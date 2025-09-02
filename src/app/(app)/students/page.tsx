@@ -2,16 +2,20 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot, doc, addDoc, updateDoc, getDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, updateDoc, getDoc, writeBatch } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { Student } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import type { SubmitHandler } from 'react-hook-form';
+import Papa from 'papaparse';
+
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Upload, Download, Users, User, UserPlus, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
@@ -23,7 +27,8 @@ export default function StudentsPage() {
   const [students, setStudents] = React.useState<Student[]>([]);
   const [schoolSettings, setSchoolSettings] = React.useState({ academicYear: 'Loading...', currentSession: 'Loading...' });
   const [isLoading, setIsLoading] = React.useState(true);
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
   const { toast } = useToast();
@@ -58,19 +63,19 @@ export default function StudentsPage() {
 
   const handleAddNewStudent = () => {
     setSelectedStudent(null);
-    setIsDialogOpen(true);
+    setIsFormDialogOpen(true);
   };
 
   const handleEditStudent = (student: Student) => {
     setSelectedStudent(student);
-    setIsDialogOpen(true);
+    setIsFormDialogOpen(true);
   };
   
-  const handleDialogClose = (open: boolean) => {
+  const handleFormDialogClose = (open: boolean) => {
       if (!open) {
           setSelectedStudent(null);
       }
-      setIsDialogOpen(open);
+      setIsFormDialogOpen(open);
   }
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
@@ -120,7 +125,7 @@ export default function StudentsPage() {
             });
         }
         
-        setIsDialogOpen(false);
+        setIsFormDialogOpen(false);
         setSelectedStudent(null);
 
     } catch (error) {
@@ -134,6 +139,85 @@ export default function StudentsPage() {
         setIsSubmitting(false);
     }
   };
+
+  const handleExport = () => {
+    const csv = Papa.unparse(students.map(s => ({
+        ...s,
+        id: s.id, // Ensure id is included if it's not a top-level prop in your data
+    })));
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "students.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+  }
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsSubmitting(true);
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+            const newStudents = results.data as any[];
+
+            try {
+                const batch = writeBatch(db);
+                const settingsDocRef = doc(db, 'school-settings', 'current');
+                const settingsSnap = await getDoc(settingsDocRef);
+                const currentSettings = settingsSnap.exists() ? settingsSnap.data() : { academicYear: 'N/A', currentSession: 'N/A' };
+
+                newStudents.forEach(student => {
+                    const docRef = doc(collection(db, "students")); // Automatically generate ID
+                    const studentData = {
+                        ...student,
+                        name: `${student.firstName} ${student.lastName}`,
+                        admissionDate: new Date().toISOString(),
+                        admissionTerm: currentSettings.currentSession,
+                        admissionYear: currentSettings.academicYear,
+                        status: student.status || 'Active',
+                        paymentStatus: student.paymentStatus || 'Pending',
+                        dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString() : new Date().toISOString(),
+                    };
+                    batch.set(docRef, studentData);
+                });
+
+                await batch.commit();
+                toast({
+                    title: "Import Successful",
+                    description: `${newStudents.length} students have been successfully imported.`,
+                });
+            } catch (error) {
+                console.error("Error importing students: ", error);
+                toast({
+                    variant: "destructive",
+                    title: "Import Error",
+                    description: "Could not import students. Please check the file format and try again.",
+                });
+            } finally {
+                setIsSubmitting(false);
+                setIsImportDialogOpen(false);
+            }
+        },
+        error: (error) => {
+            console.error("CSV Parsing Error: ", error);
+            toast({
+                variant: "destructive",
+                title: "File Error",
+                description: "Could not parse the CSV file. Please check its format.",
+            });
+            setIsSubmitting(false);
+        }
+    });
+  }
 
 
   const newAdmissions = students.filter(s => s.admissionTerm === schoolSettings.currentSession && s.admissionYear === schoolSettings.academicYear).length;
@@ -153,15 +237,40 @@ export default function StudentsPage() {
         description="View and manage all students in the system."
       >
         <div className="flex items-center gap-2">
-            <Button variant="outline">
-                <Upload className="mr-2 h-4 w-4" />
-                Import
-            </Button>
-            <Button variant="outline">
+            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="outline">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Import Students</DialogTitle>
+                        <DialogDescription>Upload a CSV file to add multiple students at once.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid w-full max-w-sm items-center gap-1.5 py-4">
+                        <Label htmlFor="csv-file">CSV File</Label>
+                        <Input id="csv-file" type="file" accept=".csv" onChange={handleImport} disabled={isSubmitting} />
+                        <p className="text-sm text-muted-foreground">
+                            Ensure your CSV has columns: firstName, lastName, email, gender, dateOfBirth, class, guardianName, guardianPhone, etc.
+                        </p>
+                    </div>
+                    {isSubmitting && (
+                        <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <span className="ml-2">Importing...</span>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            <Button variant="outline" onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" />
                 Export
             </Button>
-             <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+
+             <Dialog open={isFormDialogOpen} onOpenChange={handleFormDialogClose}>
               <DialogTrigger asChild>
                 <Button onClick={handleAddNewStudent}>
                   <PlusCircle className="mr-2 h-4 w-4" />
@@ -181,7 +290,7 @@ export default function StudentsPage() {
                       defaultValues={selectedStudent || undefined}
                    />
                 </div>
-                 {isSubmitting && (
+                 {isSubmitting && !isImportDialogOpen && (
                     <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
