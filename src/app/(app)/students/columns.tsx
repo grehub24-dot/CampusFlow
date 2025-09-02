@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export const columns: ColumnDef<Student>[] = [
   {
@@ -95,6 +96,11 @@ export const columns: ColumnDef<Student>[] = [
     id: "actions",
     cell: ({ row }) => {
       const student = row.original
+      const router = useRouter()
+
+      const handleViewDetails = () => {
+        router.push(`/students/${student.id}`);
+      }
 
       return (
         <DropdownMenu>
@@ -112,7 +118,7 @@ export const columns: ColumnDef<Student>[] = [
               Copy student ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View details</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleViewDetails}>View details</DropdownMenuItem>
             <DropdownMenuItem>Edit student</DropdownMenuItem>
             <DropdownMenuItem className="text-destructive">Delete student</DropdownMenuItem>
           </DropdownMenuContent>
