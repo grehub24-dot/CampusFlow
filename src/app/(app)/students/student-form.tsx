@@ -42,6 +42,19 @@ type StudentFormProps = {
 export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+        firstName: defaultValues?.firstName || '',
+        lastName: defaultValues?.lastName || '',
+        email: defaultValues?.email || '',
+        gender: defaultValues?.gender,
+        admissionClass: defaultValues?.class || '',
+        guardianName: defaultValues?.guardianName || '',
+        guardianPhone: defaultValues?.guardianPhone || '',
+        guardianEmail: defaultValues?.guardianEmail || '',
+        previousSchool: defaultValues?.previousSchool || '',
+        notes: defaultValues?.notes || '',
+        dateOfBirth: defaultValues?.dateOfBirth ? new Date(defaultValues.dateOfBirth) : undefined,
+    }
   });
 
   React.useEffect(() => {
@@ -63,6 +76,7 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
             guardianEmail: '',
             previousSchool: '',
             notes: '',
+            dateOfBirth: undefined,
         });
     }
   }, [defaultValues, form]);
@@ -159,7 +173,7 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Gender</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select gender..." />
@@ -180,7 +194,7 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Class</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select class..." />
