@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 
 import { PageHeader } from "@/components/page-header";
+import StatCard from "@/components/dashboard/stat-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -16,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Users, User, Wallet, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -67,12 +68,53 @@ export default function AdmissionsPage() {
     form.reset();
   };
 
+  const admissionStats = {
+    totalNewStudents: 152,
+    maleStudents: 78,
+    femaleStudents: 74,
+    totalPayments: 76000,
+    pendingInvoices: 5000,
+  };
+
   return (
     <>
       <PageHeader
         title="Admissions"
         description="Submit a new student application for admission."
       />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-6">
+        <StatCard 
+            title="Total New Admissions"
+            value={admissionStats.totalNewStudents.toLocaleString()}
+            icon={Users}
+        />
+        <StatCard 
+            title="Male Students"
+            value={admissionStats.maleStudents.toLocaleString()}
+            icon={User}
+            color="text-blue-500"
+        />
+        <StatCard 
+            title="Female Students"
+            value={admissionStats.femaleStudents.toLocaleString()}
+            icon={User}
+            color="text-pink-500"
+        />
+        <StatCard 
+            title="Total Payments"
+            value={`GHS ${admissionStats.totalPayments.toLocaleString()}`}
+            icon={Wallet}
+            description="Based on new admissions"
+        />
+        <StatCard 
+            title="Pending Invoices"
+            value={`GHS ${admissionStats.pendingInvoices.toLocaleString()}`}
+            icon={Clock}
+            description="For new admissions"
+        />
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>New Student Application Form</CardTitle>
