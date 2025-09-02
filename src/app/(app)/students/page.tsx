@@ -80,7 +80,7 @@ export default function StudentsPage() {
             name: `${values.firstName} ${values.lastName}`,
             class: values.admissionClass,
             gender: values.gender,
-            status: 'Active',
+            status: selectedStudent?.status || 'Active',
             paymentStatus: selectedStudent?.paymentStatus || 'Pending',
             email: values.email || `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
             dateOfBirth: values.dateOfBirth.toISOString(),
@@ -225,4 +225,3 @@ export default function StudentsPage() {
     </>
   );
 }
-
