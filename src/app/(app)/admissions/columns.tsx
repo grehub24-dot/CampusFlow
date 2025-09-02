@@ -59,3 +59,5 @@ export const columns: ColumnDef<Student>[] = [
     },
   },
 ]
+
+    

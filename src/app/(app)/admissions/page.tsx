@@ -6,6 +6,8 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
+import { useRouter } from 'next/navigation';
+
 
 import { PageHeader } from "@/components/page-header";
 import StatCard from "@/components/dashboard/stat-card";
@@ -20,16 +22,18 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { newlyAdmittedStudents } from '@/lib/data';
+import { newlyAdmittedStudents as initialAdmittedStudents } from '@/lib/data';
+import type { Student } from '@/types';
 import { AdmittedStudentTable } from './admitted-student-table';
 import { columns } from './columns';
+import { ToastAction } from '@/components/ui/toast';
 
 
 const formSchema = z.object({
   firstName: z.string().min(1, 'First name is required.'),
   lastName: z.string().min(1, 'Last name is required.'),
   dateOfBirth: z.date({ required_error: 'Date of birth is required.'}),
-  gender: z.string().min(1, 'Please select a gender.'),
+  gender: z.enum(['Male', 'Female']),
   admissionClass: z.string().min(1, 'Please select a class.'),
   guardianName: z.string().min(1, "Guardian's name is required."),
   guardianPhone: z.string().min(10, 'Please enter a valid phone number.'),
@@ -46,7 +50,6 @@ function AdmissionForm({ onFormSubmit, isLoading }: { onFormSubmit: SubmitHandle
     defaultValues: {
       firstName: '',
       lastName: '',
-      gender: '',
       admissionClass: '',
       guardianName: '',
       guardianPhone: '',
@@ -268,19 +271,40 @@ function AdmissionForm({ onFormSubmit, isLoading }: { onFormSubmit: SubmitHandle
 export default function AdmissionsPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [admittedStudents, setAdmittedStudents] = React.useState<Student[]>(initialAdmittedStudents);
   const { toast } = useToast();
+  const router = useRouter();
+
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setIsLoading(true);
-    console.log(values);
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const newStudent: Student = {
+        id: `STU-${Math.floor(100 + Math.random() * 900)}`,
+        name: `${values.firstName} ${values.lastName}`,
+        class: values.admissionClass,
+        gender: values.gender,
+        status: 'Active',
+        email: `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
+        admissionDate: new Date().toISOString().split('T')[0],
+    };
+
+    setAdmittedStudents(prev => [...prev, newStudent]);
+    
     setIsLoading(false);
+    setIsDialogOpen(false);
+
     toast({
       title: 'Application Submitted',
       description: `${values.firstName} ${values.lastName}'s application has been successfully submitted.`,
+      action: (
+        <ToastAction altText="Proceed to payment" onClick={() => router.push('/payments')}>
+            Proceed to Payment
+        </ToastAction>
+      )
     });
-    setIsDialogOpen(false);
   };
 
   const admissionStats = {
@@ -329,7 +353,7 @@ export default function AdmissionsPage() {
         />
          <StatCard 
             title="Total New Admissions"
-            value={admissionStats.totalNewStudents.toLocaleString()}
+            value={admittedStudents.length.toLocaleString()}
             icon={Users}
         />
         <StatCard 
@@ -343,13 +367,13 @@ export default function AdmissionsPage() {
        
         <StatCard 
             title="Male Students"
-            value={admissionStats.maleStudents.toLocaleString()}
+            value={admittedStudents.filter(s => s.gender === 'Male').length.toLocaleString()}
             icon={User}
             color="text-blue-500"
         />
         <StatCard 
             title="Female Students"
-            value={admissionStats.femaleStudents.toLocaleString()}
+            value={admittedStudents.filter(s => s.gender === 'Female').length.toLocaleString()}
             icon={User}
             color="text-pink-500"
         />
@@ -362,7 +386,7 @@ export default function AdmissionsPage() {
       </div>
 
       <div className="space-y-6">
-        <AdmittedStudentTable columns={columns} data={newlyAdmittedStudents} />
+        <AdmittedStudentTable columns={columns} data={admittedStudents} />
       </div>
     </>
   );
