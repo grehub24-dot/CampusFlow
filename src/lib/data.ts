@@ -191,33 +191,3 @@ export const pendingInvoices: Invoice[] = [
         dueDate: '2024-08-12',
     },
 ]
-
-export const newlyAdmittedStudents: Student[] = [
-  {
-    id: 'STU-011',
-    name: 'Ken Adams',
-    class: 'Grade 1',
-    gender: 'Male',
-    status: 'Active',
-    email: 'ken.a@example.com',
-    admissionDate: '2024-08-01',
-  },
-  {
-    id: 'STU-012',
-    name: 'Laura Palmer',
-    class: 'Grade 5',
-    gender: 'Female',
-    status: 'Active',
-    email: 'laura.p@example.com',
-    admissionDate: '2024-08-01',
-  },
-  {
-    id: 'STU-013',
-    name: 'Michael Scott',
-    class: 'Grade 8',
-    gender: 'Male',
-    status: 'Active',
-    email: 'michael.s@example.com',
-    admissionDate: '2024-08-02',
-  },
-];

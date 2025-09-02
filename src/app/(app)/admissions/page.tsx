@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { collection, addDoc, onSnapshot, query, orderBy } from "firebase/firestore";
 
 
 import { PageHeader } from "@/components/page-header";
@@ -22,11 +23,11 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { newlyAdmittedStudents as initialAdmittedStudents } from '@/lib/data';
 import type { Student } from '@/types';
 import { AdmittedStudentTable } from './admitted-student-table';
 import { columns } from './columns';
 import { ToastAction } from '@/components/ui/toast';
+import { db } from '@/lib/firebase';
 
 
 const formSchema = z.object({
@@ -271,46 +272,77 @@ function AdmissionForm({ onFormSubmit, isLoading }: { onFormSubmit: SubmitHandle
 export default function AdmissionsPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [admittedStudents, setAdmittedStudents] = React.useState<Student[]>(initialAdmittedStudents);
+  const [admittedStudents, setAdmittedStudents] = React.useState<Student[]>([]);
   const { toast } = useToast();
   const router = useRouter();
+
+  React.useEffect(() => {
+    setIsLoading(true);
+    const q = query(collection(db, "students"), orderBy("admissionDate", "desc"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const students: Student[] = [];
+      querySnapshot.forEach((doc) => {
+        students.push({ id: doc.id, ...doc.data() } as Student);
+      });
+      setAdmittedStudents(students);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching students:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not fetch students from the database.",
+      });
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [toast]);
 
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const newStudent: Student = {
-        id: `STU-${Math.floor(100 + Math.random() * 900)}`,
-        name: `${values.firstName} ${values.lastName}`,
-        class: values.admissionClass,
-        gender: values.gender,
-        status: 'Active',
-        email: `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
-        admissionDate: new Date().toISOString().split('T')[0],
-    };
+    try {
+        const studentId = `STU-${Date.now()}`;
+        const newStudentData = {
+            id: studentId,
+            name: `${values.firstName} ${values.lastName}`,
+            class: values.admissionClass,
+            gender: values.gender,
+            status: 'Active',
+            email: `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
+            admissionDate: new Date().toISOString().split('T')[0],
+            ...values,
+            dateOfBirth: values.dateOfBirth.toISOString().split('T')[0],
+        };
 
-    setAdmittedStudents(prev => [...prev, newStudent]);
-    
-    setIsLoading(false);
-    setIsDialogOpen(false);
+        await addDoc(collection(db, "students"), newStudentData);
+        
+        setIsLoading(false);
+        setIsDialogOpen(false);
 
-    toast({
-      title: 'Application Submitted',
-      description: `${values.firstName} ${values.lastName}'s application has been successfully submitted.`,
-      action: (
-        <ToastAction altText="Proceed to payment" onClick={() => router.push('/payments')}>
-            Proceed to Payment
-        </ToastAction>
-      )
-    });
+        toast({
+        title: 'Application Submitted',
+        description: `${values.firstName} ${values.lastName}'s application has been successfully submitted.`,
+        action: (
+            <ToastAction altText="Proceed to payment" onClick={() => router.push('/payments')}>
+                Proceed to Payment
+            </ToastAction>
+        )
+        });
+
+    } catch (error) {
+        setIsLoading(false);
+        console.error("Error adding document: ", error);
+        toast({
+            variant: "destructive",
+            title: "Submission Error",
+            description: "Could not save the application. Please try again.",
+        });
+    }
   };
 
   const admissionStats = {
-    totalNewStudents: 152,
-    maleStudents: 78,
-    femaleStudents: 74,
     totalPayments: 76000,
     pendingInvoices: 5000,
   };
@@ -391,5 +423,3 @@ export default function AdmissionsPage() {
     </>
   );
 }
-
-    
