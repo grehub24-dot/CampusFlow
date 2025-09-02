@@ -2,7 +2,7 @@
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Users, Milestone } from "lucide-react";
+import { User, Users, Milestone, Calendar, BookOpen } from "lucide-react";
 import StatCard from "@/components/dashboard/stat-card";
 import OverviewChart from "@/components/dashboard/overview-chart";
 import GenderRatioPieChart from "@/components/dashboard/gender-ratio-pie-chart";
@@ -41,6 +41,19 @@ export default function Dashboard() {
         title="Dashboard"
         description="Welcome! Here's a summary of your school's data."
       />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <StatCard 
+            title="Academic Year"
+            value="2023-2024"
+            icon={Calendar}
+        />
+        <StatCard 
+            title="Current Session"
+            value="Fall Semester"
+            icon={BookOpen}
+        />
+      </div>
 
       <Tabs defaultValue="overall" className="space-y-4">
         <TabsList>
