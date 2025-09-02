@@ -10,7 +10,7 @@ import type { SubmitHandler } from 'react-hook-form';
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Upload, Download, Users, User, BookOpen, UserPlus, Loader2 } from "lucide-react";
+import { PlusCircle, Upload, Download, Users, User, UserPlus, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 import { columns } from "./columns";

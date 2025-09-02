@@ -1,7 +1,7 @@
 
 
 export type Student = {
-  id: string;
+  id: string; // This is the Firestore document ID
   name: string;
   class: string;
   gender: 'Male' | 'Female';
