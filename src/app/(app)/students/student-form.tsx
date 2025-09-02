@@ -61,6 +61,7 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
     if (defaultValues) {
         form.reset({
             ...defaultValues,
+            lastName: defaultValues.lastName,
             admissionClass: defaultValues.class,
             dateOfBirth: defaultValues.dateOfBirth ? new Date(defaultValues.dateOfBirth) : undefined,
         })
