@@ -9,11 +9,12 @@ import { useToast } from '@/hooks/use-toast';
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Upload, Download, Users, User, Activity } from "lucide-react";
+import { PlusCircle, Upload, Download, Users, User, BookOpen } from "lucide-react";
 
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import StatCard from '@/components/dashboard/stat-card';
+import ClassEnrollmentChart from './class-enrollment-chart';
 
 export default function StudentsPage() {
   const [students, setStudents] = React.useState<Student[]>([]);
@@ -40,7 +41,6 @@ export default function StudentsPage() {
 
   const studentStats = {
     total: students.length,
-    active: students.filter(s => s.status === 'Active').length,
     male: students.filter(s => s.gender === 'Male').length,
     female: students.filter(s => s.gender === 'Female').length,
   };
@@ -68,29 +68,28 @@ export default function StudentsPage() {
         </div>
       </PageHeader>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
         <StatCard 
-            title="Total Students"
+            title="Total Admissions"
             value={studentStats.total.toLocaleString()}
             icon={Users}
         />
         <StatCard 
-            title="Active Students"
-            value={studentStats.active.toLocaleString()}
-            icon={Activity}
-        />
-        <StatCard 
-            title="Male"
+            title="Male Students"
             value={studentStats.male.toLocaleString()}
             icon={User}
             color="text-blue-500"
         />
         <StatCard 
-            title="Female"
+            title="Female Students"
             value={studentStats.female.toLocaleString()}
             icon={User}
             color="text-pink-500"
         />
+      </div>
+
+      <div className="mb-6">
+        <ClassEnrollmentChart data={students} />
       </div>
 
       <DataTable columns={columns} data={students} />
