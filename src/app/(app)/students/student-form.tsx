@@ -60,9 +60,16 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
   React.useEffect(() => {
     if (defaultValues) {
         form.reset({
-            ...defaultValues,
+            firstName: defaultValues.firstName,
             lastName: defaultValues.lastName,
+            email: defaultValues.email || '',
+            gender: defaultValues.gender,
             admissionClass: defaultValues.class,
+            guardianName: defaultValues.guardianName,
+            guardianPhone: defaultValues.guardianPhone,
+            guardianEmail: defaultValues.guardianEmail || '',
+            previousSchool: defaultValues.previousSchool || '',
+            notes: defaultValues.notes || '',
             dateOfBirth: defaultValues.dateOfBirth ? new Date(defaultValues.dateOfBirth) : undefined,
         })
     } else {

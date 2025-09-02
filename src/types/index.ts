@@ -15,7 +15,6 @@ export type Student = {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
-  admissionClass: string;
   guardianName: string;
   guardianPhone: string;
   guardianEmail?: string;
