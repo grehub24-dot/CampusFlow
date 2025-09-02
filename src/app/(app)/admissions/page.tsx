@@ -224,7 +224,7 @@ export default function AdmissionsPage() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select class..." />
-                            </SelectTrigger>
+                            </Trigger>
                           </FormControl>
                           <SelectContent>
                             {Array.from({length: 12}, (_, i) => (
