@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export const columns: ColumnDef<Student>[] = [
   {
@@ -36,6 +37,11 @@ export const columns: ColumnDef<Student>[] = [
     id: "actions",
     cell: ({ row }) => {
       const student = row.original
+      const router = useRouter()
+
+      const handleViewApplication = () => {
+        router.push(`/admissions/${student.id}`);
+      }
 
       return (
         <div className="text-right">
@@ -48,7 +54,7 @@ export const columns: ColumnDef<Student>[] = [
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>View Application</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleViewApplication}>View Application</DropdownMenuItem>
                 <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive">Reject Application</DropdownMenuItem>
@@ -59,5 +65,3 @@ export const columns: ColumnDef<Student>[] = [
     },
   },
 ]
-
-    

@@ -8,6 +8,16 @@ export type Student = {
   status: 'Active' | 'Inactive' | 'Graduated';
   email: string;
   admissionDate: string;
+  // From form
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  admissionClass?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianEmail?: string;
+  previousSchool?: string;
+  notes?: string;
 };
 
 export type Payment = {
