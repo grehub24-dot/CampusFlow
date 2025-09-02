@@ -1,4 +1,5 @@
 
+
 export type Student = {
   id: string;
   name: string;
@@ -16,6 +17,14 @@ export type Payment = {
   amount: number;
   date: string;
   status: 'Paid' | 'Pending' | 'Failed';
+};
+
+export type Invoice = {
+  id: string;
+  studentName: string;
+  studentId: string;
+  amount: number;
+  dueDate: string;
 };
 
 export type User = {

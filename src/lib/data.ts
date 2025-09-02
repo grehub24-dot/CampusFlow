@@ -1,5 +1,6 @@
 
-import type { Student, User } from '@/types';
+
+import type { Student, User, Payment, Invoice } from '@/types';
 
 export const students: Student[] = [
   {
@@ -123,4 +124,70 @@ export const users: User[] = [
         role: "Teacher",
         lastLogin: "2024-07-30T08:00:00Z"
     }
+];
+
+export const recentPayments: Payment[] = [
+  {
+    id: 'PAY-001',
+    studentName: 'Alice Johnson',
+    studentId: 'STU-001',
+    amount: 500,
+    date: '2024-07-28',
+    status: 'Paid',
+  },
+  {
+    id: 'PAY-002',
+    studentName: 'Bob Smith',
+    studentId: 'STU-002',
+    amount: 500,
+    date: '2024-07-27',
+    status: 'Paid',
+  },
+  {
+    id: 'PAY-003',
+    studentName: 'Fiona Glenanne',
+    studentId: 'STU-006',
+    amount: 500,
+    date: '2024-07-26',
+    status: 'Paid',
+  },
+    {
+    id: 'PAY-004',
+    studentName: 'Isaac Newton',
+    studentId: 'STU-009',
+    amount: 500,
+    date: '2024-07-25',
+    status: 'Paid',
+  },
+];
+
+export const pendingInvoices: Invoice[] = [
+    {
+        id: 'INV-001',
+        studentName: 'Charlie Brown',
+        studentId: 'STU-003',
+        amount: 500,
+        dueDate: '2024-08-15',
+    },
+    {
+        id: 'INV-002',
+        studentName: 'George Costanza',
+        studentId: 'STU-007',
+        amount: 500,
+        dueDate: '2024-08-15',
+    },
+    {
+        id: 'INV-003',
+        studentName: 'Hannah Montana',
+        studentId: 'STU-008',
+        amount: 500,
+        dueDate: '2024-08-10',
+    },
+     {
+        id: 'INV-004',
+        studentName: 'Jane Eyre',
+        studentId: 'STU-010',
+        amount: 500,
+        dueDate: '2024-08-12',
+    },
 ]

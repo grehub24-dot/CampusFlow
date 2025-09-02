@@ -2,16 +2,23 @@
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Users, Milestone, Calendar, BookOpen } from "lucide-react";
+import { User, Users, Milestone, Calendar, BookOpen, Wallet, Clock } from "lucide-react";
 import StatCard from "@/components/dashboard/stat-card";
 import OverviewChart from "@/components/dashboard/overview-chart";
 import GenderRatioPieChart from "@/components/dashboard/gender-ratio-pie-chart";
+import { RecentPaymentsTable } from "./recent-payments-table";
+import { recentPayments, pendingInvoices } from "@/lib/data";
+import { paymentColumns } from "./payment-columns";
+import { PendingInvoicesTable } from "./pending-invoices-table";
+import { invoiceColumns } from "./invoice-columns";
 
 export default function Dashboard() {
   const overallStats = {
     totalStudents: 1250,
     maleStudents: 640,
     femaleStudents: 610,
+    totalRevenue: 550000,
+    pendingInvoices: 25000,
   };
   
   const admissionStats = {
@@ -52,6 +59,16 @@ export default function Dashboard() {
             title="Current Session"
             value="1st Term"
             icon={BookOpen}
+        />
+        <StatCard 
+            title="Total Revenue"
+            value={`GHS ${overallStats.totalRevenue.toLocaleString()}`}
+            icon={Wallet}
+        />
+        <StatCard 
+            title="Pending Invoices"
+            value={`GHS ${overallStats.pendingInvoices.toLocaleString()}`}
+            icon={Clock}
         />
       </div>
 
@@ -97,6 +114,10 @@ export default function Dashboard() {
                 <GenderRatioPieChart data={{ male: overallStats.maleStudents, female: overallStats.femaleStudents }} />
               </CardContent>
             </Card>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <RecentPaymentsTable columns={paymentColumns} data={recentPayments} />
+              <PendingInvoicesTable columns={invoiceColumns} data={pendingInvoices} />
           </div>
         </TabsContent>
         <TabsContent value="admissions" className="space-y-4">
