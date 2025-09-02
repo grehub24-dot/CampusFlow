@@ -50,7 +50,7 @@ export default function Dashboard() {
         />
         <StatCard 
             title="Current Session"
-            value="Fall Semester"
+            value="1st Term"
             icon={BookOpen}
         />
       </div>
