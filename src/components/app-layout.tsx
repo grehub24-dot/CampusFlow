@@ -21,6 +21,7 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarSeparator,
+  SidebarRail,
 } from "@/components/ui/sidebar"
 import {
   LayoutDashboard,
@@ -30,7 +31,6 @@ import {
   BarChart3,
   Settings,
   Bell,
-  PanelLeft,
 } from "lucide-react"
 
 import { Button } from './ui/button';
@@ -82,20 +82,18 @@ function UserProfile() {
     )
 }
 
-function Header({ children }: { children: React.ReactNode }) {
+function Header() {
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 sm:px-6">
-      <SidebarTrigger className="md:hidden">
-        <PanelLeft />
-      </SidebarTrigger>
-      <div className="flex-1">
-        {/* Can add breadcrumbs or page title here */}
-      </div>
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">Toggle notifications</span>
-        </Button>
+        <SidebarTrigger />
+        <div className="flex-1">
+            {/* Can add breadcrumbs or page title here */}
+        </div>
+        <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon">
+            <Bell className="h-5 w-5" />
+            <span className="sr-only">Toggle notifications</span>
+            </Button>
       </div>
     </header>
   );
@@ -104,7 +102,8 @@ function Header({ children }: { children: React.ReactNode }) {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar collapsible="icon">
+        <SidebarRail />
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-8 w-8 text-primary">
@@ -123,7 +122,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col min-h-screen">
-          <Header>{children}</Header>
+          <Header />
           <main className="flex-1 p-4 sm:p-6 bg-background">
             {children}
           </main>
