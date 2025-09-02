@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Upload, Download, Users, User, BookOpen } from "lucide-react";
+import { PlusCircle, Upload, Download, Users, User, BookOpen, UserPlus } from "lucide-react";
 
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
@@ -39,10 +39,14 @@ export default function StudentsPage() {
     return () => unsubscribe();
   }, [toast]);
 
+  const currentYear = new Date().getFullYear();
+  const newAdmissions = students.filter(s => new Date(s.admissionDate).getFullYear() === currentYear).length;
+
   const studentStats = {
     total: students.length,
     male: students.filter(s => s.gender === 'Male').length,
     female: students.filter(s => s.gender === 'Female').length,
+    newAdmissions: newAdmissions,
   };
 
 
@@ -68,11 +72,17 @@ export default function StudentsPage() {
         </div>
       </PageHeader>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard 
-            title="Total Admissions"
+            title="Total Students"
             value={studentStats.total.toLocaleString()}
             icon={Users}
+        />
+        <StatCard 
+            title="New Admissions"
+            value={studentStats.newAdmissions.toLocaleString()}
+            icon={UserPlus}
+            description="This calendar year"
         />
         <StatCard 
             title="Male Students"
