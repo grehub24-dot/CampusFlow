@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, doc } from "firebase/firestore";
 
 
 import { PageHeader } from "@/components/page-header";
@@ -275,8 +275,22 @@ export default function AdmissionsPage() {
   const [isTableLoading, setIsTableLoading] = React.useState(true);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [admittedStudents, setAdmittedStudents] = React.useState<Student[]>([]);
+  const [schoolSettings, setSchoolSettings] = React.useState({ academicYear: 'Loading...', currentSession: 'Loading...' });
   const { toast } = useToast();
   const router = useRouter();
+
+  React.useEffect(() => {
+    const settingsDocRef = doc(db, 'school-settings', 'current');
+    const unsubscribeSettings = onSnapshot(settingsDocRef, (doc) => {
+        if (doc.exists()) {
+            setSchoolSettings(doc.data() as { academicYear: string, currentSession: string });
+        } else {
+            console.log("No such document!");
+        }
+    });
+
+    return () => unsubscribeSettings();
+  }, []);
 
   React.useEffect(() => {
     setIsTableLoading(true);
@@ -377,12 +391,12 @@ export default function AdmissionsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard 
             title="Academic Year"
-            value="2023-2024"
+            value={schoolSettings.academicYear}
             icon={CalendarIcon}
         />
         <StatCard 
             title="Current Session"
-            value="1st Term"
+            value={schoolSettings.currentSession}
             icon={BookOpen}
         />
          <StatCard 
@@ -425,5 +439,3 @@ export default function AdmissionsPage() {
     </>
   );
 }
-
-    

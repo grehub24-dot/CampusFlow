@@ -1,4 +1,11 @@
 
+'use client'
+
+import React from 'react';
+import { collection, onSnapshot, doc } from "firebase/firestore";
+import { db } from '@/lib/firebase';
+import type { Student, Payment, Invoice } from '@/types';
+
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,45 +14,94 @@ import StatCard from "@/components/dashboard/stat-card";
 import OverviewChart from "@/components/dashboard/overview-chart";
 import GenderRatioPieChart from "@/components/dashboard/gender-ratio-pie-chart";
 import { RecentPaymentsTable } from "./recent-payments-table";
-import { recentPayments, pendingInvoices } from "@/lib/data";
 import { paymentColumns } from "./payment-columns";
 import { PendingInvoicesTable } from "./pending-invoices-table";
 import { invoiceColumns } from "./invoice-columns";
+import { useToast } from '@/hooks/use-toast';
 
 export default function Dashboard() {
+  const [students, setStudents] = React.useState<Student[]>([]);
+  const [payments, setPayments] = React.useState<Payment[]>([]);
+  const [invoices, setInvoices] = React.useState<Invoice[]>([]);
+  const [schoolSettings, setSchoolSettings] = React.useState({ academicYear: 'Loading...', currentSession: 'Loading...' });
+  const { toast } = useToast();
+
+  React.useEffect(() => {
+    const settingsDocRef = doc(db, 'school-settings', 'current');
+    const unsubscribeSettings = onSnapshot(settingsDocRef, (doc) => {
+        if (doc.exists()) {
+            setSchoolSettings(doc.data() as { academicYear: string, currentSession: string });
+        } else {
+            console.log("No such settings document!");
+        }
+    });
+
+    const studentsQuery = collection(db, "students");
+    const unsubscribeStudents = onSnapshot(studentsQuery, (querySnapshot) => {
+      const studentsData: Student[] = [];
+      querySnapshot.forEach((doc) => {
+        studentsData.push({ id: doc.id, ...doc.data() } as Student);
+      });
+      setStudents(studentsData);
+    }, (error) => {
+      console.error("Error fetching students:", error);
+      toast({ variant: "destructive", title: "Error", description: "Could not fetch students." });
+    });
+    
+    // Note: Assuming 'payments' and 'invoices' collections exist.
+    // You will need to create these and add data for them to appear.
+    const paymentsQuery = collection(db, "payments");
+    const unsubscribePayments = onSnapshot(paymentsQuery, (querySnapshot) => {
+      const paymentsData: Payment[] = [];
+      querySnapshot.forEach((doc) => {
+        paymentsData.push({ id: doc.id, ...doc.data() } as Payment);
+      });
+      setPayments(paymentsData);
+    });
+
+    const invoicesQuery = collection(db, "invoices");
+    const unsubscribeInvoices = onSnapshot(invoicesQuery, (querySnapshot) => {
+      const invoicesData: Invoice[] = [];
+      querySnapshot.forEach((doc) => {
+        invoicesData.push({ id: doc.id, ...doc.data() } as Invoice);
+      });
+      setInvoices(invoicesData);
+    });
+
+    return () => {
+        unsubscribeSettings();
+        unsubscribeStudents();
+        unsubscribePayments();
+        unsubscribeInvoices();
+    };
+  }, [toast]);
+
   const overallStats = {
-    totalStudents: 1250,
-    maleStudents: 640,
-    femaleStudents: 610,
-    totalRevenue: 550000,
-    pendingInvoices: 25000,
+    totalStudents: students.length,
+    maleStudents: students.filter(s => s.gender === 'Male').length,
+    femaleStudents: students.filter(s => s.gender === 'Female').length,
+    totalRevenue: payments.reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0),
+    pendingInvoices: invoices.reduce((acc, i) => acc + i.amount, 0),
   };
-  
+
+  // Simplified admission stats - assuming all students are "new" for this example
   const admissionStats = {
-    totalNewStudents: 152,
-    maleStudents: 78,
-    femaleStudents: 74,
+    totalNewStudents: students.length,
+    maleStudents: students.filter(s => s.gender === 'Male').length,
+    femaleStudents: students.filter(s => s.gender === 'Female').length,
   };
 
-  const classEnrollment = [
-    { name: 'Grade 1', students: 120 },
-    { name: 'Grade 2', students: 115 },
-    { name: 'Grade 3', students: 130 },
-    { name: 'Grade 4', students: 110 },
-    { name: 'Grade 5', students: 125 },
-    { name: 'Grade 6', students: 100 },
-    { name: 'Grade 7', students: 95 },
-    { name: 'Grade 8', students: 90 },
-    { name: 'Grade 9', students: 85 },
-    { name: 'Grade 10', students: 80 },
-    { name: 'Grade 11', students: 75 },
-    { name: 'Grade 12', students: 70 },
-  ];
-
-  const admissionClassEnrollment = classEnrollment.map(c => ({
-      ...c, 
-      students: Math.floor(c.students * (admissionStats.totalNewStudents / overallStats.totalStudents))
-  }));
+  const classEnrollment = students.reduce((acc, student) => {
+    const existingClass = acc.find(c => c.name === student.class);
+    if (existingClass) {
+        existingClass.students += 1;
+    } else {
+        acc.push({ name: student.class, students: 1 });
+    }
+    return acc;
+  }, [] as { name: string; students: number }[]).sort((a, b) => a.name.localeCompare(b.name));
+  
+  const admissionClassEnrollment = classEnrollment; // Simplified for now
 
   return (
     <>
@@ -57,12 +113,12 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard 
             title="Academic Year"
-            value="2023-2024"
+            value={schoolSettings.academicYear}
             icon={Calendar}
         />
         <StatCard 
             title="Current Session"
-            value="1st Term"
+            value={schoolSettings.currentSession}
             icon={BookOpen}
         />
         <StatCard 
@@ -121,8 +177,8 @@ export default function Dashboard() {
             </Card>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <RecentPaymentsTable columns={paymentColumns} data={recentPayments} />
-              <PendingInvoicesTable columns={invoiceColumns} data={pendingInvoices} />
+              <RecentPaymentsTable columns={paymentColumns} data={payments} />
+              <PendingInvoicesTable columns={invoiceColumns} data={invoices} />
           </div>
         </TabsContent>
         <TabsContent value="admissions" className="space-y-4">

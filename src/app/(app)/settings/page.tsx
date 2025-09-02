@@ -1,4 +1,12 @@
 
+'use client'
+
+import React from 'react';
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from '@/lib/firebase';
+import type { User } from '@/types';
+import { useToast } from '@/hooks/use-toast';
+
 import { PageHeader } from "@/components/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,11 +14,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { users } from "@/lib/data";
 import { UserTable } from "./user-table";
 import { userColumns } from "./user-columns";
 
 export default function SettingsPage() {
+  const [users, setUsers] = React.useState<User[]>([]);
+  const { toast } = useToast();
+
+  React.useEffect(() => {
+    // Note: Assuming a 'users' collection exists.
+    // You will need to create this and add data for users to appear.
+    const usersQuery = collection(db, "users");
+    const unsubscribeUsers = onSnapshot(usersQuery, (querySnapshot) => {
+      const usersData: User[] = [];
+      querySnapshot.forEach((doc) => {
+        usersData.push({ id: doc.id, ...doc.data() } as User);
+      });
+      setUsers(usersData);
+    }, (error) => {
+      console.error("Error fetching users:", error);
+      toast({ variant: "destructive", title: "Error", description: "Could not fetch users." });
+    });
+
+    return () => unsubscribeUsers();
+  }, [toast]);
+
   return (
     <>
       <PageHeader
