@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 
 import { PageHeader } from "@/components/page-header";
 import StatCard from "@/components/dashboard/stat-card";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen } from 'lucide-react';
+import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { newlyAdmittedStudents } from '@/lib/data';
@@ -40,10 +40,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function AdmissionsPage() {
-  const [isLoading, setIsLoading] = React.useState(false);
-  const { toast } = useToast();
-
+function AdmissionForm({ onFormSubmit, isLoading }: { onFormSubmit: SubmitHandler<FormValues>, isLoading: boolean }) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -59,6 +56,220 @@ export default function AdmissionsPage() {
     },
   });
 
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-8">
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Student Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="firstName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>First Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="dateOfBirth"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Date of Birth</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("2000-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="gender"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Gender</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="admissionClass"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Admission Class</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select class..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Array.from({length: 12}, (_, i) => (
+                          <SelectItem key={i+1} value={`Grade ${i + 1}`}>{`Grade ${i + 1}`}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="previousSchool"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Previous School (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Starbright Prep School" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Guardian Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                  control={form.control}
+                  name="guardianName"
+                  render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Guardian's Full Name</FormLabel>
+                      <FormControl>
+                      <Input placeholder="Jane Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                  </FormItem>
+                  )}
+              />
+              <FormField
+                  control={form.control}
+                  name="guardianPhone"
+                  render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Guardian's Phone</FormLabel>
+                      <FormControl>
+                      <Input placeholder="024 123 4567" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                  </FormItem>
+                  )}
+              />
+              <FormField
+                  control={form.control}
+                  name="guardianEmail"
+                  render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Guardian's Email (Optional)</FormLabel>
+                      <FormControl>
+                      <Input placeholder="guardian@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                  </FormItem>
+                  )}
+              />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Additional Notes</h3>
+          <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+              <FormItem>
+                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormControl>
+                  <Textarea
+                      placeholder="Any additional information relevant to the application..."
+                      className="resize-y"
+                      {...field}
+                  />
+                  </FormControl>
+                  <FormMessage />
+              </FormItem>
+              )}
+          />
+        </div>
+        
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Submit Application
+          </Button>
+        </div>
+      </form>
+    </Form>
+  )
+}
+
+export default function AdmissionsPage() {
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const { toast } = useToast();
+
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setIsLoading(true);
     console.log(values);
@@ -69,7 +280,7 @@ export default function AdmissionsPage() {
       title: 'Application Submitted',
       description: `${values.firstName} ${values.lastName}'s application has been successfully submitted.`,
     });
-    form.reset();
+    setIsDialogOpen(false);
   };
 
   const admissionStats = {
@@ -83,8 +294,27 @@ export default function AdmissionsPage() {
   return (
     <>
       <PageHeader
-        title="Admissions" description="Submit a new student application for admission."
-      />
+        title="Admissions"
+        description="Review newly admitted students and manage applications."
+      >
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add New Student
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[800px]">
+            <DialogHeader>
+              <DialogTitle>New Student Application Form</DialogTitle>
+              <DialogDescription>Fill out the details below to submit a new application.</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[70vh] overflow-y-auto p-1">
+              <AdmissionForm onFormSubmit={onSubmit} isLoading={isLoading} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard 
@@ -131,222 +361,11 @@ export default function AdmissionsPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>New Student Application Form</CardTitle>
-            <CardDescription>Fill out the details below to submit a new application.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Student Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="firstName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>First Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="John" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="lastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Last Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Doe" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="dateOfBirth"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Date of Birth</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "w-full pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "PPP")
-                                  ) : (
-                                    <span>Pick a date</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                disabled={(date) =>
-                                  date > new Date() || date < new Date("2000-01-01")
-                                }
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="gender"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Gender</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select gender..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Male">Male</SelectItem>
-                              <SelectItem value="Female">Female</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="admissionClass"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Admission Class</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select class..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {Array.from({length: 12}, (_, i) => (
-                                  <SelectItem key={i+1} value={`Grade ${i + 1}`}>{`Grade ${i + 1}`}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="previousSchool"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Previous School (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., Starbright Prep School" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Guardian Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                          control={form.control}
-                          name="guardianName"
-                          render={({ field }) => (
-                          <FormItem>
-                              <FormLabel>Guardian's Full Name</FormLabel>
-                              <FormControl>
-                              <Input placeholder="Jane Doe" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                          </FormItem>
-                          )}
-                      />
-                      <FormField
-                          control={form.control}
-                          name="guardianPhone"
-                          render={({ field }) => (
-                          <FormItem>
-                              <FormLabel>Guardian's Phone</FormLabel>
-                              <FormControl>
-                              <Input placeholder="024 123 4567" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                          </FormItem>
-                          )}
-                      />
-                      <FormField
-                          control={form.control}
-                          name="guardianEmail"
-                          render={({ field }) => (
-                          <FormItem>
-                              <FormLabel>Guardian's Email (Optional)</FormLabel>
-                              <FormControl>
-                              <Input placeholder="guardian@example.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                          </FormItem>
-                          )}
-                      />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Additional Notes</h3>
-                  <FormField
-                      control={form.control}
-                      name="notes"
-                      render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>Notes (Optional)</FormLabel>
-                          <FormControl>
-                          <Textarea
-                              placeholder="Any additional information relevant to the application..."
-                              className="resize-y"
-                              {...field}
-                          />
-                          </FormControl>
-                          <FormMessage />
-                      </FormItem>
-                      )}
-                  />
-                </div>
-                
-                <div className="flex justify-end">
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Submit Application
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+      <div className="space-y-6">
         <AdmittedStudentTable columns={columns} data={newlyAdmittedStudents} />
       </div>
     </>
   );
 }
+
+    
