@@ -34,6 +34,19 @@ export const columns: ColumnDef<Student>[] = [
     }
   },
   {
+    accessorKey: "paymentStatus",
+    header: "Payment Status",
+    cell: ({ row }) => {
+      const status = row.getValue("paymentStatus") as string;
+      const variant = {
+        "Paid": "default",
+        "Pending": "secondary",
+        "Unpaid": "destructive",
+      }[status] ?? "secondary" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
+      return <Badge variant={variant} className="capitalize">{status || 'Pending'}</Badge>;
+    }
+  },
+  {
     id: "actions",
     cell: ({ row }) => {
       const student = row.original

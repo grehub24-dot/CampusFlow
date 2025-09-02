@@ -161,7 +161,7 @@ function AdmissionForm({ onFormSubmit }: { onFormSubmit: SubmitHandler<FormValue
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Admission Class</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValuechange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select class..." />
@@ -323,12 +323,12 @@ export default function AdmissionsPage() {
             class: values.admissionClass,
             gender: values.gender,
             status: 'Active',
+            paymentStatus: 'Pending',
             email: `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
             admissionDate: new Date().toISOString(),
             dateOfBirth: values.dateOfBirth.toISOString(),
             firstName: values.firstName,
             lastName: values.lastName,
-            admissionClass: values.admissionClass,
             guardianName: values.guardianName,
             guardianPhone: values.guardianPhone,
             guardianEmail: values.guardianEmail,
