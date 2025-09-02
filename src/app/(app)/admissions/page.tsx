@@ -319,9 +319,7 @@ export default function AdmissionsPage() {
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setIsSubmitting(true);
     try {
-        const studentId = `STU-${Date.now()}`;
         const newStudentData = {
-            id: studentId,
             name: `${values.firstName} ${values.lastName}`,
             class: values.admissionClass,
             gender: values.gender,
