@@ -45,7 +45,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-function AdmissionForm({ onFormSubmit, isSubmitting }: { onFormSubmit: SubmitHandler<FormValues>, isSubmitting: boolean }) {
+function AdmissionForm({ onFormSubmit }: { onFormSubmit: SubmitHandler<FormValues>}) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -260,8 +260,7 @@ function AdmissionForm({ onFormSubmit, isSubmitting }: { onFormSubmit: SubmitHan
         </div>
         
         <div className="flex justify-end">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button type="submit">
             Submit Application
           </Button>
         </div>
@@ -326,8 +325,15 @@ export default function AdmissionsPage() {
             status: 'Active',
             email: `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
             admissionDate: new Date().toISOString(),
-            ...values,
             dateOfBirth: values.dateOfBirth.toISOString(),
+            firstName: values.firstName,
+            lastName: values.lastName,
+            admissionClass: values.admissionClass,
+            guardianName: values.guardianName,
+            guardianPhone: values.guardianPhone,
+            guardianEmail: values.guardianEmail,
+            previousSchool: values.previousSchool,
+            notes: values.notes,
         };
 
         await addDoc(collection(db, "students"), newStudentData);
@@ -380,8 +386,13 @@ export default function AdmissionsPage() {
               <DialogDescription>Fill out the details below to submit a new application.</DialogDescription>
             </DialogHeader>
             <div className="max-h-[70vh] overflow-y-auto p-1">
-              <AdmissionForm onFormSubmit={onSubmit} isSubmitting={isSubmitting} />
+              <AdmissionForm onFormSubmit={onSubmit} />
             </div>
+            {isSubmitting && (
+              <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </PageHeader>
