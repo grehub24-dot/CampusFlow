@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { UserTable } from "./user-table";
 import { userColumns } from "./user-columns";
+import { AcademicSettingsForm } from './academic-settings-form';
 
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
@@ -48,6 +49,7 @@ export default function SettingsPage() {
       <Tabs defaultValue="school-info" className="space-y-4">
         <TabsList>
           <TabsTrigger value="school-info">School Info</TabsTrigger>
+          <TabsTrigger value="academic-year">Academic Year</TabsTrigger>
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="billing">Billing & Invoices</TabsTrigger>
@@ -75,6 +77,10 @@ export default function SettingsPage() {
               <Button>Save Changes</Button>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="academic-year">
+          <AcademicSettingsForm />
         </TabsContent>
         
         <TabsContent value="users">
