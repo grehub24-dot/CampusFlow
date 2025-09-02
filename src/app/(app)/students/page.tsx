@@ -2,7 +2,7 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, doc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { Student } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -18,10 +18,18 @@ import ClassEnrollmentChart from './class-enrollment-chart';
 
 export default function StudentsPage() {
   const [students, setStudents] = React.useState<Student[]>([]);
+  const [schoolSettings, setSchoolSettings] = React.useState({ academicYear: 'Loading...', currentSession: 'Loading...' });
   const [isLoading, setIsLoading] = React.useState(true);
   const { toast } = useToast();
 
   React.useEffect(() => {
+    const settingsDocRef = doc(db, 'school-settings', 'current');
+    const unsubscribeSettings = onSnapshot(settingsDocRef, (doc) => {
+        if (doc.exists()) {
+            setSchoolSettings(doc.data() as { academicYear: string, currentSession: string });
+        }
+    });
+
     const studentsQuery = collection(db, "students");
     const unsubscribe = onSnapshot(studentsQuery, (querySnapshot) => {
       const studentsData: Student[] = [];
@@ -36,11 +44,13 @@ export default function StudentsPage() {
       setIsLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      unsubscribeSettings();
+    };
   }, [toast]);
 
-  const currentYear = new Date().getFullYear();
-  const newAdmissions = students.filter(s => new Date(s.admissionDate).getFullYear() === currentYear).length;
+  const newAdmissions = students.filter(s => s.admissionTerm === schoolSettings.currentSession && s.admissionYear === schoolSettings.academicYear).length;
 
   const studentStats = {
     total: students.length,
@@ -82,7 +92,7 @@ export default function StudentsPage() {
             title="New Admissions"
             value={studentStats.newAdmissions.toLocaleString()}
             icon={UserPlus}
-            description="This calendar year"
+            description="This Term"
         />
         <StatCard 
             title="Male Students"

@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, onSnapshot, query, orderBy, doc } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, doc, getDoc } from "firebase/firestore";
 
 
 import { PageHeader } from "@/components/page-header";
@@ -318,6 +318,10 @@ export default function AdmissionsPage() {
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setIsSubmitting(true);
     try {
+        const settingsDocRef = doc(db, 'school-settings', 'current');
+        const settingsSnap = await getDoc(settingsDocRef);
+        const currentSettings = settingsSnap.exists() ? settingsSnap.data() : { academicYear: 'N/A', currentSession: 'N/A' };
+
         const newStudentData = {
             name: `${values.firstName} ${values.lastName}`,
             class: values.admissionClass,
@@ -326,6 +330,8 @@ export default function AdmissionsPage() {
             paymentStatus: 'Pending',
             email: `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
             admissionDate: new Date().toISOString(),
+            admissionTerm: currentSettings.currentSession,
+            admissionYear: currentSettings.academicYear,
             dateOfBirth: values.dateOfBirth.toISOString(),
             firstName: values.firstName,
             lastName: values.lastName,

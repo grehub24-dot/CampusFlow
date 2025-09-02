@@ -8,6 +8,8 @@ export type Student = {
   status: 'Active' | 'Inactive' | 'Graduated';
   email: string;
   admissionDate: string;
+  admissionTerm?: string;
+  admissionYear?: string;
   paymentStatus?: 'Paid' | 'Pending' | 'Unpaid';
   // From form
   firstName?: string;
