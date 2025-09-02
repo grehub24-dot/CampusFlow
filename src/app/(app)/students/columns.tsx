@@ -59,6 +59,14 @@ export const columns: ColumnDef<Student>[] = [
     header: "Gender",
   },
   {
+    accessorKey: "guardianName",
+    header: "Guardian Name",
+  },
+  {
+    accessorKey: "guardianPhone",
+    header: "Guardian Phone",
+  },
+  {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
