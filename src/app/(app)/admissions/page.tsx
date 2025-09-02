@@ -51,6 +51,7 @@ function AdmissionForm({ onFormSubmit, isSubmitting }: { onFormSubmit: SubmitHan
     defaultValues: {
       firstName: '',
       lastName: '',
+      gender: undefined,
       admissionClass: '',
       guardianName: '',
       guardianPhone: '',
@@ -319,27 +320,27 @@ export default function AdmissionsPage() {
 
         await addDoc(collection(db, "students"), newStudentData);
         
-        setIsSubmitting(false);
+        toast({
+            title: 'Application Submitted',
+            description: `${values.firstName} ${values.lastName}'s application has been successfully submitted.`,
+            action: (
+                <ToastAction altText="Proceed to payment" onClick={() => router.push('/payments')}>
+                    Proceed to Payment
+                </ToastAction>
+            )
+        });
+        
         setIsDialogOpen(false);
 
-        toast({
-        title: 'Application Submitted',
-        description: `${values.firstName} ${values.lastName}'s application has been successfully submitted.`,
-        action: (
-            <ToastAction altText="Proceed to payment" onClick={() => router.push('/payments')}>
-                Proceed to Payment
-            </ToastAction>
-        )
-        });
-
     } catch (error) {
-        setIsSubmitting(false);
         console.error("Error adding document: ", error);
         toast({
             variant: "destructive",
             title: "Submission Error",
             description: "Could not save the application. Please try again.",
         });
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
