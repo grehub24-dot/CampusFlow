@@ -45,7 +45,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-function AdmissionForm({ onFormSubmit, isLoading }: { onFormSubmit: SubmitHandler<FormValues>, isLoading: boolean }) {
+function AdmissionForm({ onFormSubmit, isSubmitting }: { onFormSubmit: SubmitHandler<FormValues>, isSubmitting: boolean }) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -259,8 +259,8 @@ function AdmissionForm({ onFormSubmit, isLoading }: { onFormSubmit: SubmitHandle
         </div>
         
         <div className="flex justify-end">
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Submit Application
           </Button>
         </div>
@@ -270,14 +270,15 @@ function AdmissionForm({ onFormSubmit, isLoading }: { onFormSubmit: SubmitHandle
 }
 
 export default function AdmissionsPage() {
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isTableLoading, setIsTableLoading] = React.useState(true);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [admittedStudents, setAdmittedStudents] = React.useState<Student[]>([]);
   const { toast } = useToast();
   const router = useRouter();
 
   React.useEffect(() => {
-    setIsLoading(true);
+    setIsTableLoading(true);
     const q = query(collection(db, "students"), orderBy("admissionDate", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const students: Student[] = [];
@@ -285,7 +286,7 @@ export default function AdmissionsPage() {
         students.push({ id: doc.id, ...doc.data() } as Student);
       });
       setAdmittedStudents(students);
-      setIsLoading(false);
+      setIsTableLoading(false);
     }, (error) => {
       console.error("Error fetching students:", error);
       toast({
@@ -293,7 +294,7 @@ export default function AdmissionsPage() {
         title: "Error",
         description: "Could not fetch students from the database.",
       });
-      setIsLoading(false);
+      setIsTableLoading(false);
     });
 
     return () => unsubscribe();
@@ -301,7 +302,7 @@ export default function AdmissionsPage() {
 
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
         const studentId = `STU-${Date.now()}`;
         const newStudentData = {
@@ -311,14 +312,14 @@ export default function AdmissionsPage() {
             gender: values.gender,
             status: 'Active',
             email: `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
-            admissionDate: new Date().toISOString().split('T')[0],
+            admissionDate: new Date().toISOString(),
             ...values,
-            dateOfBirth: values.dateOfBirth.toISOString().split('T')[0],
+            dateOfBirth: values.dateOfBirth.toISOString(),
         };
 
         await addDoc(collection(db, "students"), newStudentData);
         
-        setIsLoading(false);
+        setIsSubmitting(false);
         setIsDialogOpen(false);
 
         toast({
@@ -332,7 +333,7 @@ export default function AdmissionsPage() {
         });
 
     } catch (error) {
-        setIsLoading(false);
+        setIsSubmitting(false);
         console.error("Error adding document: ", error);
         toast({
             variant: "destructive",
@@ -366,7 +367,7 @@ export default function AdmissionsPage() {
               <DialogDescription>Fill out the details below to submit a new application.</DialogDescription>
             </DialogHeader>
             <div className="max-h-[70vh] overflow-y-auto p-1">
-              <AdmissionForm onFormSubmit={onSubmit} isLoading={isLoading} />
+              <AdmissionForm onFormSubmit={onSubmit} isSubmitting={isSubmitting} />
             </div>
           </DialogContent>
         </Dialog>
@@ -423,3 +424,5 @@ export default function AdmissionsPage() {
     </>
   );
 }
+
+    
