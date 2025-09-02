@@ -9,10 +9,11 @@ import { useToast } from '@/hooks/use-toast';
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Upload, Download } from "lucide-react";
+import { PlusCircle, Upload, Download, Users, User, Activity } from "lucide-react";
 
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
+import StatCard from '@/components/dashboard/stat-card';
 
 export default function StudentsPage() {
   const [students, setStudents] = React.useState<Student[]>([]);
@@ -37,6 +38,13 @@ export default function StudentsPage() {
     return () => unsubscribe();
   }, [toast]);
 
+  const studentStats = {
+    total: students.length,
+    active: students.filter(s => s.status === 'Active').length,
+    male: students.filter(s => s.gender === 'Male').length,
+    female: students.filter(s => s.gender === 'Female').length,
+  };
+
 
   return (
     <>
@@ -59,6 +67,32 @@ export default function StudentsPage() {
             </Button>
         </div>
       </PageHeader>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <StatCard 
+            title="Total Students"
+            value={studentStats.total.toLocaleString()}
+            icon={Users}
+        />
+        <StatCard 
+            title="Active Students"
+            value={studentStats.active.toLocaleString()}
+            icon={Activity}
+        />
+        <StatCard 
+            title="Male"
+            value={studentStats.male.toLocaleString()}
+            icon={User}
+            color="text-blue-500"
+        />
+        <StatCard 
+            title="Female"
+            value={studentStats.female.toLocaleString()}
+            icon={User}
+            color="text-pink-500"
+        />
+      </div>
+
       <DataTable columns={columns} data={students} />
     </>
   );
