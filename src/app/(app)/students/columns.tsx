@@ -17,7 +17,11 @@ import { Button } from "@/components/ui/button"
 import { MoreHorizontal } from "lucide-react"
 import { useRouter } from "next/navigation"
 
-export const columns: ColumnDef<Student>[] = [
+type ColumnsProps = {
+  onEdit: (student: Student) => void;
+}
+
+export const getColumns = ({ onEdit }: ColumnsProps): ColumnDef<Student>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -119,7 +123,7 @@ export const columns: ColumnDef<Student>[] = [
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleViewDetails}>View details</DropdownMenuItem>
-            <DropdownMenuItem>Edit student</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(student)}>Edit student</DropdownMenuItem>
             <DropdownMenuItem className="text-destructive">Delete student</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -127,3 +131,8 @@ export const columns: ColumnDef<Student>[] = [
     },
   },
 ]
+
+// We need to export a memoized version of the columns array
+// to prevent react-table from re-rendering unnecessarily.
+// We also need to pass the onEdit function to the columns.
+export const columns = getColumns({ onEdit: () => {} });

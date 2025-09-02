@@ -12,12 +12,12 @@ export type Student = {
   admissionYear?: string;
   paymentStatus?: 'Paid' | 'Pending' | 'Unpaid';
   // From form
-  firstName?: string;
-  lastName?: string;
-  dateOfBirth?: string;
-  admissionClass?: string;
-  guardianName?: string;
-  guardianPhone?: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  admissionClass: string;
+  guardianName: string;
+  guardianPhone: string;
   guardianEmail?: string;
   previousSchool?: string;
   notes?: string;

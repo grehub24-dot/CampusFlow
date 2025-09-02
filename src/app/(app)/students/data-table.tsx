@@ -34,10 +34,13 @@ import { Input } from "@/components/ui/input"
 import { ChevronDown } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { DataTableFacetedFilter } from "./data-table-faceted-filter"
+import { getColumns } from "./columns"
+import type { Student } from "@/types"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  onEdit: (student: TData) => void;
 }
 
 const statusOptions = [
@@ -51,13 +54,15 @@ const classOptions = [
 ]
 
 export function DataTable<TData, TValue>({
-  columns,
   data,
+  onEdit,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
+  
+  const columns = React.useMemo(() => getColumns({ onEdit: onEdit as (student: Student) => void }), [onEdit]);
 
   const table = useReactTable({
     data,

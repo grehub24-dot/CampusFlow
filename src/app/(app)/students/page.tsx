@@ -2,24 +2,30 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot, doc } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { Student } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import type { SubmitHandler } from 'react-hook-form';
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Upload, Download, Users, User, BookOpen, UserPlus } from "lucide-react";
+import { PlusCircle, Upload, Download, Users, User, BookOpen, UserPlus, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import StatCard from '@/components/dashboard/stat-card';
 import ClassEnrollmentChart from './class-enrollment-chart';
+import { StudentForm, type FormValues } from './student-form';
 
 export default function StudentsPage() {
   const [students, setStudents] = React.useState<Student[]>([]);
   const [schoolSettings, setSchoolSettings] = React.useState({ academicYear: 'Loading...', currentSession: 'Loading...' });
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -50,6 +56,86 @@ export default function StudentsPage() {
     };
   }, [toast]);
 
+  const handleAddNewStudent = () => {
+    setSelectedStudent(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditStudent = (student: Student) => {
+    setSelectedStudent(student);
+    setIsDialogOpen(true);
+  };
+  
+  const handleDialogClose = (open: boolean) => {
+      if (!open) {
+          setSelectedStudent(null);
+      }
+      setIsDialogOpen(open);
+  }
+
+  const onSubmit: SubmitHandler<FormValues> = async (values) => {
+    setIsSubmitting(true);
+    try {
+        const studentData = {
+            name: `${values.firstName} ${values.lastName}`,
+            class: values.admissionClass,
+            gender: values.gender,
+            status: 'Active',
+            paymentStatus: selectedStudent?.paymentStatus || 'Pending',
+            email: values.email || `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
+            dateOfBirth: values.dateOfBirth.toISOString(),
+            firstName: values.firstName,
+            lastName: values.lastName,
+            guardianName: values.guardianName,
+            guardianPhone: values.guardianPhone,
+            guardianEmail: values.guardianEmail,
+            previousSchool: values.previousSchool,
+            notes: values.notes,
+        };
+
+        if (selectedStudent) {
+            // Update existing student
+            const studentDocRef = doc(db, "students", selectedStudent.id);
+            await updateDoc(studentDocRef, studentData);
+            toast({
+                title: 'Student Updated',
+                description: `${studentData.name}'s details have been successfully updated.`,
+            });
+        } else {
+            // Add new student
+             const settingsDocRef = doc(db, 'school-settings', 'current');
+             const settingsSnap = await getDoc(settingsDocRef);
+             const currentSettings = settingsSnap.exists() ? settingsSnap.data() : { academicYear: 'N/A', currentSession: 'N/A' };
+
+            const newStudentData = {
+                ...studentData,
+                admissionDate: new Date().toISOString(),
+                admissionTerm: currentSettings.currentSession,
+                admissionYear: currentSettings.academicYear,
+            };
+            await addDoc(collection(db, "students"), newStudentData);
+            toast({
+                title: 'Student Added',
+                description: `${studentData.name} has been successfully added.`,
+            });
+        }
+        
+        setIsDialogOpen(false);
+        setSelectedStudent(null);
+
+    } catch (error) {
+        console.error("Error saving student: ", error);
+        toast({
+            variant: "destructive",
+            title: "Save Error",
+            description: "Could not save the student details. Please try again.",
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+
   const newAdmissions = students.filter(s => s.admissionTerm === schoolSettings.currentSession && s.admissionYear === schoolSettings.academicYear).length;
 
   const studentStats = {
@@ -75,10 +161,33 @@ export default function StudentsPage() {
                 <Download className="mr-2 h-4 w-4" />
                 Export
             </Button>
-            <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Student
-            </Button>
+             <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+              <DialogTrigger asChild>
+                <Button onClick={handleAddNewStudent}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Student
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[800px]">
+                <DialogHeader>
+                  <DialogTitle>{selectedStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>
+                  <DialogDescription>
+                    {selectedStudent ? "Update the student's details below." : "Fill out the details below to add a new student."}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="max-h-[70vh] overflow-y-auto p-1">
+                   <StudentForm 
+                      onSubmit={onSubmit} 
+                      defaultValues={selectedStudent || undefined}
+                   />
+                </div>
+                 {isSubmitting && (
+                    <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                )}
+              </DialogContent>
+            </Dialog>
         </div>
       </PageHeader>
 
@@ -112,7 +221,8 @@ export default function StudentsPage() {
         <ClassEnrollmentChart data={students} />
       </div>
 
-      <DataTable columns={columns} data={students} />
+      <DataTable columns={columns} data={students} onEdit={handleEditStudent} />
     </>
   );
 }
+
