@@ -15,13 +15,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal } from "lucide-react"
-import { useRouter } from "next/navigation"
 
 type ColumnsProps = {
   onEdit: (student: Student) => void;
+  onViewDetails: (student: Student) => void;
 }
 
-export const getColumns = ({ onEdit }: ColumnsProps): ColumnDef<Student>[] => [
+export const getColumns = ({ onEdit, onViewDetails }: ColumnsProps): ColumnDef<Student>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -49,19 +49,11 @@ export const getColumns = ({ onEdit }: ColumnsProps): ColumnDef<Student>[] => [
     header: "Name",
   },
   {
-    accessorKey: "email",
-    header: "Email",
-  },
-  {
     accessorKey: "class",
     header: "Class",
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
     },
-  },
-  {
-    accessorKey: "gender",
-    header: "Gender",
   },
   {
     accessorKey: "guardianName",
@@ -89,23 +81,10 @@ export const getColumns = ({ onEdit }: ColumnsProps): ColumnDef<Student>[] => [
     },
   },
   {
-    accessorKey: "admissionDate",
-    header: "Admission Date",
-    cell: ({ row }) => {
-        const date = new Date(row.getValue("admissionDate"));
-        return new Intl.DateTimeFormat('en-US').format(date);
-    }
-  },
-  {
     id: "actions",
     cell: ({ row }) => {
       const student = row.original
-      const router = useRouter()
-
-      const handleViewDetails = () => {
-        router.push(`/students/${student.id}`);
-      }
-
+      
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -122,7 +101,7 @@ export const getColumns = ({ onEdit }: ColumnsProps): ColumnDef<Student>[] => [
               Copy student ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleViewDetails}>View details</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onViewDetails(student)}>View details</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(student)}>Edit student</DropdownMenuItem>
             <DropdownMenuItem className="text-destructive">Delete student</DropdownMenuItem>
           </DropdownMenuContent>
@@ -135,4 +114,4 @@ export const getColumns = ({ onEdit }: ColumnsProps): ColumnDef<Student>[] => [
 // We need to export a memoized version of the columns array
 // to prevent react-table from re-rendering unnecessarily.
 // We also need to pass the onEdit function to the columns.
-export const columns = getColumns({ onEdit: () => {} });
+export const columns = getColumns({ onEdit: () => {}, onViewDetails: () => {} });

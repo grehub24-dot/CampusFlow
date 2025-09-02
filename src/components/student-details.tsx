@@ -2,21 +2,16 @@
 'use client'
 
 import React from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import type { Student } from '@/types';
-import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, Book, Calendar, Phone, Mail, Home, BadgeInfo } from 'lucide-react';
+import { User, Book, Calendar, Phone, Mail, Home, BadgeInfo, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
 
-const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined }) => (
+const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined | null }) => (
     <div className="flex items-start gap-3">
         <Icon className="h-5 w-5 text-muted-foreground mt-1" />
         <div>
@@ -26,64 +21,13 @@ const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, lab
     </div>
 );
 
+interface StudentDetailsProps {
+    student: Student;
+}
 
-export default function StudentDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const id = params.id as string;
-  const [student, setStudent] = React.useState<Student | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    if (!id) return;
-    const fetchStudent = async () => {
-      setIsLoading(true);
-      const docRef = doc(db, 'students', id);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        setStudent({ id: docSnap.id, ...docSnap.data() } as Student);
-      } else {
-        console.log('No such document!');
-      }
-      setIsLoading(false);
-    };
-
-    fetchStudent();
-  }, [id]);
-
-  if (isLoading) {
-    return (
-        <div>
-            <PageHeader title="Student Details">
-                <Skeleton className="h-10 w-24" />
-            </PageHeader>
-            <Card>
-                <CardHeader className="flex flex-row items-center gap-4">
-                    <Skeleton className="h-24 w-24 rounded-full" />
-                    <div className="space-y-2">
-                        <Skeleton className="h-8 w-48" />
-                        <Skeleton className="h-6 w-32" />
-                    </div>
-                </CardHeader>
-                <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {[...Array(9)].map((_, i) => (
-                        <div className="flex items-start gap-3" key={i}>
-                            <Skeleton className="h-8 w-8 rounded-sm" />
-                            <div className="space-y-1">
-                                <Skeleton className="h-4 w-24" />
-                                <Skeleton className="h-6 w-32" />
-                            </div>
-                        </div>
-                    ))}
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
-
+export function StudentDetails({ student }: StudentDetailsProps) {
   if (!student) {
-    return <div>Student not found.</div>;
+    return <div>Loading...</div>;
   }
   
   const fallback = student.name.split(' ').map(n => n[0]).join('');
@@ -101,14 +45,7 @@ export default function StudentDetailPage() {
       }[student.paymentStatus || 'Pending'] ?? "secondary" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
 
   return (
-    <>
-      <PageHeader title="Student Details" description={`Viewing profile for ${student.name}`}>
-        <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Students
-        </Button>
-      </PageHeader>
-
+    <div className="p-1 pt-4">
       <Card>
         <CardHeader>
             <div className="flex flex-col md:flex-row items-start gap-6">
@@ -119,7 +56,7 @@ export default function StudentDetailPage() {
                 <div className="flex-1">
                     <div className="flex items-center gap-4">
                         <CardTitle className="text-3xl">{student.name}</CardTitle>
-                        <Badge variant={statusVariant}>{student.status}</Badge>
+                        {student.status && <Badge variant={statusVariant}>{student.status}</Badge>}
                     </div>
                     <CardDescription className="mt-1">
                         <span className="font-semibold">{student.class}</span> | Admitted on {student.admissionDate ? format(new Date(student.admissionDate), 'PPP') : 'N/A'}
@@ -141,7 +78,7 @@ export default function StudentDetailPage() {
             <div>
                 <h3 className="text-lg font-semibold mb-4 border-b pb-2">Academic Information</h3>
                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <DetailItem icon={BookOpen} label="Admission Term" value={`${student.admissionTerm}, ${student.admissionYear}`} />
+                    <DetailItem icon={BookOpen} label="Admission Term" value={`${student.admissionTerm || 'N/A'}, ${student.admissionYear || 'N/A'}`} />
                     <DetailItem icon={BadgeInfo} label="Payment Status" value={student.paymentStatus} />
                  </div>
             </div>
@@ -163,7 +100,6 @@ export default function StudentDetailPage() {
             )}
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }
-

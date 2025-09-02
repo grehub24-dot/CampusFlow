@@ -25,9 +25,10 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { Student } from '@/types';
 import { AdmittedStudentTable } from './admitted-student-table';
-import { columns } from './columns';
 import { ToastAction } from '@/components/ui/toast';
 import { db } from '@/lib/firebase';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { StudentDetails } from '@/components/student-details';
 
 
 const formSchema = z.object({
@@ -161,7 +162,7 @@ function AdmissionForm({ onFormSubmit }: { onFormSubmit: SubmitHandler<FormValue
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Admission Class</FormLabel>
-                  <Select onValuechange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select class..." />
@@ -273,6 +274,8 @@ export default function AdmissionsPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTableLoading, setIsTableLoading] = React.useState(true);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
   const [admittedStudents, setAdmittedStudents] = React.useState<Student[]>([]);
   const [schoolSettings, setSchoolSettings] = React.useState({ academicYear: 'Loading...', currentSession: 'Loading...' });
   const { toast } = useToast();
@@ -367,6 +370,11 @@ export default function AdmissionsPage() {
         setIsSubmitting(false);
     }
   };
+  
+  const handleViewApplication = (student: Student) => {
+    setSelectedStudent(student);
+    setIsSheetOpen(true);
+  }
 
   const admissionStats = {
     totalPayments: 76000,
@@ -449,8 +457,17 @@ export default function AdmissionsPage() {
       </div>
 
       <div className="space-y-6">
-        <AdmittedStudentTable columns={columns} data={admittedStudents} />
+        <AdmittedStudentTable data={admittedStudents} onViewApplication={handleViewApplication} />
       </div>
+
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Applicant Details</SheetTitle>
+          </SheetHeader>
+          {selectedStudent && <StudentDetails student={selectedStudent} />}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

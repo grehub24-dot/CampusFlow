@@ -5,7 +5,6 @@ import * as React from "react"
 import {
   ColumnDef,
   ColumnFiltersState,
-  SortingState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -13,6 +12,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import type { Student } from "@/types"
+import { getColumns } from './columns';
 
 import {
   Table,
@@ -25,16 +26,18 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+interface DataTableProps {
+  data: Student[]
+  onViewApplication: (student: Student) => void;
 }
 
-export function AdmittedStudentTable<TData, TValue>({
-  columns,
+export function AdmittedStudentTable({
   data,
-}: DataTableProps<TData, TValue>) {
+  onViewApplication,
+}: DataTableProps) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  
+  const columns = React.useMemo(() => getColumns({ onViewApplication }), [onViewApplication]);
 
   const table = useReactTable({
     data,

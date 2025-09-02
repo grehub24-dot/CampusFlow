@@ -16,6 +16,8 @@ import { PlusCircle, Upload, Download, Users, User, UserPlus, Loader2 } from "lu
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { StudentDetails } from '@/components/student-details';
 
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
@@ -29,6 +31,7 @@ export default function StudentsPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = React.useState(false);
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
   const { toast } = useToast();
@@ -71,6 +74,11 @@ export default function StudentsPage() {
     setIsFormDialogOpen(true);
   };
   
+  const handleViewDetails = (student: Student) => {
+    setSelectedStudent(student);
+    setIsSheetOpen(true);
+  }
+
   const handleFormDialogClose = (open: boolean) => {
       if (!open) {
           setSelectedStudent(null);
@@ -143,7 +151,6 @@ export default function StudentsPage() {
   const handleExport = () => {
     const csv = Papa.unparse(students.map(s => ({
         ...s,
-        id: s.id, // Ensure id is included if it's not a top-level prop in your data
     })));
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -330,7 +337,16 @@ export default function StudentsPage() {
         <ClassEnrollmentChart data={students} />
       </div>
 
-      <DataTable columns={columns} data={students} onEdit={handleEditStudent} />
+      <DataTable columns={columns} data={students} onEdit={handleEditStudent} onViewDetails={handleViewDetails} />
+
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Student Details</SheetTitle>
+          </SheetHeader>
+          {selectedStudent && <StudentDetails student={selectedStudent} />}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

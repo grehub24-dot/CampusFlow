@@ -37,10 +37,10 @@ import { DataTableFacetedFilter } from "./data-table-faceted-filter"
 import { getColumns } from "./columns"
 import type { Student } from "@/types"
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  onEdit: (student: TData) => void;
+interface DataTableProps {
+  data: Student[];
+  onEdit: (student: Student) => void;
+  onViewDetails: (student: Student) => void;
 }
 
 const statusOptions = [
@@ -53,16 +53,21 @@ const classOptions = [
     ...Array.from({length: 12}, (_, i) => ({ label: `Grade ${i + 1}`, value: `Grade ${i + 1}` }))
 ]
 
-export function DataTable<TData, TValue>({
+export function DataTable({
   data,
   onEdit,
-}: DataTableProps<TData, TValue>) {
+  onViewDetails,
+}: DataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
+    email: false,
+    gender: false,
+    admissionDate: false,
+  })
   const [rowSelection, setRowSelection] = React.useState({})
   
-  const columns = React.useMemo(() => getColumns({ onEdit: onEdit as (student: Student) => void }), [onEdit]);
+  const columns = React.useMemo(() => getColumns({ onEdit, onViewDetails }), [onEdit, onViewDetails]);
 
   const table = useReactTable({
     data,
