@@ -79,8 +79,7 @@ export default function AdmissionsPage() {
   return (
     <>
       <PageHeader
-        title="Admissions"
-        description="Submit a new student application for admission."
+        title="Admissions" description="Submit a new student application for admission."
       />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-6">
