@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2, Users, User, Wallet, Clock } from 'lucide-react';
+import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -82,12 +82,31 @@ export default function AdmissionsPage() {
         title="Admissions" description="Submit a new student application for admission."
       />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard 
+            title="Academic Year"
+            value="2023-2024"
+            icon={CalendarIcon}
+        />
+        <StatCard 
+            title="Current Session"
+            value="1st Term"
+            icon={BookOpen}
+        />
+         <StatCard 
             title="Total New Admissions"
             value={admissionStats.totalNewStudents.toLocaleString()}
             icon={Users}
         />
+        <StatCard 
+            title="Total Payments"
+            value={`GHS ${admissionStats.totalPayments.toLocaleString()}`}
+            icon={Wallet}
+            description="Based on new admissions"
+        />
+      </div>
+      <div className="grid gap-4 md:grid-cols-3 mb-6">
+       
         <StatCard 
             title="Male Students"
             value={admissionStats.maleStudents.toLocaleString()}
@@ -99,12 +118,6 @@ export default function AdmissionsPage() {
             value={admissionStats.femaleStudents.toLocaleString()}
             icon={User}
             color="text-pink-500"
-        />
-        <StatCard 
-            title="Total Payments"
-            value={`GHS ${admissionStats.totalPayments.toLocaleString()}`}
-            icon={Wallet}
-            description="Based on new admissions"
         />
         <StatCard 
             title="Pending Invoices"
@@ -223,7 +236,7 @@ export default function AdmissionsPage() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select class..." />
-                            </Trigger>
+                            </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {Array.from({length: 12}, (_, i) => (
