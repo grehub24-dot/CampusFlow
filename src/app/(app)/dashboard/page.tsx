@@ -42,6 +42,11 @@ export default function Dashboard() {
     { name: 'Grade 12', students: 70 },
   ];
 
+  const admissionClassEnrollment = classEnrollment.map(c => ({
+      ...c, 
+      students: Math.floor(c.students * (admissionStats.totalNewStudents / overallStats.totalStudents))
+  }));
+
   return (
     <>
       <PageHeader
@@ -146,7 +151,7 @@ export default function Dashboard() {
                         <CardTitle>New Student Enrollment</CardTitle>
                     </CardHeader>
                     <CardContent className="pl-2">
-                        <OverviewChart data={classEnrollment.map(c => ({...c, students: Math.floor(c.students * (admissionStats.totalNewStudents/overallStats.totalStudents) * (1 + (Math.random() - 0.5) * 0.2))}))} />
+                        <OverviewChart data={admissionClassEnrollment} />
                     </CardContent>
                 </Card>
                 <Card className="lg:col-span-3">
