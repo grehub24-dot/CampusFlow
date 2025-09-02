@@ -1,10 +1,16 @@
 
 "use client"
 
+import * as React from "react"
 import {
   ColumnDef,
+  ColumnFiltersState,
+  SortingState,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
 
@@ -17,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -27,10 +34,17 @@ export function AdmittedStudentTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    onColumnFiltersChange: setColumnFilters,
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      columnFilters,
+    },
   })
 
   return (
@@ -40,6 +54,16 @@ export function AdmittedStudentTable<TData, TValue>({
           <CardDescription>A list of students whose applications have been accepted.</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="flex items-center py-4">
+            <Input
+            placeholder="Filter by name..."
+            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+                table.getColumn("name")?.setFilterValue(event.target.value)
+            }
+            className="max-w-sm"
+            />
+        </div>
         <div className="rounded-md border">
           <Table>
             <TableHeader>
