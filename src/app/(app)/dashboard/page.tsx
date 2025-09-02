@@ -136,7 +136,7 @@ export default function Dashboard() {
       <Tabs defaultValue="overall" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overall">Overall Analytics</TabsTrigger>
-          <TabsTrigger value="admissions">This Year's Admissions</TabsTrigger>
+          <TabsTrigger value="admissions">Admissions</TabsTrigger>
         </TabsList>
         <TabsContent value="overall" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
@@ -182,29 +182,24 @@ export default function Dashboard() {
           </div>
         </TabsContent>
         <TabsContent value="admissions" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
                 <StatCard
-                title="New Students"
-                value={admissionStats.totalNewStudents.toLocaleString()}
-                icon={Milestone}
+                  title="Male Admissions"
+                  value={admissionStats.maleStudents.toLocaleString()}
+                  icon={User}
+                  color="text-blue-500"
                 />
                 <StatCard
-                title="Male Students"
-                value={admissionStats.maleStudents.toLocaleString()}
-                icon={User}
-                color="text-blue-500"
-                />
-                <StatCard
-                title="Female Students"
-                value={admissionStats.femaleStudents.toLocaleString()}
-                icon={User}
-                color="text-pink-500"
+                  title="Female Admissions"
+                  value={admissionStats.femaleStudents.toLocaleString()}
+                  icon={User}
+                  color="text-pink-500"
                 />
             </div>
              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="lg:col-span-4">
                     <CardHeader>
-                        <CardTitle>New Student Enrollment</CardTitle>
+                        <CardTitle>Admissions by Class</CardTitle>
                     </CardHeader>
                     <CardContent className="pl-2">
                         <OverviewChart data={admissionClassEnrollment} />
