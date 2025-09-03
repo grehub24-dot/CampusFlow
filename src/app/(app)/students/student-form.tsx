@@ -334,5 +334,3 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
     </Form>
   )
 }
-
-    
