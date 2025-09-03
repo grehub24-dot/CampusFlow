@@ -23,7 +23,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { Student, AcademicTerm } from '@/types';
+import type { Student, AcademicTerm, SchoolClass } from '@/types';
 import { AdmittedStudentTable } from './admitted-student-table';
 import { ToastAction } from '@/components/ui/toast';
 import { db } from '@/lib/firebase';
@@ -46,7 +46,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-function AdmissionForm({ onFormSubmit }: { onFormSubmit: SubmitHandler<FormValues>}) {
+function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<FormValues>, classes: SchoolClass[] }) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -169,8 +169,8 @@ function AdmissionForm({ onFormSubmit }: { onFormSubmit: SubmitHandler<FormValue
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Array.from({length: 12}, (_, i) => (
-                          <SelectItem key={i+1} value={`Grade ${i + 1}`}>{`Grade ${i + 1}`}</SelectItem>
+                      {classes.map((c) => (
+                        <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -278,6 +278,7 @@ export default function AdmissionsPage() {
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
   const [admittedStudents, setAdmittedStudents] = React.useState<Student[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
+  const [classes, setClasses] = React.useState<SchoolClass[]>([]);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -292,7 +293,19 @@ export default function AdmissionsPage() {
         }
     });
 
-    return () => unsubscribeSettings();
+    const classesQuery = query(collection(db, "classes"), orderBy("name"));
+    const unsubscribeClasses = onSnapshot(classesQuery, (snapshot) => {
+        const classesData: SchoolClass[] = [];
+        snapshot.forEach((doc) => {
+            classesData.push({ id: doc.id, ...doc.data() } as SchoolClass);
+        });
+        setClasses(classesData);
+    });
+
+    return () => {
+      unsubscribeSettings();
+      unsubscribeClasses();
+    }
   }, []);
 
   React.useEffect(() => {
@@ -417,7 +430,7 @@ export default function AdmissionsPage() {
               <DialogDescription>Fill out the details below to submit a new application.</DialogDescription>
             </DialogHeader>
             <div className="max-h-[70vh] overflow-y-auto p-1">
-              <AdmissionForm onFormSubmit={onSubmit} />
+              <AdmissionForm onFormSubmit={onSubmit} classes={classes} />
             </div>
             {isSubmitting && (
               <div className="absolute inset-0 bg-white/50 flex items-center justify-center">

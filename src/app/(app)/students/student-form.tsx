@@ -6,6 +6,8 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { db } from '@/lib/firebase';
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -16,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Student } from '@/types';
+import type { Student, SchoolClass } from '@/types';
 
 const formSchema = z.object({
   firstName: z.string().min(1, 'First name is required.'),
@@ -40,6 +42,7 @@ type StudentFormProps = {
 }
 
 export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
+  const [classes, setClasses] = React.useState<SchoolClass[]>([]);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -56,6 +59,18 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
         dateOfBirth: defaultValues?.dateOfBirth ? new Date(defaultValues.dateOfBirth) : undefined,
     }
   });
+
+  React.useEffect(() => {
+    const classesQuery = query(collection(db, "classes"), orderBy("name"));
+    const unsubscribeClasses = onSnapshot(classesQuery, (snapshot) => {
+        const classesData: SchoolClass[] = [];
+        snapshot.forEach((doc) => {
+            classesData.push({ id: doc.id, ...doc.data() } as SchoolClass);
+        });
+        setClasses(classesData);
+    });
+    return () => unsubscribeClasses();
+  }, [])
 
   React.useEffect(() => {
     if (defaultValues) {
@@ -209,8 +224,8 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Array.from({length: 12}, (_, i) => (
-                          <SelectItem key={i+1} value={`Grade ${i + 1}`}>{`Grade ${i + 1}`}</SelectItem>
+                      {classes.map(c => (
+                        <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

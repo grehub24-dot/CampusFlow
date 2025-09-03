@@ -17,6 +17,7 @@ import Image from "next/image";
 import { UserTable } from "./user-table";
 import { userColumns } from "./user-columns";
 import { AcademicSettings } from './academic-settings';
+import { ClassSettings } from './class-settings';
 
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
@@ -50,6 +51,7 @@ export default function SettingsPage() {
         <TabsList>
           <TabsTrigger value="school-info">School Info</TabsTrigger>
           <TabsTrigger value="academic-year">Academic Year</TabsTrigger>
+          <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="billing">Billing & Invoices</TabsTrigger>
@@ -81,6 +83,10 @@ export default function SettingsPage() {
         
         <TabsContent value="academic-year">
           <AcademicSettings />
+        </TabsContent>
+
+        <TabsContent value="classes">
+            <ClassSettings />
         </TabsContent>
         
         <TabsContent value="users">

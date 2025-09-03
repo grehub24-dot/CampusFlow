@@ -64,3 +64,9 @@ export type AcademicTerm = {
     endDate: string;
     isCurrent: boolean;
 }
+
+export type SchoolClass = {
+  id: string;
+  name: string;
+  category: 'Creche' | 'Nursery' | 'Kindergarten' | 'Basic' | 'JHS';
+};

@@ -14,6 +14,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { db } from '@/lib/firebase';
 
 import {
   Table,
@@ -35,7 +37,7 @@ import { ChevronDown } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { DataTableFacetedFilter } from "./data-table-faceted-filter"
 import { getColumns } from "./columns"
-import type { Student } from "@/types"
+import type { Student, SchoolClass } from "@/types"
 
 interface DataTableProps {
   data: Student[];
@@ -56,10 +58,6 @@ const paymentStatusOptions = [
     { label: "Unpaid", value: "Unpaid" },
 ]
 
-const classOptions = [
-    ...Array.from({length: 12}, (_, i) => ({ label: `Grade ${i + 1}`, value: `Grade ${i + 1}` }))
-]
-
 export function DataTable({
   data,
   onEdit,
@@ -72,6 +70,19 @@ export function DataTable({
     guardianPhone: false,
   })
   const [rowSelection, setRowSelection] = React.useState({})
+  const [classes, setClasses] = React.useState<SchoolClass[]>([]);
+  
+  React.useEffect(() => {
+    const classesQuery = query(collection(db, "classes"), orderBy("name"));
+    const unsubscribeClasses = onSnapshot(classesQuery, (snapshot) => {
+        const classesData: SchoolClass[] = [];
+        snapshot.forEach((doc) => {
+            classesData.push({ id: doc.id, ...doc.data() } as SchoolClass);
+        });
+        setClasses(classesData);
+    });
+    return () => unsubscribeClasses();
+  }, [])
   
   const columns = React.useMemo(() => getColumns({ onEdit, onViewDetails, onDelete }), [onEdit, onViewDetails, onDelete]);
 
@@ -93,6 +104,10 @@ export function DataTable({
       rowSelection,
     },
   })
+  
+  const classOptions = React.useMemo(() => 
+    classes.map(c => ({ label: c.name, value: c.name }))
+  , [classes]);
 
   return (
     <Card>
