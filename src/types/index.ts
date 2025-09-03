@@ -29,6 +29,10 @@ export type Payment = {
   amount: number;
   date: string;
   status: 'Paid' | 'Pending' | 'Failed';
+  paymentMethod?: 'Cash' | 'Bank Transfer' | 'Mobile Money' | 'Card';
+  academicYear?: string;
+  term?: string;
+  notes?: string;
 };
 
 export type Invoice = {
