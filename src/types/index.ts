@@ -70,3 +70,18 @@ export type SchoolClass = {
   name: string;
   category: 'Pre-school' | 'Primary' | 'Junior High School';
 };
+
+export type FeeStructure = {
+  id: string;
+  classId: string;
+  academicTermId: string;
+  latePenalty?: number;
+  admissionFee?: number;
+  termlyFee?: number;
+  schoolFees?: number;
+  booksFee?: number;
+  uniformFee?: number;
+  printingFee?: number;
+  arrears?: number;
+  others?: number;
+}

@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React from 'react';
@@ -18,6 +19,7 @@ import { UserTable } from "./user-table";
 import { userColumns } from "./user-columns";
 import { AcademicSettings } from './academic-settings';
 import { ClassSettings } from './class-settings';
+import { FeeStructureSettings } from './fee-structure-settings';
 
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
@@ -52,6 +54,7 @@ export default function SettingsPage() {
           <TabsTrigger value="school-info">School Info</TabsTrigger>
           <TabsTrigger value="academic-year">Academic Year</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
+          <TabsTrigger value="fees">Fee Structure</TabsTrigger>
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="billing">Billing & Invoices</TabsTrigger>
@@ -87,6 +90,10 @@ export default function SettingsPage() {
 
         <TabsContent value="classes">
             <ClassSettings />
+        </TabsContent>
+
+        <TabsContent value="fees">
+            <FeeStructureSettings />
         </TabsContent>
         
         <TabsContent value="users">
