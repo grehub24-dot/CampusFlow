@@ -98,13 +98,13 @@ export default function StudentsPage() {
 
   const handleConfirmDelete = async () => {
     if (!studentToDelete) return;
+    setIsSubmitting(true);
     try {
       await deleteDoc(doc(db, "students", studentToDelete.id));
       toast({
         title: "Student Deleted",
         description: `${studentToDelete.name} has been successfully deleted.`,
       });
-      setStudentToDelete(null);
     } catch (error) {
       console.error("Error deleting student:", error);
       toast({
@@ -112,7 +112,9 @@ export default function StudentsPage() {
         title: "Error",
         description: "Could not delete student. Please try again.",
       });
-      setStudentToDelete(null);
+    } finally {
+        setIsSubmitting(false);
+        setStudentToDelete(null);
     }
   };
 
@@ -290,7 +292,7 @@ export default function StudentsPage() {
     <>
       <PageHeader
         title="Students"
-        description="View and manage all students in the system."
+        description={`Manage student RECORDS for the current term (${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}).`}
       >
         <div className="flex items-center gap-2">
             <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
@@ -408,7 +410,7 @@ export default function StudentsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setStudentToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={handleConfirmDelete} disabled={isSubmitting}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
