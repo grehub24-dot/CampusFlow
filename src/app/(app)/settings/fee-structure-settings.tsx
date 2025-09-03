@@ -116,14 +116,11 @@ export function FeeStructureSettings() {
             const data = {
                 classId: values.classId,
                 academicTermId: values.academicTermId,
-                latePenalty: values.latePenalty || 0,
                 admissionFee: values.admissionFee || 0,
-                termlyFee: values.termlyFee || 0,
                 schoolFees: values.schoolFees || 0,
                 booksFee: values.booksFee || 0,
                 uniformFee: values.uniformFee || 0,
                 printingFee: values.printingFee || 0,
-                arrears: values.arrears || 0,
                 others: values.others || 0,
             };
 
@@ -190,7 +187,7 @@ export function FeeStructureSettings() {
                                 <TableHead>Class</TableHead>
                                 <TableHead>Term</TableHead>
                                 <TableHead>Admission Fee</TableHead>
-                                <TableHead>Termly Fee</TableHead>
+                                <TableHead>School Fees</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -203,7 +200,7 @@ export function FeeStructureSettings() {
                                         <TableCell>{getClassName(structure.classId)}</TableCell>
                                         <TableCell>{getTermName(structure.academicTermId)}</TableCell>
                                         <TableCell>{structure.admissionFee?.toLocaleString()}</TableCell>
-                                        <TableCell>{structure.termlyFee?.toLocaleString()}</TableCell>
+                                        <TableCell>{structure.schoolFees?.toLocaleString()}</TableCell>
                                         <TableCell className="text-right">
                                              <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
