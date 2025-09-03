@@ -59,7 +59,7 @@ export function StudentDetails({ student }: StudentDetailsProps) {
                         {student.status && <Badge variant={statusVariant}>{student.status}</Badge>}
                     </div>
                     <CardDescription className="mt-1">
-                        <span className="font-semibold">{student.class}</span> | Admitted on {student.admissionDate ? format(new Date(student.admissionDate), 'PPP') : 'N/A'}
+                        <span className="font-semibold">{student.class}</span>
                     </CardDescription>
                 </div>
             </div>
@@ -79,6 +79,7 @@ export function StudentDetails({ student }: StudentDetailsProps) {
                 <h3 className="text-lg font-semibold mb-4 border-b pb-2">Academic Information</h3>
                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <DetailItem icon={BookOpen} label="Admission Term" value={`${student.admissionTerm || 'N/A'}, ${student.admissionYear || 'N/A'}`} />
+                    <DetailItem icon={Calendar} label="Admission Date" value={student.admissionDate ? format(new Date(student.admissionDate), 'PPP') : 'N/A'} />
                     <DetailItem icon={BadgeInfo} label="Payment Status" value={student.paymentStatus} />
                  </div>
             </div>
