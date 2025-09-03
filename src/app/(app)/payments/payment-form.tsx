@@ -66,7 +66,7 @@ export function PaymentForm({ students, feeStructures, currentTerm, onSubmit }: 
   React.useEffect(() => {
     if (selectedStudentId && currentTerm) {
         const student = students.find(s => s.id === selectedStudentId);
-        if (student) {
+        if (student && student.classId) {
             const feeStructure = feeStructures.find(fs => 
                 fs.classId === student.classId && fs.academicTermId === currentTerm.id
             );
@@ -80,6 +80,8 @@ export function PaymentForm({ students, feeStructures, currentTerm, onSubmit }: 
                 if (feeStructure.others) newItems.push({ name: 'Others', amount: feeStructure.others, included: true });
             }
             replace(newItems);
+        } else {
+            replace([]);
         }
     } else {
         replace([]);
@@ -132,6 +134,7 @@ export function PaymentForm({ students, feeStructures, currentTerm, onSubmit }: 
                                         <Checkbox
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
+                                            id={`items.${index}.included`}
                                         />
                                     )}
                                 />
