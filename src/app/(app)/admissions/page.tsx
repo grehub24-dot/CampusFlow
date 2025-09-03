@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, onSnapshot, query, orderBy, where, getDocs } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, where } from "firebase/firestore";
 
 
 import { PageHeader } from "@/components/page-header";
@@ -66,7 +66,7 @@ function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<
     const selectedClass = classes.find(c => c.id === values.admissionClassId);
     const enrichedValues = {
         ...values,
-        admissionClass: selectedClass?.name || '', // Keep the name for display
+        admissionClass: selectedClass?.name || '',
     };
     onFormSubmit(enrichedValues);
   };
@@ -451,7 +451,7 @@ export default function AdmissionsPage() {
         </Dialog>
       </PageHeader>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+      <div className="grid gap-4 md:grid-cols-2 mb-6">
          <StatCard 
             title="Total New Admissions"
             value={admittedStudents.length.toLocaleString()}
@@ -464,7 +464,10 @@ export default function AdmissionsPage() {
             icon={Wallet}
             description="Based on new admissions"
         />
-         <StatCard 
+      </div>
+      <div className="grid gap-4 md:grid-cols-3 mb-6">
+       
+        <StatCard 
             title="Male Students"
             value={admittedStudents.filter(s => s.gender === 'Male').length.toLocaleString()}
             icon={User}
@@ -475,6 +478,12 @@ export default function AdmissionsPage() {
             value={admittedStudents.filter(s => s.gender === 'Female').length.toLocaleString()}
             icon={User}
             color="text-pink-500"
+        />
+        <StatCard 
+            title="Pending Invoices"
+            value={`GHS ${admissionStats.pendingInvoices.toLocaleString()}`}
+            icon={Clock}
+            description="For new admissions"
         />
       </div>
 
@@ -493,3 +502,7 @@ export default function AdmissionsPage() {
     </>
   );
 }
+
+    
+
+    
