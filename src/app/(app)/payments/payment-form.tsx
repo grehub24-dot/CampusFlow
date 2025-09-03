@@ -55,7 +55,7 @@ export function PaymentForm({ students, feeStructures, currentTerm, onSubmit }: 
     },
   });
 
-  const { fields, append, remove, replace } = useFieldArray({
+  const { fields, replace } = useFieldArray({
     control: form.control,
     name: "items",
   });
@@ -73,6 +73,7 @@ export function PaymentForm({ students, feeStructures, currentTerm, onSubmit }: 
             
             const newItems = [];
             if (feeStructure) {
+                // We exclude admission fee as per the requirement
                 if (feeStructure.schoolFees) newItems.push({ name: 'School Fees', amount: feeStructure.schoolFees, included: true });
                 if (feeStructure.booksFee) newItems.push({ name: 'Books Fee', amount: feeStructure.booksFee, included: true });
                 if (feeStructure.uniformFee) newItems.push({ name: 'Uniform Fee', amount: feeStructure.uniformFee, included: true });
@@ -81,10 +82,10 @@ export function PaymentForm({ students, feeStructures, currentTerm, onSubmit }: 
             }
             replace(newItems);
         } else {
-            replace([]);
+            replace([]); // Clear items if no student or classId found
         }
     } else {
-        replace([]);
+        replace([]); // Clear items if no student or term selected
     }
   }, [selectedStudentId, students, feeStructures, currentTerm, replace]);
 
