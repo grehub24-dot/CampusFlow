@@ -68,5 +68,5 @@ export type AcademicTerm = {
 export type SchoolClass = {
   id: string;
   name: string;
-  category: 'Creche' | 'Nursery' | 'Kindergarten' | 'Basic' | 'JHS';
+  category: 'Pre-school' | 'Primary' | 'Junior High School';
 };

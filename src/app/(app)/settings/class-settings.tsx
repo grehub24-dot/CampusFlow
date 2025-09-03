@@ -31,7 +31,7 @@ import {
 
 import { ClassForm, type FormValues } from './class-settings-form';
 
-const categoryOrder = ['Creche', 'Nursery', 'Kindergarten', 'Basic', 'JHS'];
+const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
 
 export function ClassSettings() {
     const [classes, setClasses] = React.useState<SchoolClass[]>([]);

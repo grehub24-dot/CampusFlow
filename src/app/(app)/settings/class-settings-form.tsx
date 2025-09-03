@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const formSchema = z.object({
   name: z.string().min(1, 'Class name is required.'),
-  category: z.enum(['Creche', 'Nursery', 'Kindergarten', 'Basic', 'JHS']),
+  category: z.enum(['Pre-school', 'Primary', 'Junior High School']),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -70,11 +70,9 @@ export function ClassForm({ onSubmit, defaultValues }: ClassFormProps) {
                             </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                                <SelectItem value="Creche">Creche</SelectItem>
-                                <SelectItem value="Nursery">Nursery</SelectItem>
-                                <SelectItem value="Kindergarten">Kindergarten</SelectItem>
-                                <SelectItem value="Basic">Basic</SelectItem>
-                                <SelectItem value="JHS">JHS (Junior High)</SelectItem>
+                                <SelectItem value="Pre-school">Pre-school</SelectItem>
+                                <SelectItem value="Primary">Primary</SelectItem>
+                                <SelectItem value="Junior High School">Junior High School</SelectItem>
                             </SelectContent>
                         </Select>
                         <FormMessage />
