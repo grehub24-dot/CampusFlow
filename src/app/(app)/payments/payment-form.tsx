@@ -25,6 +25,7 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [total, setTotal] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
   const { toast } = useToast();
 
   const selectedStudent = useMemo(
@@ -93,7 +94,7 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
         amount: total,
         date: new Date().toISOString(),
         status: 'Paid',
-        paymentMethod: 'Cash', // Defaulting, can be changed to a form field
+        paymentMethod: paymentMethod,
         academicYear: currentTerm.academicYear,
         term: currentTerm.session,
         items: itemsToPay,
@@ -167,7 +168,21 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
         <p className="text-sm text-muted-foreground p-4 text-center border rounded-md">No fee structure found for this student's class and the current term.</p>
       )}
 
-
+      <div>
+        <Label htmlFor="payment-method">Payment Method</Label>
+        <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+          <SelectTrigger id="payment-method">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Cash">Cash</SelectItem>
+            <SelectItem value="Momo">Mobile Money</SelectItem>
+            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+            <SelectItem value="Cheque">Cheque</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
       <div>
         <Label className="block font-medium mb-1">Total Amount (GHS)</Label>
         <Input

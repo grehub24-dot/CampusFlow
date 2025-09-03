@@ -36,7 +36,7 @@ export type Payment = {
   amount: number;
   date: string;
   status: 'Paid' | 'Pending' | 'Failed';
-  paymentMethod?: 'Cash' | 'Bank Transfer' | 'Mobile Money' | 'Card';
+  paymentMethod?: 'Cash' | 'Bank Transfer' | 'Mobile Money' | 'Card' | 'Cheque';
   academicYear?: string;
   term?: string;
   notes?: string;
