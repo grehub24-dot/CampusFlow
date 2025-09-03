@@ -10,7 +10,7 @@ import type { SubmitHandler } from 'react-hook-form';
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, Wallet, Clock, Receipt } from "lucide-react";
+import { PlusCircle, Loader2, Wallet, Clock, Receipt, Calendar, BookOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -167,7 +167,17 @@ export default function PaymentsPage() {
         </Dialog>
       </PageHeader>
       
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3 mb-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-6">
+        <StatCard 
+            title="Academic Year"
+            value={currentTerm?.academicYear || 'Not Set'}
+            icon={Calendar}
+        />
+        <StatCard 
+            title="Current Session"
+            value={currentTerm?.session || 'Not Set'}
+            icon={BookOpen}
+        />
         <StatCard 
             title="Total Revenue"
             value={`GHS ${totalRevenue.toLocaleString()}`}
