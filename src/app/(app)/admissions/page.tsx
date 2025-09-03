@@ -440,17 +440,7 @@ export default function AdmissionsPage() {
         </Dialog>
       </PageHeader>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <StatCard 
-            title="Academic Year"
-            value={currentTerm?.academicYear || 'Not Set'}
-            icon={CalendarIcon}
-        />
-        <StatCard 
-            title="Current Session"
-            value={currentTerm?.session || 'Not Set'}
-            icon={BookOpen}
-        />
+      <div className="grid gap-4 md:grid-cols-2 mb-6">
          <StatCard 
             title="Total New Admissions"
             value={admittedStudents.length.toLocaleString()}
@@ -501,5 +491,3 @@ export default function AdmissionsPage() {
     </>
   );
 }
-
-    
