@@ -55,7 +55,7 @@ export function PaymentForm({ students, feeStructures, currentTerm, onSubmit }: 
     },
   });
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
     name: "items",
   });
@@ -79,12 +79,12 @@ export function PaymentForm({ students, feeStructures, currentTerm, onSubmit }: 
                 if (feeStructure.printingFee) newItems.push({ name: 'Printing Fee', amount: feeStructure.printingFee, included: true });
                 if (feeStructure.others) newItems.push({ name: 'Others', amount: feeStructure.others, included: true });
             }
-            form.setValue('items', newItems);
+            replace(newItems);
         }
     } else {
-        form.setValue('items', []);
+        replace([]);
     }
-  }, [selectedStudentId, students, feeStructures, currentTerm, form]);
+  }, [selectedStudentId, students, feeStructures, currentTerm, replace]);
 
   React.useEffect(() => {
     const total = paymentItems.reduce((sum, item) => item.included ? sum + item.amount : sum, 0);

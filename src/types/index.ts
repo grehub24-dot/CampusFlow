@@ -34,7 +34,7 @@ export type Payment = {
   academicYear?: string;
   term?: string;
   notes?: string;
-  items?: { name: string; amount: number }[];
+  items?: { name: string; amount: number; included: boolean }[];
 };
 
 export type Invoice = {
