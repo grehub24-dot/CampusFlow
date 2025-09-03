@@ -115,7 +115,7 @@ export default function PaymentsPage() {
         notes: values.notes,
         academicYear: currentTerm.academicYear,
         term: currentTerm.session,
-        items: values.items.filter(item => item.name),
+        items: values.items.filter(item => item.included && item.name),
       };
 
       await addDoc(collection(db, "payments"), newPaymentData);
@@ -206,7 +206,8 @@ export default function PaymentsPage() {
         <StatCard 
             title="Total Pending Invoices"
             value={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
-            icon={`${invoices.length} invoices`}
+            icon={Clock}
+            description={`${invoices.length} invoices`}
         />
       </div>
 
