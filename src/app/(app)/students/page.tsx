@@ -2,7 +2,7 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot, doc, addDoc, updateDoc, getDoc, writeBatch } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, updateDoc, getDoc, writeBatch, deleteDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { Student } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,16 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Upload, Download, Users, User, UserPlus, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -34,6 +44,7 @@ export default function StudentsPage() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
+  const [studentToDelete, setStudentToDelete] = React.useState<Student | null>(null);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -78,6 +89,30 @@ export default function StudentsPage() {
     setSelectedStudent(student);
     setIsSheetOpen(true);
   }
+
+  const handleDeleteStudent = (student: Student) => {
+    setStudentToDelete(student);
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!studentToDelete) return;
+    try {
+      await deleteDoc(doc(db, "students", studentToDelete.id));
+      toast({
+        title: "Student Deleted",
+        description: `${studentToDelete.name} has been successfully deleted.`,
+      });
+      setStudentToDelete(null);
+    } catch (error) {
+      console.error("Error deleting student:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not delete student. Please try again.",
+      });
+      setStudentToDelete(null);
+    }
+  };
 
   const handleFormDialogClose = (open: boolean) => {
       if (!open) {
@@ -337,7 +372,7 @@ export default function StudentsPage() {
         <ClassEnrollmentChart data={students} />
       </div>
 
-      <DataTable columns={columns} data={students} onEdit={handleEditStudent} onViewDetails={handleViewDetails} />
+      <DataTable columns={columns} data={students} onEdit={handleEditStudent} onViewDetails={handleViewDetails} onDelete={handleDeleteStudent} />
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
@@ -347,6 +382,22 @@ export default function StudentsPage() {
           {selectedStudent && <StudentDetails student={selectedStudent} />}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={!!studentToDelete} onOpenChange={(open) => !open && setStudentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the student's
+              record from the database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setStudentToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

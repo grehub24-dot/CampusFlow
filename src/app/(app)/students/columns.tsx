@@ -19,9 +19,10 @@ import { MoreHorizontal } from "lucide-react"
 type ColumnsProps = {
   onEdit: (student: Student) => void;
   onViewDetails: (student: Student) => void;
+  onDelete: (student: Student) => void;
 }
 
-export const getColumns = ({ onEdit, onViewDetails }: ColumnsProps): ColumnDef<Student>[] => [
+export const getColumns = ({ onEdit, onViewDetails, onDelete }: ColumnsProps): ColumnDef<Student>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -103,7 +104,7 @@ export const getColumns = ({ onEdit, onViewDetails }: ColumnsProps): ColumnDef<S
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onViewDetails(student)}>View details</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(student)}>Edit student</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">Delete student</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDelete(student)} className="text-destructive">Delete student</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )
@@ -114,4 +115,4 @@ export const getColumns = ({ onEdit, onViewDetails }: ColumnsProps): ColumnDef<S
 // We need to export a memoized version of the columns array
 // to prevent react-table from re-rendering unnecessarily.
 // We also need to pass the onEdit function to the columns.
-export const columns = getColumns({ onEdit: () => {}, onViewDetails: () => {} });
+export const columns = getColumns({ onEdit: () => {}, onViewDetails: () => {}, onDelete: () => {} });
