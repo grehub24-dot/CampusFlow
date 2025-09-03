@@ -19,6 +19,16 @@ type ColumnsProps = {
   onViewApplication: (student: Student) => void;
 }
 
+const calculateAge = (dob: string) => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+};
 
 export const getColumns = ({ onViewApplication }: ColumnsProps): ColumnDef<Student>[] => [
   {
@@ -28,6 +38,14 @@ export const getColumns = ({ onViewApplication }: ColumnsProps): ColumnDef<Stude
   {
     accessorKey: "class",
     header: "Class",
+  },
+   {
+    accessorKey: "dateOfBirth",
+    header: "Age",
+    cell: ({ row }) => {
+        const dob = row.getValue("dateOfBirth") as string;
+        return dob ? calculateAge(dob) : "N/A";
+    }
   },
   {
     accessorKey: "admissionDate",

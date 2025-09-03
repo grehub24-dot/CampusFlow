@@ -97,6 +97,11 @@ export function DataTable({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    initialState: {
+        pagination: {
+            pageSize: 20,
+        },
+    },
     state: {
       sorting,
       columnFilters,

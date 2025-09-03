@@ -5,13 +5,13 @@ import React from 'react';
 import type { Student } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Book, Calendar, Phone, Mail, Home, BadgeInfo, BookOpen } from 'lucide-react';
+import { User, Book, Calendar, Phone, Mail, Home, BadgeInfo, BookOpen, Cake } from 'lucide-react';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
 
-const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined | null }) => (
+const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined | null | number }) => (
     <div className="flex items-start gap-3">
         <Icon className="h-5 w-5 text-muted-foreground mt-1" />
         <div>
@@ -44,6 +44,17 @@ export function StudentDetails({ student }: StudentDetailsProps) {
         "Unpaid": "destructive",
       }[student.paymentStatus || 'Pending'] ?? "secondary" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
 
+  const calculateAge = (dob: string) => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+  };
+
   return (
     <div className="p-1 pt-4">
       <Card>
@@ -70,6 +81,7 @@ export function StudentDetails({ student }: StudentDetailsProps) {
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <DetailItem icon={User} label="Gender" value={student.gender} />
                     <DetailItem icon={Calendar} label="Date of Birth" value={student.dateOfBirth ? format(new Date(student.dateOfBirth), 'PPP') : 'N/A'} />
+                    <DetailItem icon={Cake} label="Age" value={student.dateOfBirth ? `${calculateAge(student.dateOfBirth)} years old` : 'N/A'} />
                     <DetailItem icon={Mail} label="Email Address" value={student.email} />
                     <DetailItem icon={Book} label="Previous School" value={student.previousSchool} />
                 </div>

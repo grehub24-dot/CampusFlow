@@ -14,13 +14,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown } from "lucide-react"
 
 type ColumnsProps = {
   onEdit: (student: Student) => void;
   onViewDetails: (student: Student) => void;
   onDelete: (student: Student) => void;
 }
+
+const calculateAge = (dob: string) => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+};
+
 
 export const getColumns = ({ onEdit, onViewDetails, onDelete }: ColumnsProps): ColumnDef<Student>[] => [
   {
@@ -48,6 +60,29 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete }: ColumnsProps): C
   {
     accessorKey: "name",
     header: "Name",
+  },
+  {
+    accessorKey: "dateOfBirth",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Age
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+        const dob = row.getValue("dateOfBirth") as string;
+        return <div className="pl-4">{dob ? calculateAge(dob) : "N/A"}</div>;
+    },
+    sortingFn: (rowA, rowB, columnId) => {
+        const ageA = calculateAge(rowA.getValue(columnId));
+        const ageB = calculateAge(rowB.getValue(columnId));
+        return ageA - ageB;
+    }
   },
   {
     accessorKey: "class",
