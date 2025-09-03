@@ -37,7 +37,7 @@ const formSchema = z.object({
 export type FormValues = z.infer<typeof formSchema>;
 
 type StudentFormProps = {
-    onSubmit: SubmitHandler<FormValues>;
+    onSubmit: SubmitHandler<FormValues & { admissionClass: string }>;
     defaultValues?: Student;
 }
 
@@ -110,7 +110,6 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
         ...values,
         admissionClass: selectedClass?.name || '', // Keep the name for display
     };
-    // @ts-ignore
     onSubmit(enrichedValues);
   };
 
