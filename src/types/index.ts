@@ -4,6 +4,7 @@ export type Student = {
   id: string; // This is the Firestore document ID
   name: string;
   class: string;
+  classId?: string; // Add this to link to the classes collection
   gender: 'Male' | 'Female';
   status: 'Active' | 'Inactive' | 'Graduated';
   email: string;
@@ -33,6 +34,7 @@ export type Payment = {
   academicYear?: string;
   term?: string;
   notes?: string;
+  items?: { name: string; amount: number }[];
 };
 
 export type Invoice = {

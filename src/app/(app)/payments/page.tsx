@@ -4,7 +4,7 @@
 import React from 'react';
 import { collection, onSnapshot, doc, addDoc, updateDoc, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Student, Payment, Invoice, AcademicTerm } from '@/types';
+import type { Student, Payment, Invoice, AcademicTerm, FeeStructure } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import type { SubmitHandler } from 'react-hook-form';
 
@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Loader2, Wallet, Clock, Receipt, Calendar, BookOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import StatCard from '@/components/dashboard/stat-card';
 import { PaymentForm, type FormValues } from './payment-form';
 import { RecentPaymentsTable } from '../dashboard/recent-payments-table';
@@ -27,6 +26,7 @@ export default function PaymentsPage() {
   const [payments, setPayments] = React.useState<Payment[]>([]);
   const [invoices, setInvoices] = React.useState<Invoice[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
+  const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
 
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
@@ -72,12 +72,19 @@ export default function PaymentsPage() {
       setInvoices(invoicesData);
       setIsLoading(false);
     });
+    
+    const feeStructuresQuery = collection(db, "fee-structures");
+    const unsubscribeFeeStructures = onSnapshot(feeStructuresQuery, (snapshot) => {
+      const feeStructuresData: FeeStructure[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeStructure));
+      setFeeStructures(feeStructuresData);
+    });
 
     return () => {
       unsubscribeSettings();
       unsubscribeStudents();
       unsubscribePayments();
       unsubscribeInvoices();
+      unsubscribeFeeStructures();
     };
   }, []);
 
@@ -108,6 +115,7 @@ export default function PaymentsPage() {
         notes: values.notes,
         academicYear: currentTerm.academicYear,
         term: currentTerm.session,
+        items: values.items.filter(item => item.name),
       };
 
       await addDoc(collection(db, "payments"), newPaymentData);
@@ -156,7 +164,12 @@ export default function PaymentsPage() {
               <DialogDescription>Fill out the form below to record a new financial transaction.</DialogDescription>
             </DialogHeader>
             <div className="max-h-[70vh] overflow-y-auto p-1">
-                <PaymentForm students={students} onSubmit={onSubmit} />
+                <PaymentForm 
+                  students={students} 
+                  onSubmit={onSubmit} 
+                  feeStructures={feeStructures}
+                  currentTerm={currentTerm}
+                />
             </div>
              {isSubmitting && (
                 <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
@@ -193,8 +206,7 @@ export default function PaymentsPage() {
         <StatCard 
             title="Total Pending Invoices"
             value={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
-            icon={Clock}
-            description={`${invoices.length} invoices`}
+            icon={`${invoices.length} invoices`}
         />
       </div>
 

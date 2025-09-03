@@ -2,7 +2,7 @@
 'use client'
 
 import React from 'react';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useForm, type SubmitHandler, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -14,26 +14,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Student } from '@/types';
+import type { Student, FeeStructure, AcademicTerm } from '@/types';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 const formSchema = z.object({
   studentId: z.string().min(1, 'Please select a student.'),
-  amount: z.coerce.number().min(1, 'Please enter a valid amount.'),
+  amount: z.coerce.number().min(0, 'Amount cannot be negative.'),
   paymentDate: z.date({ required_error: 'Payment date is required.' }),
   paymentMethod: z.enum(['Cash', 'Bank Transfer', 'Mobile Money', 'Card']),
   notes: z.string().optional(),
+  items: z.array(z.object({
+    name: z.string(),
+    amount: z.coerce.number(),
+    included: z.boolean().default(true),
+  })),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
 
 type PaymentFormProps = {
   students: Student[];
+  feeStructures: FeeStructure[];
+  currentTerm: AcademicTerm | null;
   onSubmit: SubmitHandler<FormValues>;
 }
 
-export function PaymentForm({ students, onSubmit }: PaymentFormProps) {
+export function PaymentForm({ students, feeStructures, currentTerm, onSubmit }: PaymentFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -42,8 +51,46 @@ export function PaymentForm({ students, onSubmit }: PaymentFormProps) {
       paymentDate: new Date(),
       paymentMethod: undefined,
       notes: '',
+      items: [],
     },
   });
+
+  const { fields, append, remove, update } = useFieldArray({
+    control: form.control,
+    name: "items",
+  });
+
+  const selectedStudentId = useWatch({ control: form.control, name: 'studentId' });
+  const paymentItems = useWatch({ control: form.control, name: 'items' });
+
+  React.useEffect(() => {
+    if (selectedStudentId && currentTerm) {
+        const student = students.find(s => s.id === selectedStudentId);
+        if (student) {
+            const feeStructure = feeStructures.find(fs => 
+                fs.classId === student.classId && fs.academicTermId === currentTerm.id
+            );
+            
+            const newItems = [];
+            if (feeStructure) {
+                if (feeStructure.schoolFees) newItems.push({ name: 'School Fees', amount: feeStructure.schoolFees, included: true });
+                if (feeStructure.booksFee) newItems.push({ name: 'Books Fee', amount: feeStructure.booksFee, included: true });
+                if (feeStructure.uniformFee) newItems.push({ name: 'Uniform Fee', amount: feeStructure.uniformFee, included: true });
+                if (feeStructure.printingFee) newItems.push({ name: 'Printing Fee', amount: feeStructure.printingFee, included: true });
+                if (feeStructure.others) newItems.push({ name: 'Others', amount: feeStructure.others, included: true });
+            }
+            form.setValue('items', newItems);
+        }
+    } else {
+        form.setValue('items', []);
+    }
+  }, [selectedStudentId, students, feeStructures, currentTerm, form]);
+
+  React.useEffect(() => {
+    const total = paymentItems.reduce((sum, item) => item.included ? sum + item.amount : sum, 0);
+    form.setValue('amount', total);
+  }, [paymentItems, form]);
+
 
   return (
     <Form {...form}>
@@ -70,20 +117,52 @@ export function PaymentForm({ students, onSubmit }: PaymentFormProps) {
             </FormItem>
           )}
         />
+        
+        {fields.length > 0 && (
+            <div className="space-y-2">
+                <Label>Fee Items</Label>
+                <div className="space-y-2 rounded-md border p-4">
+                    {fields.map((item, index) => (
+                         <div key={item.id} className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                               <FormField
+                                    control={form.control}
+                                    name={`items.${index}.included`}
+                                    render={({ field }) => (
+                                        <Checkbox
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    )}
+                                />
+                               <Label htmlFor={`items.${index}.included`} className="font-normal">{item.name}</Label>
+                            </div>
+                            <span className="text-sm">GHS {item.amount.toLocaleString()}</span>
+                        </div>
+                    ))}
+                     <div className="flex items-center justify-between pt-2 border-t">
+                        <Label className="font-semibold">Total</Label>
+                        <span className="font-semibold">GHS {form.getValues('amount').toLocaleString()}</span>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Total Payment Amount (GHS)</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="e.g., 500.00" {...field} readOnly className="bg-muted" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Amount (GHS)</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="e.g., 500.00" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <FormField
             control={form.control}
             name="paymentDate"
@@ -122,30 +201,31 @@ export function PaymentForm({ students, onSubmit }: PaymentFormProps) {
               </FormItem>
             )}
           />
+           <FormField
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Method</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a payment method..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Mobile Money">Mobile Money</SelectItem>
+                      <SelectItem value="Card">Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
         </div>
-        <FormField
-          control={form.control}
-          name="paymentMethod"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Payment Method</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a payment method..." />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="Cash">Cash</SelectItem>
-                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="Mobile Money">Mobile Money</SelectItem>
-                  <SelectItem value="Card">Card</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+       
         <FormField
           control={form.control}
           name="notes"

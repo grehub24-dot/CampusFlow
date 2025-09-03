@@ -26,7 +26,7 @@ const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.').optional().or(z.literal('')),
   dateOfBirth: z.date({ required_error: 'Date of birth is required.'}),
   gender: z.enum(['Male', 'Female']),
-  admissionClass: z.string().min(1, 'Please select a class.'),
+  admissionClassId: z.string().min(1, 'Please select a class.'),
   guardianName: z.string().min(1, "Guardian's name is required."),
   guardianPhone: z.string().min(10, 'Please enter a valid phone number.'),
   guardianEmail: z.string().email('Please enter a valid email address.').optional().or(z.literal('')),
@@ -50,7 +50,7 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
         lastName: defaultValues?.lastName || '',
         email: defaultValues?.email || '',
         gender: defaultValues?.gender,
-        admissionClass: defaultValues?.class || '',
+        admissionClassId: defaultValues?.classId || '',
         guardianName: defaultValues?.guardianName || '',
         guardianPhone: defaultValues?.guardianPhone || '',
         guardianEmail: defaultValues?.guardianEmail || '',
@@ -79,7 +79,7 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
             lastName: defaultValues.lastName,
             email: defaultValues.email || '',
             gender: defaultValues.gender,
-            admissionClass: defaultValues.class,
+            admissionClassId: defaultValues.classId,
             guardianName: defaultValues.guardianName,
             guardianPhone: defaultValues.guardianPhone,
             guardianEmail: defaultValues.guardianEmail || '',
@@ -93,7 +93,7 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
             lastName: '',
             email: '',
             gender: undefined,
-            admissionClass: '',
+            admissionClassId: '',
             guardianName: '',
             guardianPhone: '',
             guardianEmail: '',
@@ -103,10 +103,21 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
         });
     }
   }, [defaultValues, form]);
+  
+    const customOnSubmit: SubmitHandler<FormValues> = (values) => {
+    const selectedClass = classes.find(c => c.id === values.admissionClassId);
+    const enrichedValues = {
+        ...values,
+        admissionClass: selectedClass?.name || '', // Keep the name for display
+    };
+    // @ts-ignore
+    onSubmit(enrichedValues);
+  };
+
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(customOnSubmit)} className="space-y-8">
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Student Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -213,7 +224,7 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
             />
             <FormField
               control={form.control}
-              name="admissionClass"
+              name="admissionClassId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Class</FormLabel>
@@ -225,7 +236,7 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
                     </FormControl>
                     <SelectContent>
                       {classes.map(c => (
-                        <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

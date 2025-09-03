@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, onSnapshot, query, orderBy, where } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, where, getDocs } from "firebase/firestore";
 
 
 import { PageHeader } from "@/components/page-header";
@@ -36,7 +36,7 @@ const formSchema = z.object({
   lastName: z.string().min(1, 'Last name is required.'),
   dateOfBirth: z.date({ required_error: 'Date of birth is required.'}),
   gender: z.enum(['Male', 'Female']),
-  admissionClass: z.string().min(1, 'Please select a class.'),
+  admissionClassId: z.string().min(1, 'Please select a class.'),
   guardianName: z.string().min(1, "Guardian's name is required."),
   guardianPhone: z.string().min(10, 'Please enter a valid phone number.'),
   guardianEmail: z.string().email('Please enter a valid email address.').optional().or(z.literal('')),
@@ -46,14 +46,14 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<FormValues>, classes: SchoolClass[] }) {
+function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<FormValues & { admissionClass: string }>, classes: SchoolClass[] }) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
       gender: undefined,
-      admissionClass: '',
+      admissionClassId: '',
       guardianName: '',
       guardianPhone: '',
       guardianEmail: '',
@@ -61,10 +61,20 @@ function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<
       notes: '',
     },
   });
+  
+  const customOnSubmit: SubmitHandler<FormValues> = (values) => {
+    const selectedClass = classes.find(c => c.id === values.admissionClassId);
+    const enrichedValues = {
+        ...values,
+        admissionClass: selectedClass?.name || '', // Keep the name for display
+    };
+    onFormSubmit(enrichedValues);
+  };
+
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(customOnSubmit)} className="space-y-8">
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Student Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -158,7 +168,7 @@ function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<
             />
             <FormField
               control={form.control}
-              name="admissionClass"
+              name="admissionClassId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Admission Class</FormLabel>
@@ -170,7 +180,7 @@ function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<
                     </FormControl>
                     <SelectContent>
                       {classes.map((c) => (
-                        <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -342,7 +352,7 @@ export default function AdmissionsPage() {
   }, [currentTerm, toast]);
 
 
-  const onSubmit: SubmitHandler<FormValues> = async (values) => {
+  const onSubmit: SubmitHandler<FormValues & { admissionClass: string }> = async (values) => {
     setIsSubmitting(true);
     if (!currentTerm) {
         toast({
@@ -357,6 +367,7 @@ export default function AdmissionsPage() {
         const newStudentData = {
             name: `${values.firstName} ${values.lastName}`,
             class: values.admissionClass,
+            classId: values.admissionClassId,
             gender: values.gender,
             status: 'Active',
             paymentStatus: 'Pending',
@@ -440,7 +451,7 @@ export default function AdmissionsPage() {
         </Dialog>
       </PageHeader>
 
-      <div className="grid gap-4 md:grid-cols-2 mb-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
          <StatCard 
             title="Total New Admissions"
             value={admittedStudents.length.toLocaleString()}
@@ -453,10 +464,7 @@ export default function AdmissionsPage() {
             icon={Wallet}
             description="Based on new admissions"
         />
-      </div>
-      <div className="grid gap-4 md:grid-cols-3 mb-6">
-       
-        <StatCard 
+         <StatCard 
             title="Male Students"
             value={admittedStudents.filter(s => s.gender === 'Male').length.toLocaleString()}
             icon={User}
@@ -467,12 +475,6 @@ export default function AdmissionsPage() {
             value={admittedStudents.filter(s => s.gender === 'Female').length.toLocaleString()}
             icon={User}
             color="text-pink-500"
-        />
-        <StatCard 
-            title="Pending Invoices"
-            value={`GHS ${admissionStats.pendingInvoices.toLocaleString()}`}
-            icon={Clock}
-            description="For new admissions"
         />
       </div>
 
