@@ -61,6 +61,10 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete }: ColumnsProps): C
     header: "Guardian Name",
   },
   {
+    accessorKey: "guardianPhone",
+    header: "Guardian Phone",
+  },
+  {
     accessorKey: "paymentStatus",
     header: "Fees Status",
     cell: ({ row }) => {

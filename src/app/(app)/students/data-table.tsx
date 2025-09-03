@@ -69,9 +69,6 @@ export function DataTable({
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
-    email: false,
-    gender: false,
-    admissionDate: false,
     guardianPhone: false,
   })
   const [rowSelection, setRowSelection] = React.useState({})
