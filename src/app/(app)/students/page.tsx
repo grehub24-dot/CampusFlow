@@ -29,7 +29,6 @@ import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { StudentDetails } from '@/components/student-details';
 
-import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import StatCard from '@/components/dashboard/stat-card';
 import ClassEnrollmentChart from './class-enrollment-chart';
@@ -372,7 +371,7 @@ export default function StudentsPage() {
         <ClassEnrollmentChart data={students} />
       </div>
 
-      <DataTable columns={columns} data={students} onEdit={handleEditStudent} onViewDetails={handleViewDetails} onDelete={handleDeleteStudent} />
+      <DataTable data={students} onEdit={handleEditStudent} onViewDetails={handleViewDetails} onDelete={handleDeleteStudent} />
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">

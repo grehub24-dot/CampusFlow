@@ -111,8 +111,3 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete }: ColumnsProps): C
     },
   },
 ]
-
-// We need to export a memoized version of the columns array
-// to prevent react-table from re-rendering unnecessarily.
-// We also need to pass the onEdit function to the columns.
-export const columns = getColumns({ onEdit: () => {}, onViewDetails: () => {}, onDelete: () => {} });
