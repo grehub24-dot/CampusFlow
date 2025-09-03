@@ -23,6 +23,12 @@ export type Student = {
   notes?: string;
 };
 
+export type FeeItem = {
+    name: string;
+    amount: number;
+    included?: boolean;
+}
+
 export type Payment = {
   id: string;
   studentName: string;
@@ -34,7 +40,7 @@ export type Payment = {
   academicYear?: string;
   term?: string;
   notes?: string;
-  items?: { name: string; amount: number; included: boolean }[];
+  items?: FeeItem[];
 };
 
 export type Invoice = {

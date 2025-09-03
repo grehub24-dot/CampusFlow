@@ -6,7 +6,6 @@ import { collection, onSnapshot, doc, addDoc, updateDoc, query, where } from "fi
 import { db } from '@/lib/firebase';
 import type { Student, Payment, Invoice, AcademicTerm, FeeStructure } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import type { SubmitHandler } from 'react-hook-form';
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,7 @@ import { PlusCircle, Loader2, Wallet, Clock, Receipt, Calendar, BookOpen } from 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StatCard from '@/components/dashboard/stat-card';
-import { PaymentForm, type FormValues } from './payment-form';
+import PaymentForm from './payment-form';
 import { RecentPaymentsTable } from '../dashboard/recent-payments-table';
 import { PendingInvoicesTable } from '../dashboard/pending-invoices-table';
 import { paymentColumns } from '../dashboard/payment-columns';
@@ -88,59 +87,6 @@ export default function PaymentsPage() {
     };
   }, []);
 
-  const onSubmit: SubmitHandler<FormValues> = async (values) => {
-    setIsSubmitting(true);
-    if (!currentTerm) {
-        toast({
-            variant: "destructive",
-            title: "No Active Term",
-            description: "Cannot record a payment because no academic term is set as current.",
-        });
-        setIsSubmitting(false);
-        return;
-    }
-    try {
-      const selectedStudent = students.find(s => s.id === values.studentId);
-      if (!selectedStudent) {
-        throw new Error("Student not found");
-      }
-
-      const newPaymentData = {
-        studentId: values.studentId,
-        studentName: selectedStudent.name,
-        amount: values.amount,
-        date: values.paymentDate.toISOString(),
-        status: 'Paid', // Assuming direct payments are always successful
-        paymentMethod: values.paymentMethod,
-        notes: values.notes,
-        academicYear: currentTerm.academicYear,
-        term: currentTerm.session,
-        items: values.items.filter(item => item.included && item.name),
-      };
-
-      await addDoc(collection(db, "payments"), newPaymentData);
-
-      // Optionally, update the student's payment status
-      const studentDocRef = doc(db, "students", values.studentId);
-      await updateDoc(studentDocRef, { paymentStatus: 'Paid' });
-
-      toast({
-        title: 'Payment Recorded',
-        description: `Payment of GHS ${values.amount} for ${selectedStudent.name} has been recorded.`,
-      });
-      setIsFormDialogOpen(false);
-    } catch (error) {
-      console.error("Error recording payment: ", error);
-      toast({
-        variant: "destructive",
-        title: "Save Error",
-        description: "Could not record the payment. Please try again.",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const totalRevenue = payments.reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0);
   const pendingInvoicesTotal = invoices.reduce((acc, i) => acc + i.amount, 0);
   const revenueThisTerm = currentTerm ? payments.filter(p => p.term === currentTerm.session && p.academicYear === currentTerm.academicYear).reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0) : 0;
@@ -164,18 +110,15 @@ export default function PaymentsPage() {
               <DialogDescription>Fill out the form below to record a new financial transaction.</DialogDescription>
             </DialogHeader>
             <div className="max-h-[70vh] overflow-y-auto p-1">
-                <PaymentForm 
-                  students={students} 
-                  onSubmit={onSubmit} 
-                  feeStructures={feeStructures}
-                  currentTerm={currentTerm}
-                />
+                {currentTerm && (
+                  <PaymentForm 
+                    students={students} 
+                    feeStructures={feeStructures}
+                    currentTerm={currentTerm}
+                    onSuccess={() => setIsFormDialogOpen(false)}
+                  />
+                )}
             </div>
-             {isSubmitting && (
-                <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-            )}
           </DialogContent>
         </Dialog>
       </PageHeader>
@@ -205,9 +148,9 @@ export default function PaymentsPage() {
         />
         <StatCard 
             title="Total Pending Invoices"
-            value={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
+            value={`${invoices.length}`}
             icon={Clock}
-            description={`${invoices.length} invoices`}
+            description={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
         />
       </div>
 
