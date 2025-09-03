@@ -306,8 +306,8 @@ export default function AdmissionsPage() {
     const q = query(
         collection(db, "students"), 
         where("admissionYear", "==", currentTerm.academicYear),
-        where("admissionTerm", "==", currentTerm.session),
-        orderBy("admissionDate", "desc")
+        where("admissionTerm", "==", currentTerm.session)
+        // orderBy("admissionDate", "desc") // This requires a composite index
     );
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const students: Student[] = [];
