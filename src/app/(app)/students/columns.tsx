@@ -61,8 +61,21 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete }: ColumnsProps): C
     header: "Guardian Name",
   },
   {
-    accessorKey: "guardianPhone",
-    header: "Guardian Phone",
+    accessorKey: "paymentStatus",
+    header: "Fees Status",
+    cell: ({ row }) => {
+      const status = row.getValue("paymentStatus") as string || "Pending";
+      const variant = {
+        "Paid": "default",
+        "Pending": "secondary",
+        "Unpaid": "destructive",
+      }[status] ?? "secondary" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
+      return <Badge variant={variant} className="capitalize">{status}</Badge>;
+    },
+     filterFn: (row, id, value) => {
+      const status = row.getValue(id) as string || "Pending";
+      return value.includes(status)
+    },
   },
   {
     accessorKey: "status",

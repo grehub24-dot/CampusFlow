@@ -50,6 +50,12 @@ const statusOptions = [
     { label: "Graduated", value: "Graduated" },
 ]
 
+const paymentStatusOptions = [
+    { label: "Paid", value: "Paid" },
+    { label: "Pending", value: "Pending" },
+    { label: "Unpaid", value: "Unpaid" },
+]
+
 const classOptions = [
     ...Array.from({length: 12}, (_, i) => ({ label: `Grade ${i + 1}`, value: `Grade ${i + 1}` }))
 ]
@@ -66,6 +72,7 @@ export function DataTable({
     email: false,
     gender: false,
     admissionDate: false,
+    guardianPhone: false,
   })
   const [rowSelection, setRowSelection] = React.useState({})
   
@@ -93,7 +100,7 @@ export function DataTable({
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="flex items-center py-4 gap-2">
+        <div className="flex items-center py-4 gap-2 flex-wrap">
             <Input
             placeholder="Filter by name..."
             value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
@@ -106,6 +113,11 @@ export function DataTable({
                 column={table.getColumn("status")}
                 title="Status"
                 options={statusOptions}
+            />
+            <DataTableFacetedFilter
+                column={table.getColumn("paymentStatus")}
+                title="Fees Status"
+                options={paymentStatusOptions}
             />
             <DataTableFacetedFilter
                 column={table.getColumn("class")}
@@ -132,7 +144,7 @@ export function DataTable({
                         column.toggleVisibility(!!value)
                         }
                     >
-                        {column.id}
+                        {column.id.replace(/([A-Z])/g, ' $1')}
                     </DropdownMenuCheckboxItem>
                     )
                 })}
