@@ -4,7 +4,7 @@ export type Student = {
   id: string; // This is the Firestore document ID
   name: string;
   class: string;
-  classId?: string; // Add this to link to the classes collection
+  classId: string; // Ensure this is always present
   gender: 'Male' | 'Female';
   status: 'Active' | 'Inactive' | 'Graduated';
   email: string;

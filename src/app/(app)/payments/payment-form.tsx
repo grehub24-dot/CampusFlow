@@ -33,7 +33,7 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
   );
 
   const matchingStructure = useMemo(() => {
-    if (!selectedStudent || !selectedStudent.classId) return null;
+    if (!selectedStudent || !selectedStudent.classId || !currentTerm) return null;
     return feeStructures.find(
       fs =>
         fs.classId === selectedStudent.classId &&
