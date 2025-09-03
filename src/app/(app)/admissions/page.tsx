@@ -319,8 +319,8 @@ export default function AdmissionsPage() {
     const q = query(
         collection(db, "students"), 
         where("admissionYear", "==", currentTerm.academicYear),
-        where("admissionTerm", "==", currentTerm.session)
-        // orderBy("admissionDate", "desc") // This requires a composite index
+        where("admissionTerm", "==", currentTerm.session),
+        orderBy("admissionDate", "desc")
     );
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const students: Student[] = [];
@@ -334,7 +334,7 @@ export default function AdmissionsPage() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Could not fetch students from the database.",
+        description: "Could not fetch students from the database. A required index is likely missing.",
       });
       setIsTableLoading(false);
     });
@@ -407,8 +407,8 @@ export default function AdmissionsPage() {
   }
 
   const admissionStats = {
-    totalPayments: 76000,
-    pendingInvoices: 5000,
+    totalPayments: admittedStudents.filter(s => s.paymentStatus === 'Paid').length * 500, // Example fee
+    pendingInvoices: admittedStudents.filter(s => s.paymentStatus !== 'Paid').length * 500, // Example fee
   };
 
   return (

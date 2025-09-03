@@ -83,10 +83,12 @@ export default function Dashboard() {
     pendingInvoices: invoices.reduce((acc, i) => acc + i.amount, 0),
   };
 
+  const newlyAdmittedStudents = students.filter(s => s.admissionYear === currentTerm?.academicYear && s.admissionTerm === currentTerm?.session);
+
   const admissionStats = {
-    totalNewStudents: students.filter(s => s.admissionYear === currentTerm?.academicYear && s.admissionTerm === currentTerm?.session).length,
-    maleStudents: students.filter(s => s.gender === 'Male' && s.admissionYear === currentTerm?.academicYear && s.admissionTerm === currentTerm?.session).length,
-    femaleStudents: students.filter(s => s.gender === 'Female' && s.admissionYear === currentTerm?.academicYear && s.admissionTerm === currentTerm?.session).length,
+    totalNewStudents: newlyAdmittedStudents.length,
+    maleStudents: newlyAdmittedStudents.filter(s => s.gender === 'Male').length,
+    femaleStudents: newlyAdmittedStudents.filter(s => s.gender === 'Female').length,
   };
 
   const classEnrollment = students.reduce((acc, student) => {
@@ -99,8 +101,7 @@ export default function Dashboard() {
     return acc;
   }, [] as { name: string; students: number }[]).sort((a, b) => a.name.localeCompare(b.name));
   
-  const admissionClassEnrollment = students
-    .filter(s => s.admissionYear === currentTerm?.academicYear && s.admissionTerm === currentTerm?.session)
+  const admissionClassEnrollment = newlyAdmittedStudents
     .reduce((acc, student) => {
         const existingClass = acc.find(c => c.name === student.class);
         if (existingClass) {
