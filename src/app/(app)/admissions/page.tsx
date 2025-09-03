@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, onSnapshot, query, orderBy, doc, getDoc } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, where } from "firebase/firestore";
 
 
 import { PageHeader } from "@/components/page-header";
@@ -23,7 +23,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { Student } from '@/types';
+import type { Student, AcademicTerm } from '@/types';
 import { AdmittedStudentTable } from './admitted-student-table';
 import { ToastAction } from '@/components/ui/toast';
 import { db } from '@/lib/firebase';
@@ -277,17 +277,18 @@ export default function AdmissionsPage() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
   const [admittedStudents, setAdmittedStudents] = React.useState<Student[]>([]);
-  const [schoolSettings, setSchoolSettings] = React.useState({ academicYear: 'Loading...', currentSession: 'Loading...' });
+  const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
   React.useEffect(() => {
-    const settingsDocRef = doc(db, 'school-settings', 'current');
-    const unsubscribeSettings = onSnapshot(settingsDocRef, (doc) => {
-        if (doc.exists()) {
-            setSchoolSettings(doc.data() as { academicYear: string, currentSession: string });
+    const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
+    const unsubscribeSettings = onSnapshot(academicTermsQuery, (snapshot) => {
+        if (!snapshot.empty) {
+            const termDoc = snapshot.docs[0];
+            setCurrentTerm({ id: termDoc.id, ...termDoc.data() } as AcademicTerm);
         } else {
-            console.log("No such document!");
+            setCurrentTerm(null);
         }
     });
 
@@ -295,8 +296,19 @@ export default function AdmissionsPage() {
   }, []);
 
   React.useEffect(() => {
+    if (!currentTerm) {
+      setAdmittedStudents([]);
+      setIsTableLoading(false);
+      return;
+    }
+    
     setIsTableLoading(true);
-    const q = query(collection(db, "students"), orderBy("admissionDate", "desc"));
+    const q = query(
+        collection(db, "students"), 
+        where("admissionYear", "==", currentTerm.academicYear),
+        where("admissionTerm", "==", currentTerm.session),
+        orderBy("admissionDate", "desc")
+    );
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const students: Student[] = [];
       querySnapshot.forEach((doc) => {
@@ -315,16 +327,21 @@ export default function AdmissionsPage() {
     });
 
     return () => unsubscribe();
-  }, [toast]);
+  }, [currentTerm, toast]);
 
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setIsSubmitting(true);
+    if (!currentTerm) {
+        toast({
+            variant: "destructive",
+            title: "No Active Term",
+            description: "Cannot add a student because no academic term is set as current.",
+        });
+        setIsSubmitting(false);
+        return;
+    }
     try {
-        const settingsDocRef = doc(db, 'school-settings', 'current');
-        const settingsSnap = await getDoc(settingsDocRef);
-        const currentSettings = settingsSnap.exists() ? settingsSnap.data() : { academicYear: 'N/A', currentSession: 'N/A' };
-
         const newStudentData = {
             name: `${values.firstName} ${values.lastName}`,
             class: values.admissionClass,
@@ -333,8 +350,8 @@ export default function AdmissionsPage() {
             paymentStatus: 'Pending',
             email: `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
             admissionDate: new Date().toISOString(),
-            admissionTerm: currentSettings.currentSession,
-            admissionYear: currentSettings.academicYear,
+            admissionTerm: currentTerm.session,
+            admissionYear: currentTerm.academicYear,
             dateOfBirth: values.dateOfBirth.toISOString(),
             firstName: values.firstName,
             lastName: values.lastName,
@@ -385,7 +402,7 @@ export default function AdmissionsPage() {
     <>
       <PageHeader
         title="Admissions"
-        description="Review newly admitted students and manage applications."
+        description={`Manage student applications for the current term (${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}).`}
       >
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -414,18 +431,19 @@ export default function AdmissionsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard 
             title="Academic Year"
-            value={schoolSettings.academicYear}
+            value={currentTerm?.academicYear || 'Not Set'}
             icon={CalendarIcon}
         />
         <StatCard 
             title="Current Session"
-            value={schoolSettings.currentSession}
+            value={currentTerm?.session || 'Not Set'}
             icon={BookOpen}
         />
          <StatCard 
             title="Total New Admissions"
             value={admittedStudents.length.toLocaleString()}
             icon={Users}
+            description="For the current term"
         />
         <StatCard 
             title="Total Payments"

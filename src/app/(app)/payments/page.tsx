@@ -2,9 +2,9 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot, doc, addDoc, updateDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, updateDoc, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Student, Payment, Invoice } from '@/types';
+import type { Student, Payment, Invoice, AcademicTerm } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import type { SubmitHandler } from 'react-hook-form';
 
@@ -26,7 +26,7 @@ export default function PaymentsPage() {
   const [students, setStudents] = React.useState<Student[]>([]);
   const [payments, setPayments] = React.useState<Payment[]>([]);
   const [invoices, setInvoices] = React.useState<Invoice[]>([]);
-  const [schoolSettings, setSchoolSettings] = React.useState({ academicYear: 'Loading...', currentSession: 'Loading...' });
+  const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
 
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
@@ -35,10 +35,13 @@ export default function PaymentsPage() {
   const { toast } = useToast();
 
   React.useEffect(() => {
-    const settingsDocRef = doc(db, 'school-settings', 'current');
-    const unsubscribeSettings = onSnapshot(settingsDocRef, (doc) => {
-        if (doc.exists()) {
-            setSchoolSettings(doc.data() as { academicYear: string, currentSession: string });
+    const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
+    const unsubscribeSettings = onSnapshot(academicTermsQuery, (snapshot) => {
+        if (!snapshot.empty) {
+            const termDoc = snapshot.docs[0];
+            setCurrentTerm({ id: termDoc.id, ...termDoc.data() } as AcademicTerm);
+        } else {
+            setCurrentTerm(null);
         }
     });
 
@@ -80,6 +83,15 @@ export default function PaymentsPage() {
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setIsSubmitting(true);
+    if (!currentTerm) {
+        toast({
+            variant: "destructive",
+            title: "No Active Term",
+            description: "Cannot record a payment because no academic term is set as current.",
+        });
+        setIsSubmitting(false);
+        return;
+    }
     try {
       const selectedStudent = students.find(s => s.id === values.studentId);
       if (!selectedStudent) {
@@ -94,8 +106,8 @@ export default function PaymentsPage() {
         status: 'Paid', // Assuming direct payments are always successful
         paymentMethod: values.paymentMethod,
         notes: values.notes,
-        academicYear: schoolSettings.academicYear,
-        term: schoolSettings.currentSession,
+        academicYear: currentTerm.academicYear,
+        term: currentTerm.session,
       };
 
       await addDoc(collection(db, "payments"), newPaymentData);
@@ -123,7 +135,7 @@ export default function PaymentsPage() {
 
   const totalRevenue = payments.reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0);
   const pendingInvoicesTotal = invoices.reduce((acc, i) => acc + i.amount, 0);
-  const revenueThisTerm = payments.filter(p => p.term === schoolSettings.currentSession && p.academicYear === schoolSettings.academicYear).reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0);
+  const revenueThisTerm = currentTerm ? payments.filter(p => p.term === currentTerm.session && p.academicYear === currentTerm.academicYear).reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0) : 0;
 
   return (
     <>
@@ -166,7 +178,7 @@ export default function PaymentsPage() {
             title="Revenue (This Term)"
             value={`GHS ${revenueThisTerm.toLocaleString()}`}
             icon={Receipt}
-            description={`For ${schoolSettings.currentSession}`}
+            description={`For ${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}`}
         />
         <StatCard 
             title="Total Pending Invoices"

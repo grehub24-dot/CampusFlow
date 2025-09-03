@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { UserTable } from "./user-table";
 import { userColumns } from "./user-columns";
-import { AcademicSettingsForm } from './academic-settings-form';
+import { AcademicSettings } from './academic-settings';
 
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
@@ -80,7 +80,7 @@ export default function SettingsPage() {
         </TabsContent>
         
         <TabsContent value="academic-year">
-          <AcademicSettingsForm />
+          <AcademicSettings />
         </TabsContent>
         
         <TabsContent value="users">

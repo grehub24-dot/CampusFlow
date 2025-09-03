@@ -2,9 +2,9 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot, doc, addDoc, updateDoc, getDoc, writeBatch, deleteDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, deleteDoc, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Student } from '@/types';
+import type { Student, AcademicTerm } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import type { SubmitHandler } from 'react-hook-form';
 import Papa from 'papaparse';
@@ -36,7 +36,7 @@ import { StudentForm, type FormValues } from './student-form';
 
 export default function StudentsPage() {
   const [students, setStudents] = React.useState<Student[]>([]);
-  const [schoolSettings, setSchoolSettings] = React.useState({ academicYear: 'Loading...', currentSession: 'Loading...' });
+  const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = React.useState(false);
@@ -47,10 +47,13 @@ export default function StudentsPage() {
   const { toast } = useToast();
 
   React.useEffect(() => {
-    const settingsDocRef = doc(db, 'school-settings', 'current');
-    const unsubscribeSettings = onSnapshot(settingsDocRef, (doc) => {
-        if (doc.exists()) {
-            setSchoolSettings(doc.data() as { academicYear: string, currentSession: string });
+    const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
+    const unsubscribeSettings = onSnapshot(academicTermsQuery, (snapshot) => {
+        if (!snapshot.empty) {
+            const termDoc = snapshot.docs[0];
+            setCurrentTerm({ id: termDoc.id, ...termDoc.data() } as AcademicTerm);
+        } else {
+            setCurrentTerm(null);
         }
     });
 
@@ -150,15 +153,21 @@ export default function StudentsPage() {
             });
         } else {
             // Add new student
-             const settingsDocRef = doc(db, 'school-settings', 'current');
-             const settingsSnap = await getDoc(settingsDocRef);
-             const currentSettings = settingsSnap.exists() ? settingsSnap.data() : { academicYear: 'N/A', currentSession: 'N/A' };
+            if (!currentTerm) {
+                toast({
+                    variant: "destructive",
+                    title: "No Active Term",
+                    description: "Cannot add a student because no academic term is set as current.",
+                });
+                setIsSubmitting(false);
+                return;
+            }
 
             const newStudentData = {
                 ...studentData,
                 admissionDate: new Date().toISOString(),
-                admissionTerm: currentSettings.currentSession,
-                admissionYear: currentSettings.academicYear,
+                admissionTerm: currentTerm.session,
+                admissionYear: currentTerm.academicYear,
             };
             await addDoc(collection(db, "students"), newStudentData);
             toast({
@@ -210,20 +219,26 @@ export default function StudentsPage() {
         complete: async (results) => {
             const newStudents = results.data as any[];
 
+            if (!currentTerm) {
+                toast({
+                    variant: "destructive",
+                    title: "No Active Term",
+                    description: "Cannot import students because no academic term is set as current.",
+                });
+                setIsSubmitting(false);
+                return;
+            }
+
             try {
                 const batch = writeBatch(db);
-                const settingsDocRef = doc(db, 'school-settings', 'current');
-                const settingsSnap = await getDoc(settingsDocRef);
-                const currentSettings = settingsSnap.exists() ? settingsSnap.data() : { academicYear: 'N/A', currentSession: 'N/A' };
-
                 newStudents.forEach(student => {
                     const docRef = doc(collection(db, "students")); // Automatically generate ID
                     const studentData = {
                         ...student,
                         name: `${student.firstName} ${student.lastName}`,
                         admissionDate: new Date().toISOString(),
-                        admissionTerm: currentSettings.currentSession,
-                        admissionYear: currentSettings.academicYear,
+                        admissionTerm: currentTerm.session,
+                        admissionYear: currentTerm.academicYear,
                         status: student.status || 'Active',
                         paymentStatus: student.paymentStatus || 'Pending',
                         dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString() : new Date().toISOString(),
@@ -261,7 +276,7 @@ export default function StudentsPage() {
   }
 
 
-  const newAdmissions = students.filter(s => s.admissionTerm === schoolSettings.currentSession && s.admissionYear === schoolSettings.academicYear).length;
+  const newAdmissions = currentTerm ? students.filter(s => s.admissionTerm === currentTerm.session && s.admissionYear === currentTerm.academicYear).length : 0;
 
   const studentStats = {
     total: students.length,

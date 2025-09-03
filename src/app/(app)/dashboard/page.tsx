@@ -2,9 +2,9 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot, doc } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Student, Payment, Invoice } from '@/types';
+import type { Student, Payment, Invoice, AcademicTerm } from '@/types';
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,16 +23,17 @@ export default function Dashboard() {
   const [students, setStudents] = React.useState<Student[]>([]);
   const [payments, setPayments] = React.useState<Payment[]>([]);
   const [invoices, setInvoices] = React.useState<Invoice[]>([]);
-  const [schoolSettings, setSchoolSettings] = React.useState({ academicYear: 'Loading...', currentSession: 'Loading...' });
+  const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const { toast } = useToast();
 
   React.useEffect(() => {
-    const settingsDocRef = doc(db, 'school-settings', 'current');
-    const unsubscribeSettings = onSnapshot(settingsDocRef, (doc) => {
-        if (doc.exists()) {
-            setSchoolSettings(doc.data() as { academicYear: string, currentSession: string });
+    const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
+    const unsubscribeSettings = onSnapshot(academicTermsQuery, (snapshot) => {
+        if (!snapshot.empty) {
+            const termDoc = snapshot.docs[0];
+            setCurrentTerm({ id: termDoc.id, ...termDoc.data() } as AcademicTerm);
         } else {
-            console.log("No such settings document!");
+            setCurrentTerm(null);
         }
     });
 
@@ -48,8 +49,6 @@ export default function Dashboard() {
       toast({ variant: "destructive", title: "Error", description: "Could not fetch students." });
     });
     
-    // Note: Assuming 'payments' and 'invoices' collections exist.
-    // You will need to create these and add data for them to appear.
     const paymentsQuery = collection(db, "payments");
     const unsubscribePayments = onSnapshot(paymentsQuery, (querySnapshot) => {
       const paymentsData: Payment[] = [];
@@ -84,11 +83,10 @@ export default function Dashboard() {
     pendingInvoices: invoices.reduce((acc, i) => acc + i.amount, 0),
   };
 
-  // Simplified admission stats - assuming all students are "new" for this example
   const admissionStats = {
-    totalNewStudents: students.length,
-    maleStudents: students.filter(s => s.gender === 'Male').length,
-    femaleStudents: students.filter(s => s.gender === 'Female').length,
+    totalNewStudents: students.filter(s => s.admissionYear === currentTerm?.academicYear && s.admissionTerm === currentTerm?.session).length,
+    maleStudents: students.filter(s => s.gender === 'Male' && s.admissionYear === currentTerm?.academicYear && s.admissionTerm === currentTerm?.session).length,
+    femaleStudents: students.filter(s => s.gender === 'Female' && s.admissionYear === currentTerm?.academicYear && s.admissionTerm === currentTerm?.session).length,
   };
 
   const classEnrollment = students.reduce((acc, student) => {
@@ -101,7 +99,17 @@ export default function Dashboard() {
     return acc;
   }, [] as { name: string; students: number }[]).sort((a, b) => a.name.localeCompare(b.name));
   
-  const admissionClassEnrollment = classEnrollment; // Simplified for now
+  const admissionClassEnrollment = students
+    .filter(s => s.admissionYear === currentTerm?.academicYear && s.admissionTerm === currentTerm?.session)
+    .reduce((acc, student) => {
+        const existingClass = acc.find(c => c.name === student.class);
+        if (existingClass) {
+            existingClass.students += 1;
+        } else {
+            acc.push({ name: student.class, students: 1 });
+        }
+        return acc;
+  }, [] as { name: string; students: number }[]).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <>
@@ -113,12 +121,12 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard 
             title="Academic Year"
-            value={schoolSettings.academicYear}
+            value={currentTerm?.academicYear || 'Not Set'}
             icon={Calendar}
         />
         <StatCard 
             title="Current Session"
-            value={schoolSettings.currentSession}
+            value={currentTerm?.session || 'Not Set'}
             icon={BookOpen}
         />
         <StatCard 
@@ -182,7 +190,12 @@ export default function Dashboard() {
           </div>
         </TabsContent>
         <TabsContent value="admissions" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
+                 <StatCard
+                  title="New Admissions (This Term)"
+                  value={admissionStats.totalNewStudents.toLocaleString()}
+                  icon={Users}
+                />
                 <StatCard
                   title="Male Admissions"
                   value={admissionStats.maleStudents.toLocaleString()}

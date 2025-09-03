@@ -55,3 +55,12 @@ export type Report = {
   reportContent: string;
   reportFormat: string;
 };
+
+export type AcademicTerm = {
+    id: string;
+    academicYear: string;
+    session: string;
+    startDate: string;
+    endDate: string;
+    isCurrent: boolean;
+}
