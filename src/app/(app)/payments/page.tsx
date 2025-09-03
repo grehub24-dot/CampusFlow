@@ -29,7 +29,6 @@ export default function PaymentsPage() {
 
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const { toast } = useToast();
 
@@ -123,7 +122,7 @@ export default function PaymentsPage() {
         </Dialog>
       </PageHeader>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard 
             title="Academic Year"
             value={currentTerm?.academicYear || 'Not Set'}
@@ -146,7 +145,10 @@ export default function PaymentsPage() {
             icon={Receipt}
             description={`For ${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}`}
         />
-        <StatCard 
+      </div>
+
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+         <StatCard 
             title="Total Pending Invoices"
             value={`${invoices.length}`}
             icon={Clock}

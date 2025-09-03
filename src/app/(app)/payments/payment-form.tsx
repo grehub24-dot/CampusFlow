@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 
 interface Props {
@@ -141,21 +142,22 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
           <h3 className="font-medium mb-2">Fee Items</h3>
           <div className="space-y-2 border rounded-md p-4">
             {displayItems.map(item => (
-              <label
+              <div
                 key={item.name}
-                className="flex items-center justify-between p-2 rounded cursor-pointer hover:bg-muted"
+                className="flex items-center justify-between"
               >
                 <div className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4"
+                  <Checkbox
+                    id={`fee-item-${item.name}`}
                     checked={checkedItems[item.name] || false}
-                    onChange={() => handleToggle(item.name, item.amount)}
+                    onCheckedChange={() => handleToggle(item.name, item.amount)}
                   />
-                  <span className="text-sm">{item.name}</span>
+                  <Label htmlFor={`fee-item-${item.name}`} className="text-sm font-normal cursor-pointer">
+                    {item.name}
+                  </Label>
                 </div>
                 <span className="text-sm">GHS {item.amount.toFixed(2)}</span>
-              </label>
+              </div>
             ))}
           </div>
         </div>
