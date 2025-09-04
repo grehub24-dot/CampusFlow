@@ -95,4 +95,12 @@ export type FeeStructure = {
   others?: number;
 }
 
+export type Message = {
+    id: string;
+    recipient: string;
+    type: 'SMS' | 'Email';
+    content: string;
+    status: 'Sent' | 'Failed' | 'Pending';
+    date: string;
+};
     

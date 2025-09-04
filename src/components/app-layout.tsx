@@ -31,6 +31,7 @@ import {
   BarChart3,
   Settings,
   Bell,
+  MessageSquare,
 } from "lucide-react"
 
 import { Button } from './ui/button';
@@ -43,6 +44,7 @@ const navItems = [
   { href: "/students", icon: Users, label: "Students" },
   { href: "/payments", icon: CreditCard, label: "Payments" },
   { href: "/reports", icon: BarChart3, label: "Reports" },
+  { href: "/communications", icon: MessageSquare, label: "Communications" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
