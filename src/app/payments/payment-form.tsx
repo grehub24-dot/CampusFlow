@@ -58,7 +58,7 @@ export default function PaymentForm({
   const [currentAmountPaid, setCurrentAmountPaid] = useState(0);
   const [amountTendered, setAmountTendered] = useState(0);
   const { toast } = useToast();
-  const [receiptLabel, setReceiptLabel] = useState('Receipt No');
+  const [receiptLabel, setReceiptLabel] = useState('Receipt No.');
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -292,7 +292,7 @@ export default function PaymentForm({
         <h3 className="font-medium mb-2">
             Fee Items for {currentTerm.session} ({currentTerm.academicYear})
         </h3>
-        <div className="space-y-2 border rounded-md p-4">
+        <div className="space-y-2 border rounded-md p-4 max-h-[250px] overflow-y-auto">
           {allFeeItemsForForm.length > 0 ? allFeeItemsForForm.map((item) => {
             const isMandatory = isNewAdmissionForTerm && MANDATORY_NEW_ADMISSION_FEES.includes(item.name);
             return (
@@ -324,17 +324,13 @@ export default function PaymentForm({
               No fee structure found for this student for the current term.
             </p>
           )}
-
-          {allFeeItemsForForm.length > 0 && (
-            <>
-                <hr className="my-2" />
-                <div className="flex justify-between items-center font-bold text-lg">
-                    <span>Total Bill</span>
-                    <span>GHS {totalAmountDue.toFixed(2)}</span>
-                </div>
-            </>
-          )}
         </div>
+        {allFeeItemsForForm.length > 0 && (
+          <div className="border-t mt-4 pt-4 flex justify-between items-center font-bold text-2xl">
+              <span>Total Bill</span>
+              <span>GHS {totalAmountDue.toFixed(2)}</span>
+          </div>
+        )}
       </div>
       
       <div className="grid grid-cols-2 gap-4">
@@ -388,33 +384,36 @@ export default function PaymentForm({
        <div className="border p-4 rounded-md bg-muted/50 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>New Balance (GHS)</Label>
+              <Label>New Balance</Label>
               <Input
                 type="text"
-                value={balance.toFixed(2)}
+                value={`GHS ${balance.toFixed(2)}`}
                 readOnly
-                className="bg-background font-bold text-lg h-auto p-2"
+                className={cn(
+                  "bg-background font-bold h-auto p-2 text-base",
+                  balance > 0 ? "text-red-500" : "text-foreground"
+                )}
               />
             </div>
-            <div>
-              <Label htmlFor="amountTendered">Amount Tendered (GHS)</Label>
+             <div>
+              <Label htmlFor="amountTendered">Amount Tendered</Label>
               <Input
                 id="amountTendered"
                 type="number"
                 value={amountTendered || ''}
                 onChange={(e) => setAmountTendered(parseFloat(e.target.value) || 0)}
-                 className="bg-background"
+                 className="bg-background font-bold text-blue-600 text-xl h-auto p-2"
               />
             </div>
           </div>
           {amountTendered > 0 && (
              <div >
-              <Label>Change (GHS)</Label>
+              <Label>Change</Label>
               <Input
                 type="text"
-                value={change.toFixed(2)}
+                value={`GHS ${change.toFixed(2)}`}
                 readOnly
-                className="bg-background font-bold text-green-600 text-lg h-auto p-2"
+                className="bg-background font-bold text-green-600 text-sm h-auto p-2"
               />
             </div>
           )}
@@ -432,5 +431,7 @@ export default function PaymentForm({
     </form>
   );
 }
+
+    
 
     
