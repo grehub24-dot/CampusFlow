@@ -42,12 +42,13 @@ export async function sendSms(recipient: string, message: string) {
     if (!credentials) {
         throw new Error("Frog API credentials are not configured.");
     }
-    const { apiKey, senderId } = credentials;
+    const { apiKey, senderId, username } = credentials;
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'API-KEY': apiKey
+        'API-KEY': apiKey,
+        'USERNAME': username
       },
       body: JSON.stringify({
         to: recipient,
@@ -91,14 +92,21 @@ export async function getBalance() {
         const data = await response.json();
 
         if (!response.ok || data.status !== 'SUCCESS') {
-            console.error('Frog API Error:', data);
-            throw new Error(data.message || 'Failed to fetch balance');
+            // Don't show an error toast if the API is simply not configured.
+            if (data.message !== 'API credentials not configured.') {
+                 console.error('Frog API Error:', data);
+                 throw new Error(data.message || 'Failed to fetch balance');
+            }
+            return { success: false, error: data.message, balance: 0 };
         }
         
         const smsBalance = data.data?.bundles?.SMS || 0;
         return { success: true, balance: smsBalance };
     } catch (error) {
-        console.error('Error fetching balance:', error);
+        // Avoid creating a toast for a simple config error
+        if ((error as Error).message !== 'Frog API Key or Username is not configured in settings.') {
+             console.error('Error fetching balance:', error);
+        }
         return { success: false, error: (error as Error).message, balance: 0 };
     }
 }
