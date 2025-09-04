@@ -151,8 +151,8 @@ export default function PaymentsPage() {
          <StatCard 
             title="Total Pending Invoices"
             value={`${invoices.length}`}
-            description={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
             icon={Clock}
+            description={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
         />
       </div>
 
