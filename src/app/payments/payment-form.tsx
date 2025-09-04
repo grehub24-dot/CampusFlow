@@ -82,11 +82,13 @@ export default function PaymentForm({
       setCheckedItems({});
       return;
     }
-
-    const isNewAdmission = selectedStudent.admissionTerm === currentTerm.session &&
-                         selectedStudent.admissionYear === currentTerm.academicYear;
     
-    const termNumber = parseInt(currentTerm.session.split(' ')[0], 10);
+    const isNewAdmission = selectedStudent.isNewAdmission === true || (
+      selectedStudent.admissionTerm === currentTerm.session &&
+      selectedStudent.admissionYear === currentTerm.academicYear
+    );
+    
+    const termNumber = selectedStudent.currentTermNumber || parseInt(currentTerm.session.split(' ')[0], 10);
 
     let initialChecks: Record<string, boolean> = {};
 
