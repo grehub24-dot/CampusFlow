@@ -4,7 +4,7 @@
 import React from 'react';
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Student, Payment, Invoice, AcademicTerm } from '@/types';
+import type { Student, Payment, Invoice, AcademicTerm, FeeStructure, FeeItem } from '@/types';
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +25,8 @@ import { StudentDetails } from '@/components/student-details';
 export default function Dashboard() {
   const [students, setStudents] = React.useState<Student[]>([]);
   const [payments, setPayments] = React.useState<Payment[]>([]);
-  const [invoices, setInvoices] = React.useState<Invoice[]>([]);
+  const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
+  const [feeItems, setFeeItems] = React.useState<FeeItem[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const [selectedPayment, setSelectedPayment] = React.useState<Payment | null>(null);
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
@@ -65,20 +66,23 @@ export default function Dashboard() {
       setPayments(paymentsData);
     });
 
-    const invoicesQuery = collection(db, "invoices");
-    const unsubscribeInvoices = onSnapshot(invoicesQuery, (querySnapshot) => {
-      const invoicesData: Invoice[] = [];
-      querySnapshot.forEach((doc) => {
-        invoicesData.push({ id: doc.id, ...doc.data() } as Invoice);
-      });
-      setInvoices(invoicesData);
+    const feeStructuresQuery = query(collection(db, "fee-structures"));
+    const unsubscribeFeeStructures = onSnapshot(feeStructuresQuery, (snapshot) => {
+        setFeeStructures(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeStructure)));
     });
+    
+    const feeItemsQuery = query(collection(db, "fee-items"));
+    const unsubscribeFeeItems = onSnapshot(feeItemsQuery, (snapshot) => {
+        setFeeItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeItem)));
+    });
+
 
     return () => {
         unsubscribeSettings();
         unsubscribeStudents();
         unsubscribePayments();
-        unsubscribeInvoices();
+        unsubscribeFeeStructures();
+        unsubscribeFeeItems();
     };
   }, [toast]);
   
@@ -102,6 +106,51 @@ export default function Dashboard() {
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [students] 
   );
+  
+  const pendingInvoices: Invoice[] = React.useMemo(() => {
+    if (!currentTerm || students.length === 0 || feeStructures.length === 0 || feeItems.length === 0) {
+      return [];
+    }
+
+    return students.map(student => {
+      const structure = feeStructures.find(fs => fs.classId === student.classId && fs.academicTermId === currentTerm.id);
+      if (!structure || !Array.isArray(structure.items)) return null;
+      
+      const isNew = student.admissionTerm === currentTerm.session && student.admissionYear === currentTerm.academicYear;
+      const termNumber = parseInt(currentTerm.session.split(' ')[0], 10);
+
+      const totalAmountDue = structure.items.reduce((total, item) => {
+          const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
+          if (!feeItemInfo || feeItemInfo.isOptional) return total;
+          
+          if (isNew) {
+            if (feeItemInfo.appliesTo.includes('new')) return total + item.amount;
+          } else {
+            if (termNumber === 1 && feeItemInfo.appliesTo.includes('term1')) return total + item.amount;
+            if (termNumber > 1 && feeItemInfo.appliesTo.includes('term2_3')) return total + item.amount;
+          }
+          return total;
+      }, 0);
+
+      const totalPaid = payments
+        .filter(p => p.studentId === student.id && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session)
+        .reduce((sum, p) => sum + p.amount, 0);
+
+      const balance = totalAmountDue - totalPaid;
+      
+      if (balance > 0) {
+        return {
+          id: student.id,
+          studentId: student.id,
+          studentName: student.name,
+          amount: balance,
+          dueDate: currentTerm.endDate,
+        };
+      }
+      
+      return null;
+    }).filter((invoice): invoice is Invoice => invoice !== null);
+  }, [students, payments, feeStructures, feeItems, currentTerm]);
 
 
   const overallStats = {
@@ -109,7 +158,7 @@ export default function Dashboard() {
     maleStudents: students.filter(s => s.gender === 'Male').length,
     femaleStudents: students.filter(s => s.gender === 'Female').length,
     totalRevenue: payments.reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0),
-    pendingInvoices: invoices.reduce((acc, i) => acc + i.amount, 0),
+    pendingInvoices: pendingInvoices.reduce((acc, i) => acc + i.amount, 0),
   };
 
   const newlyAdmittedStudents = students.filter(s => s.admissionYear === currentTerm?.academicYear && s.admissionTerm === currentTerm?.session);
@@ -216,7 +265,7 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <RecentPaymentsTable columns={memoizedPaymentColumns} data={payments} />
-              <PendingInvoicesTable columns={invoiceColumns} data={invoices} />
+              <PendingInvoicesTable columns={invoiceColumns} data={pendingInvoices} />
           </div>
         </TabsContent>
         <TabsContent value="admissions" className="space-y-4">

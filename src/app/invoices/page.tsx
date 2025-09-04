@@ -4,7 +4,7 @@
 import React from 'react';
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Payment, Invoice, AcademicTerm } from '@/types';
+import type { Payment, Invoice, AcademicTerm, Student, FeeStructure, FeeItem } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 import { PageHeader } from "@/components/page-header";
@@ -18,7 +18,9 @@ import { PaymentDetails } from '@/components/payment-details';
 
 export default function InvoicesPage() {
   const [payments, setPayments] = React.useState<Payment[]>([]);
-  const [invoices, setInvoices] = React.useState<Invoice[]>([]);
+  const [students, setStudents] = React.useState<Student[]>([]);
+  const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
+  const [feeItems, setFeeItems] = React.useState<FeeItem[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
 
   const [isLoading, setIsLoading] = React.useState(true);
@@ -48,24 +50,77 @@ export default function InvoicesPage() {
       setPayments(paymentsData);
     });
 
-    const invoicesQuery = collection(db, "invoices");
-    const unsubscribeInvoices = onSnapshot(invoicesQuery, (querySnapshot) => {
-      const invoicesData: Invoice[] = [];
-      querySnapshot.forEach((doc) => {
-        invoicesData.push({ id: doc.id, ...doc.data() } as Invoice);
-      });
-      setInvoices(invoicesData);
-      setIsLoading(false);
+    const studentsQuery = collection(db, "students");
+    const unsubscribeStudents = onSnapshot(studentsQuery, (querySnapshot) => {
+      setStudents(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student)));
+    });
+
+    const feeStructuresQuery = query(collection(db, "fee-structures"));
+    const unsubscribeFeeStructures = onSnapshot(feeStructuresQuery, (snapshot) => {
+        setFeeStructures(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeStructure)));
+    });
+    
+    const feeItemsQuery = query(collection(db, "fee-items"));
+    const unsubscribeFeeItems = onSnapshot(feeItemsQuery, (snapshot) => {
+        setFeeItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeItem)));
+        setIsLoading(false);
     });
     
     return () => {
       unsubscribeSettings();
       unsubscribePayments();
-      unsubscribeInvoices();
+      unsubscribeStudents();
+      unsubscribeFeeStructures();
+      unsubscribeFeeItems();
     };
   }, []);
   
-  const pendingInvoicesTotal = invoices.reduce((acc, i) => acc + i.amount, 0);
+  const pendingInvoices: Invoice[] = React.useMemo(() => {
+    if (!currentTerm || students.length === 0 || feeStructures.length === 0 || feeItems.length === 0) {
+      return [];
+    }
+
+    return students.map(student => {
+      const structure = feeStructures.find(fs => fs.classId === student.classId && fs.academicTermId === currentTerm.id);
+      if (!structure || !Array.isArray(structure.items)) return null;
+      
+      const isNew = student.admissionTerm === currentTerm.session && student.admissionYear === currentTerm.academicYear;
+      const termNumber = parseInt(currentTerm.session.split(' ')[0], 10);
+
+      const totalAmountDue = structure.items.reduce((total, item) => {
+          const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
+          if (!feeItemInfo || feeItemInfo.isOptional) return total;
+          
+          if (isNew) {
+            if (feeItemInfo.appliesTo.includes('new')) return total + item.amount;
+          } else {
+            if (termNumber === 1 && feeItemInfo.appliesTo.includes('term1')) return total + item.amount;
+            if (termNumber > 1 && feeItemInfo.appliesTo.includes('term2_3')) return total + item.amount;
+          }
+          return total;
+      }, 0);
+
+      const totalPaid = payments
+        .filter(p => p.studentId === student.id && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session)
+        .reduce((sum, p) => sum + p.amount, 0);
+
+      const balance = totalAmountDue - totalPaid;
+      
+      if (balance > 0) {
+        return {
+          id: student.id,
+          studentId: student.id,
+          studentName: student.name,
+          amount: balance,
+          dueDate: currentTerm.endDate,
+        };
+      }
+      
+      return null;
+    }).filter((invoice): invoice is Invoice => invoice !== null);
+  }, [students, payments, feeStructures, feeItems, currentTerm]);
+
+  const pendingInvoicesTotal = pendingInvoices.reduce((acc, i) => acc + i.amount, 0);
   const revenueThisTerm = currentTerm ? payments.filter(p => p.term === currentTerm.session && p.academicYear === currentTerm.academicYear).reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0) : 0;
 
   return (
@@ -94,14 +149,14 @@ export default function InvoicesPage() {
         />
         <StatCard 
             title="Total Pending Invoices"
-            value={`${invoices.length}`}
+            value={`${pendingInvoices.length}`}
             icon={Clock}
             description={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
         />
       </div>
 
       <div>
-        <PendingInvoicesTable columns={invoiceColumns} data={invoices} />
+        <PendingInvoicesTable columns={invoiceColumns} data={pendingInvoices} />
       </div>
       
       <Sheet open={isPaymentSheetOpen} onOpenChange={setIsPaymentSheetOpen}>
