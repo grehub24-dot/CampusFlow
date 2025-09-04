@@ -47,9 +47,6 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
-const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'Kindergarten 2'];
-
 function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<FormValues & { admissionClass: string, admissionClassCategory: string }>, classes: SchoolClass[] }) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -426,19 +423,24 @@ export default function AdmissionsPage() {
             notes: values.notes,
         };
 
-        await addDoc(collection(db, "students"), newStudentData);
+        const docRef = await addDoc(collection(db, "students"), newStudentData);
         
         toast({
             title: 'Application Submitted',
             description: `${values.firstName} ${values.lastName}'s application has been successfully submitted.`,
-            action: (
-                <ToastAction altText="Proceed to payment" onClick={() => router.push('/payments')}>
-                    Proceed to Payment
-                </ToastAction>
-            )
         });
         
         setIsAdmissionDialogOpen(false);
+
+        // Open payment dialog for the new student
+        const newStudentForPayment: Student = {
+            id: docRef.id,
+            ...newStudentData,
+            isNewAdmission: true,
+            currentTermNumber: parseInt(currentTerm.session.split(' ')[0], 10)
+        }
+        setSelectedStudent(newStudentForPayment);
+        setIsPaymentDialogOpen(true);
 
     } catch (error) {
         console.error("Error adding document: ", error);
