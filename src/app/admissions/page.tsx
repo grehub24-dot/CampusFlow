@@ -451,7 +451,7 @@ export default function AdmissionsPage() {
         </Dialog>
       </PageHeader>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+      <div className="grid gap-4 md:grid-cols-2 mb-6">
          <StatCard 
             title="Total New Admissions"
             value={admittedStudents.length.toLocaleString()}
@@ -464,6 +464,9 @@ export default function AdmissionsPage() {
             icon={Wallet}
             description="Based on new admissions"
         />
+      </div>
+      <div className="grid gap-4 md:grid-cols-3 mb-6">
+       
         <StatCard 
             title="Male Students"
             value={admittedStudents.filter(s => s.gender === 'Male').length.toLocaleString()}
@@ -476,8 +479,14 @@ export default function AdmissionsPage() {
             icon={User}
             color="text-pink-500"
         />
+        <StatCard 
+            title="Pending Invoices"
+            value={`GHS ${admissionStats.pendingInvoices.toLocaleString()}`}
+            icon={Clock}
+            description="For new admissions"
+        />
       </div>
-      
+
       <div className="space-y-6">
         <AdmittedStudentTable data={admittedStudents} onViewApplication={handleViewApplication} />
       </div>

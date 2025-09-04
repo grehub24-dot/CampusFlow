@@ -303,7 +303,7 @@ export default function StudentsPage() {
     <>
       <PageHeader
         title="Students"
-        description={`Manage student records for the current term (${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}).`}
+        description="View and manage all students in the system."
       >
         <div className="flex items-center gap-2">
             <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
