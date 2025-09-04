@@ -14,7 +14,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal } from "lucide-react"
 
-export const invoiceColumns: ColumnDef<Invoice>[] = [
+type ColumnsProps = {
+  onViewInvoice: (invoice: Invoice) => void;
+  onSendReminder: (invoice: Invoice) => void;
+}
+
+export const getInvoiceColumns = ({ onViewInvoice, onSendReminder }: ColumnsProps): ColumnDef<Invoice>[] => [
   {
     accessorKey: "studentName",
     header: "Student Name",
@@ -42,6 +47,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
+      const invoice = row.original;
       return (
         <div className="text-right">
             <DropdownMenu>
@@ -53,12 +59,14 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>View Invoice</DropdownMenuItem>
-                <DropdownMenuItem>Send Reminder</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onViewInvoice(invoice)}>View Invoice</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onSendReminder(invoice)}>Send Reminder</DropdownMenuItem>
             </DropdownMenuContent>
             </DropdownMenu>
         </div>
       )
     },
   },
-]
+];
+
+export const invoiceColumns = getInvoiceColumns({ onViewInvoice: () => {}, onSendReminder: () => {} });

@@ -6,14 +6,15 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { Payment, Invoice, AcademicTerm, Student, FeeStructure, FeeItem } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { sendSms } from '@/lib/frog-api';
 
 import { PageHeader } from "@/components/page-header";
 import { Receipt, Calendar, BookOpen, Clock } from "lucide-react";
 import StatCard from '@/components/dashboard/stat-card';
 import { PendingInvoicesTable } from '../dashboard/pending-invoices-table';
-import { invoiceColumns } from './columns';
+import { getInvoiceColumns } from './columns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { PaymentDetails } from '@/components/payment-details';
+import { StudentDetails } from '@/components/student-details';
 
 
 export default function InvoicesPage() {
@@ -24,8 +25,8 @@ export default function InvoicesPage() {
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
 
   const [isLoading, setIsLoading] = React.useState(true);
-  const [selectedPayment, setSelectedPayment] = React.useState<Payment | null>(null);
-  const [isPaymentSheetOpen, setIsPaymentSheetOpen] = React.useState(false);
+  const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
+  const [isStudentSheetOpen, setIsStudentSheetOpen] = React.useState(false);
 
 
   const { toast } = useToast();
@@ -74,6 +75,39 @@ export default function InvoicesPage() {
       unsubscribeFeeItems();
     };
   }, []);
+
+  const handleViewStudent = (studentId: string) => {
+    const student = students.find(s => s.id === studentId);
+    if (student) {
+        setSelectedStudent(student);
+        setIsStudentSheetOpen(true);
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find student details.'})
+    }
+  }
+
+  const handleViewInvoice = (invoice: Invoice) => {
+    handleViewStudent(invoice.studentId);
+  }
+
+  const handleSendReminder = async (invoice: Invoice) => {
+    const student = students.find(s => s.id === invoice.studentId);
+    if (!student || !student.guardianPhone) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Guardian phone number not found.' });
+        return;
+    }
+    
+    const message = `Dear Guardian, this is a friendly reminder that there is an outstanding balance of GHS ${invoice.amount.toFixed(2)} for ${student.name}. Please make a payment at your earliest convenience. Thank you.`;
+
+    toast({ title: 'Sending Reminder...', description: `Sending SMS to ${student.guardianPhone}` });
+    const result = await sendSms(student.guardianPhone, message);
+
+    if (result.success) {
+        toast({ title: 'Reminder Sent', description: `SMS reminder sent successfully to ${student.name}'s guardian.` });
+    } else {
+        toast({ variant: 'destructive', title: 'Failed to Send', description: result.error });
+    }
+  }
   
   const pendingInvoices: Invoice[] = React.useMemo(() => {
     if (!currentTerm || students.length === 0 || feeStructures.length === 0 || feeItems.length === 0) {
@@ -120,6 +154,12 @@ export default function InvoicesPage() {
     }).filter((invoice): invoice is Invoice => invoice !== null);
   }, [students, payments, feeStructures, feeItems, currentTerm]);
 
+  const memoizedInvoiceColumns = React.useMemo(
+      () => getInvoiceColumns({ onViewInvoice: handleViewInvoice, onSendReminder: handleSendReminder }),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [students] 
+  );
+
   const pendingInvoicesTotal = pendingInvoices.reduce((acc, i) => acc + i.amount, 0);
   const revenueThisTerm = currentTerm ? payments.filter(p => p.term === currentTerm.session && p.academicYear === currentTerm.academicYear).reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0) : 0;
 
@@ -156,15 +196,15 @@ export default function InvoicesPage() {
       </div>
 
       <div>
-        <PendingInvoicesTable columns={invoiceColumns} data={pendingInvoices} />
+        <PendingInvoicesTable columns={memoizedInvoiceColumns} data={pendingInvoices} />
       </div>
       
-      <Sheet open={isPaymentSheetOpen} onOpenChange={setIsPaymentSheetOpen}>
+      <Sheet open={isStudentSheetOpen} onOpenChange={setIsStudentSheetOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Payment Details</SheetTitle>
+            <SheetTitle>Student Details</SheetTitle>
           </SheetHeader>
-          {selectedPayment && <PaymentDetails payment={selectedPayment} />}
+          {selectedStudent && <StudentDetails student={selectedStudent} />}
         </SheetContent>
       </Sheet>
     </>

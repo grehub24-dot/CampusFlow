@@ -5,6 +5,7 @@ import React from 'react';
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { Student, Payment, Invoice, AcademicTerm, FeeStructure, FeeItem } from '@/types';
+import { sendSms } from '@/lib/frog-api';
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +17,7 @@ import GenderRatioPieChart from "@/components/dashboard/gender-ratio-pie-chart";
 import { RecentPaymentsTable } from "./recent-payments-table";
 import { paymentColumns } from "./payment-columns";
 import { PendingInvoicesTable } from "./pending-invoices-table";
-import { invoiceColumns } from "./invoice-columns";
+import { getInvoiceColumns } from "./invoice-columns";
 import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { PaymentDetails } from '@/components/payment-details';
@@ -101,8 +102,37 @@ export default function Dashboard() {
     }
   }
   
+  const handleViewInvoice = (invoice: Invoice) => {
+    handleViewStudent(invoice.studentId);
+  }
+
+  const handleSendReminder = async (invoice: Invoice) => {
+    const student = students.find(s => s.id === invoice.studentId);
+    if (!student || !student.guardianPhone) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Guardian phone number not found.' });
+        return;
+    }
+    
+    const message = `Dear Guardian, this is a friendly reminder that there is an outstanding balance of GHS ${invoice.amount.toFixed(2)} for ${student.name}. Please make a payment at your earliest convenience. Thank you.`;
+
+    toast({ title: 'Sending Reminder...', description: `Sending SMS to ${student.guardianPhone}` });
+    const result = await sendSms(student.guardianPhone, message);
+
+    if (result.success) {
+        toast({ title: 'Reminder Sent', description: `SMS reminder sent successfully to ${student.name}'s guardian.` });
+    } else {
+        toast({ variant: 'destructive', title: 'Failed to Send', description: result.error });
+    }
+  }
+
   const memoizedPaymentColumns = React.useMemo(
       () => paymentColumns({ onViewPayment: handleViewPayment, onViewStudent: handleViewStudent }),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [students] 
+  );
+
+  const memoizedInvoiceColumns = React.useMemo(
+      () => getInvoiceColumns({ onViewInvoice: handleViewInvoice, onSendReminder: handleSendReminder }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [students] 
   );
@@ -265,7 +295,7 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <RecentPaymentsTable columns={memoizedPaymentColumns} data={payments} />
-              <PendingInvoicesTable columns={invoiceColumns} data={pendingInvoices} />
+              <PendingInvoicesTable columns={memoizedInvoiceColumns} data={pendingInvoices} />
           </div>
         </TabsContent>
         <TabsContent value="admissions" className="space-y-4">
