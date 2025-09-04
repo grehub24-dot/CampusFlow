@@ -9,7 +9,7 @@ const FROG_API_BASE_URL_V1 = 'https://api.wigal.com.gh/v1';
 const FROG_API_BASE_URL_V3 = 'https://frogapi.wigal.com.gh/api/v3';
 
 
-async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string, username: string }> {
+async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string, username: string } | null> {
     const settingsDocRef = doc(db, "settings", "integrations");
     const docSnap = await getDoc(settingsDocRef);
 
@@ -19,7 +19,7 @@ async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string,
         const username = settings.frogUsername;
         if (!apiKey || !username) {
             console.error("Frog API Key or Username is not configured in settings.");
-            throw new Error("Frog API Key or Username is not configured in settings.");
+            return null;
         }
         return {
             apiKey: apiKey,
@@ -28,9 +28,8 @@ async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string,
         };
     }
 
-    // Fallback or default values if no settings are found
     console.error("Frog API settings are not configured.");
-    throw new Error("Frog API settings are not configured.");
+    return null;
 }
 
 
@@ -39,7 +38,11 @@ export async function sendSms(recipient: string, message: string) {
   const url = `${FROG_API_BASE_URL_V1}/sms/send`;
   
   try {
-    const { apiKey, senderId } = await getFrogCredentials();
+    const credentials = await getFrogCredentials();
+    if (!credentials) {
+        throw new Error("Frog API credentials are not configured.");
+    }
+    const { apiKey, senderId } = credentials;
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -70,7 +73,13 @@ export async function getBalance() {
     const url = `${FROG_API_BASE_URL_V3}/balance`;
     
     try {
-        const { apiKey, username } = await getFrogCredentials();
+        const credentials = await getFrogCredentials();
+        if (!credentials) {
+            // If no credentials, we can't fetch balance. Return success:false.
+            return { success: false, error: 'API credentials not configured.', balance: 0 };
+        }
+        const { apiKey, username } = credentials;
+
         const response = await fetch(url, {
             method: 'GET',
             headers: {

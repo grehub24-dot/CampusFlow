@@ -78,12 +78,15 @@ export default function CommunicationsPage() {
         if (result.success) {
           setBalance(result.balance);
         } else {
-          console.error("API Error fetching balance:", result.error);
-          toast({
-            variant: 'destructive',
-            title: 'API Error',
-            description: 'Could not fetch SMS credit balance.'
-          });
+          // Don't show an error toast if the API is simply not configured.
+          if (result.error !== 'API credentials not configured.') {
+              console.error("API Error fetching balance:", result.error);
+              toast({
+                variant: 'destructive',
+                title: 'API Error',
+                description: 'Could not fetch SMS credit balance.'
+              });
+          }
         }
       } catch (error) {
         console.error("Failed to fetch balance:", error);
