@@ -426,7 +426,7 @@ export default function AdmissionsPage() {
     setIsSheetOpen(true);
   }
 
-  const handleMakePayment = (student: Student) => {
+  const handlePay = (student: Student) => {
     setSelectedStudent(student);
     setIsPaymentDialogOpen(true);
   }
@@ -494,7 +494,7 @@ export default function AdmissionsPage() {
       </div>
       
       <div className="space-y-6">
-        <AdmittedStudentTable data={admittedStudents} onViewApplication={handleViewApplication} onMakePayment={handleMakePayment} />
+        <AdmittedStudentTable data={admittedStudents} onViewApplication={handleViewApplication} onPay={handlePay} />
       </div>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

@@ -17,7 +17,7 @@ import { MoreHorizontal } from "lucide-react"
 
 type ColumnsProps = {
   onViewApplication: (student: Student) => void;
-  onMakePayment: (student: Student) => void;
+  onPay: (student: Student) => void;
 }
 
 const calculateAge = (dob: string) => {
@@ -31,7 +31,7 @@ const calculateAge = (dob: string) => {
     return age;
 };
 
-export const getColumns = ({ onViewApplication, onMakePayment }: ColumnsProps): ColumnDef<Student>[] => [
+export const getColumns = ({ onViewApplication, onPay }: ColumnsProps): ColumnDef<Student>[] => [
   {
     accessorKey: "name",
     header: "Name",
@@ -75,7 +75,15 @@ export const getColumns = ({ onViewApplication, onMakePayment }: ColumnsProps): 
       const student = row.original
 
       return (
-        <div className="text-right">
+        <div className="flex justify-end items-center gap-2">
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPay(student)}
+                disabled={student.paymentStatus === 'Paid'}
+            >
+                Pay
+            </Button>
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -86,7 +94,6 @@ export const getColumns = ({ onViewApplication, onMakePayment }: ColumnsProps): 
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onViewApplication(student)}>View Application</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onMakePayment(student)}>Make Payment</DropdownMenuItem>
                 <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive">Reject Application</DropdownMenuItem>
@@ -100,4 +107,4 @@ export const getColumns = ({ onViewApplication, onMakePayment }: ColumnsProps): 
 
 // We need to export a memoized version of the columns array
 // to prevent react-table from re-rendering unnecessarily.
-export const columns = getColumns({ onViewApplication: () => {}, onMakePayment: () => {} });
+export const columns = getColumns({ onViewApplication: () => {}, onPay: () => {} });
