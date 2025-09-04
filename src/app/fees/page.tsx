@@ -22,6 +22,8 @@ type FeeSummary = {
     hasStructure: boolean;
 }
 
+const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
+
 export default function FeesPage() {
     const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
     const [classes, setClasses] = React.useState<SchoolClass[]>([]);
@@ -44,7 +46,13 @@ export default function FeesPage() {
         const classesQuery = query(collection(db, "classes"));
         const unsubscribeClasses = onSnapshot(classesQuery, (snapshot) => {
             const data: SchoolClass[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SchoolClass));
-            setClasses(data);
+            const sortedData = data.sort((a, b) => {
+                const catA = categoryOrder.indexOf(a.category);
+                const catB = categoryOrder.indexOf(b.category);
+                if (catA !== catB) return catA - catB;
+                return a.name.localeCompare(b.name);
+            });
+            setClasses(sortedData);
              if (feeStructures.length > 0 && terms.length > 0) setIsLoading(false);
         });
 
@@ -157,4 +165,3 @@ export default function FeesPage() {
         </>
     );
 }
-

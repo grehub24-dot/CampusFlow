@@ -47,7 +47,9 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<FormValues & { admissionClass: string }>, classes: SchoolClass[] }) {
+const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
+
+function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<FormValues & { admissionClass: string, admissionClassCategory: string }>, classes: SchoolClass[] }) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -68,6 +70,7 @@ function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<
     const enrichedValues = {
         ...values,
         admissionClass: selectedClass?.name || '',
+        admissionClassCategory: selectedClass?.category || '',
     };
     onFormSubmit(enrichedValues);
   };
@@ -312,7 +315,13 @@ export default function AdmissionsPage() {
         snapshot.forEach((doc) => {
             classesData.push({ id: doc.id, ...doc.data() } as SchoolClass);
         });
-        setClasses(classesData);
+        const sortedData = classesData.sort((a, b) => {
+            const catA = categoryOrder.indexOf(a.category);
+            const catB = categoryOrder.indexOf(b.category);
+            if (catA !== catB) return catA - catB;
+            return a.name.localeCompare(b.name);
+        });
+        setClasses(sortedData);
     });
     
     const feeStructuresQuery = collection(db, "fee-structures");
@@ -362,7 +371,7 @@ export default function AdmissionsPage() {
   }, [currentTerm, toast]);
 
 
-  const onSubmit: SubmitHandler<FormValues & { admissionClass: string }> = async (values) => {
+  const onSubmit: SubmitHandler<FormValues & { admissionClass: string, admissionClassCategory: string }> = async (values) => {
     setIsSubmitting(true);
     if (!currentTerm) {
         toast({
@@ -378,6 +387,7 @@ export default function AdmissionsPage() {
             name: `${values.firstName} ${values.lastName}`,
             class: values.admissionClass,
             classId: values.admissionClassId,
+            classCategory: values.admissionClassCategory,
             gender: values.gender,
             status: 'Active',
             paymentStatus: 'Pending',

@@ -55,7 +55,7 @@ export default function StudentsPage() {
     const unsubscribeSettings = onSnapshot(academicTermsQuery, (snapshot) => {
         if (!snapshot.empty) {
             const termDoc = snapshot.docs[0];
-            setCurrentTerm({ id: termDoc.id, ...termDoc.data() } as AcademicTerm);
+            setCurrentTerm({ id: termDoc.id, ...doc.data() } as AcademicTerm);
         } else {
             setCurrentTerm(null);
         }
@@ -157,12 +157,13 @@ export default function StudentsPage() {
       setIsFormDialogOpen(open);
   }
 
-  const onSubmit: SubmitHandler<FormValues & { admissionClass: string }> = async (values) => {
+  const onSubmit: SubmitHandler<FormValues & { admissionClass: string, admissionClassCategory: string }> = async (values) => {
     setIsSubmitting(true);
     try {
         const studentData = {
             name: `${values.firstName} ${values.lastName}`,
             class: values.admissionClass,
+            classCategory: values.admissionClassCategory,
             classId: values.admissionClassId,
             gender: values.gender,
             status: selectedStudent?.status || 'Active',
@@ -273,6 +274,7 @@ export default function StudentsPage() {
                         ...student,
                         name: `${student.firstName} ${student.lastName}`,
                         classId: studentClass?.id || '',
+                        classCategory: studentClass?.category || '',
                         admissionDate: new Date().toISOString(),
                         admissionTerm: currentTerm.session,
                         admissionYear: currentTerm.academicYear,

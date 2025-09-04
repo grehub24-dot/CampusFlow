@@ -13,19 +13,22 @@ type ClassEnrollmentChartProps = {
   data: Student[];
 };
 
+const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
+
 export default function ClassEnrollmentChart({ data }: ClassEnrollmentChartProps) {
   const classEnrollment = data.reduce((acc, student) => {
     const existingClass = acc.find(c => c.name === student.class);
     if (existingClass) {
         existingClass.students += 1;
     } else if (student.class) {
-        acc.push({ name: student.class, students: 1 });
+        acc.push({ name: student.class, students: 1, category: student.classCategory || '' });
     }
     return acc;
-  }, [] as { name: string; students: number }[]).sort((a, b) => {
-    const gradeA = parseInt(a.name.split(' ')[1]);
-    const gradeB = parseInt(b.name.split(' ')[1]);
-    return gradeA - gradeB;
+  }, [] as { name: string; students: number, category: string }[]).sort((a, b) => {
+    const catA = categoryOrder.indexOf(a.category);
+    const catB = categoryOrder.indexOf(b.category);
+    if (catA !== catB) return catA - catB;
+    return a.name.localeCompare(b.name);
   });
 
   return (

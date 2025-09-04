@@ -37,9 +37,11 @@ const formSchema = z.object({
 export type FormValues = z.infer<typeof formSchema>;
 
 type StudentFormProps = {
-    onSubmit: SubmitHandler<FormValues & { admissionClass: string }>;
+    onSubmit: SubmitHandler<FormValues & { admissionClass: string, admissionClassCategory: string }>;
     defaultValues?: Student;
 }
+
+const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
 
 export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
   const [classes, setClasses] = React.useState<SchoolClass[]>([]);
@@ -61,13 +63,16 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
   });
 
   React.useEffect(() => {
-    const classesQuery = query(collection(db, "classes"), orderBy("name"));
+    const classesQuery = query(collection(db, "classes"));
     const unsubscribeClasses = onSnapshot(classesQuery, (snapshot) => {
-        const classesData: SchoolClass[] = [];
-        snapshot.forEach((doc) => {
-            classesData.push({ id: doc.id, ...doc.data() } as SchoolClass);
+        const classesData: SchoolClass[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SchoolClass));
+        const sortedData = classesData.sort((a, b) => {
+            const catA = categoryOrder.indexOf(a.category);
+            const catB = categoryOrder.indexOf(b.category);
+            if (catA !== catB) return catA - catB;
+            return a.name.localeCompare(b.name);
         });
-        setClasses(classesData);
+        setClasses(sortedData);
     });
     return () => unsubscribeClasses();
   }, [])
@@ -109,6 +114,7 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
     const enrichedValues = {
         ...values,
         admissionClass: selectedClass?.name || '', // Keep the name for display
+        admissionClassCategory: selectedClass?.category || '',
     };
     onSubmit(enrichedValues);
   };

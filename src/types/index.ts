@@ -5,6 +5,7 @@ export type Student = {
   name: string;
   class: string;
   classId: string; // Ensure this is always present
+  classCategory?: string; // Add category to student
   gender: 'Male' | 'Female';
   status: 'Active' | 'Inactive' | 'Graduated';
   email: string;
