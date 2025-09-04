@@ -45,6 +45,7 @@ const navItems = [
   { href: "/admissions", icon: UserPlus, label: "Admissions" },
   { href: "/students", icon: Users, label: "Students" },
   { href: "/payments", icon: CreditCard, label: "Payments" },
+  { href: "/invoices", icon: Receipt, label: "Invoices" },
   { href: "/fees", icon: Receipt, label: "Fees" },
   { href: "/reports", icon: BarChart3, label: "Reports" },
   { href: "/communications", icon: MessageSquare, label: "Communications" },

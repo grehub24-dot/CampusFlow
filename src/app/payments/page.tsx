@@ -21,6 +21,7 @@ import { invoiceColumns } from '../dashboard/invoice-columns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { PaymentDetails } from '@/components/payment-details';
 import { StudentDetails } from '@/components/student-details';
+import { useRouter } from 'next/navigation';
 
 
 export default function PaymentsPage() {
@@ -36,6 +37,7 @@ export default function PaymentsPage() {
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
   const [isPaymentSheetOpen, setIsPaymentSheetOpen] = React.useState(false);
   const [isStudentSheetOpen, setIsStudentSheetOpen] = React.useState(false);
+  const router = useRouter();
 
 
   const { toast } = useToast();
@@ -126,6 +128,10 @@ export default function PaymentsPage() {
         title="Payments"
         description="Manage all financial transactions and invoices."
       >
+        <Button onClick={() => router.push('/invoices')}>
+          <Receipt className="mr-2 h-4 w-4" />
+          View Invoices
+        </Button>
         <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -186,20 +192,9 @@ export default function PaymentsPage() {
             description={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
         />
       </div>
-
-      <Tabs defaultValue="payments" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="payments">All Payments</TabsTrigger>
-          <TabsTrigger value="invoices">Pending Invoices</TabsTrigger>
-        </TabsList>
-        <TabsContent value="payments">
-          <RecentPaymentsTable columns={memoizedPaymentColumns} data={payments} />
-        </TabsContent>
-        <TabsContent value="invoices">
-          <PendingInvoicesTable columns={invoiceColumns} data={invoices} />
-        </TabsContent>
-      </Tabs>
       
+      <RecentPaymentsTable columns={memoizedPaymentColumns} data={payments} />
+
       <Sheet open={isPaymentSheetOpen} onOpenChange={setIsPaymentSheetOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader>
