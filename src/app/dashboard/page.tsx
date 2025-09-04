@@ -247,21 +247,25 @@ export default function Dashboard() {
             title="Academic Year"
             value={currentTerm?.academicYear || 'Not Set'}
             icon={Calendar}
+            color="text-blue-500"
         />
         <StatCard 
             title="Current Session"
             value={currentTerm?.session || 'Not Set'}
             icon={BookOpen}
+            color="text-green-500"
         />
         <StatCard 
             title="Total Revenue"
             value={`GHS ${overallStats.totalRevenue.toLocaleString()}`}
             icon={Wallet}
+            color="text-purple-500"
         />
         <StatCard 
             title="Pending Invoices"
             value={`GHS ${overallStats.pendingInvoices.toLocaleString()}`}
             icon={Clock}
+            color="text-orange-500"
         />
       </div>
 
@@ -276,6 +280,7 @@ export default function Dashboard() {
               title="Total Students"
               value={overallStats.totalStudents.toLocaleString()}
               icon={Users}
+              color="text-indigo-500"
             />
             <StatCard
               title="Male Students"
@@ -319,6 +324,7 @@ export default function Dashboard() {
                   title="New Admissions (This Term)"
                   value={admissionStats.totalNewStudents.toLocaleString()}
                   icon={Users}
+                  color="text-indigo-500"
                 />
                 <StatCard
                   title="Male Admissions"
