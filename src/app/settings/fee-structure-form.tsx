@@ -42,10 +42,10 @@ export function FeeStructureForm({ onSubmit, defaultValues, classes, terms, feeI
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      classId: '',
-      academicTermId: '',
-      items: [],
-    }
+        classId: defaultValues?.classId || '',
+        academicTermId: defaultValues?.academicTermId || '',
+        items: defaultValues?.items || [],
+    },
   });
   
   const { fields, replace } = useFieldArray({
