@@ -98,7 +98,7 @@ export function FeeStructureForm({ onSubmit, defaultValues, classes, terms, feeI
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Class</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!!defaultValues}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select a class..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             {sortedClasses.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -114,7 +114,7 @@ export function FeeStructureForm({ onSubmit, defaultValues, classes, terms, feeI
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Academic Term</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!!defaultValues}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select a term..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             {terms.map(t => <SelectItem key={t.id} value={t.id}>{`${t.session} (${t.academicYear})`}</SelectItem>)}

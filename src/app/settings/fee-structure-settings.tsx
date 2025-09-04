@@ -144,22 +144,27 @@ export function FeeStructureSettings() {
     const onSubmit: SubmitHandler<FormValues> = async (values) => {
         setIsSubmitting(true);
         try {
-            const feeItemsData = values.items.map(item => ({
-                feeItemId: item.feeItemId,
-                amount: item.amount || 0
-            }));
-
-            const data = {
-                classId: values.classId,
-                academicTermId: values.academicTermId,
-                items: feeItemsData
-            };
-
             if (selectedFeeStructure) {
+                const data = {
+                    classId: selectedFeeStructure.classId, // Keep original classId
+                    academicTermId: selectedFeeStructure.academicTermId, // Keep original termId
+                    items: values.items.map(item => ({
+                        feeItemId: item.feeItemId,
+                        amount: item.amount || 0
+                    }))
+                };
                 const docRef = doc(db, "fee-structures", selectedFeeStructure.id);
                 await updateDoc(docRef, data);
                 toast({ title: 'Fee Structure Updated', description: 'The fee structure has been successfully updated.' });
             } else {
+                 const data = {
+                    classId: values.classId,
+                    academicTermId: values.academicTermId,
+                    items: values.items.map(item => ({
+                        feeItemId: item.feeItemId,
+                        amount: item.amount || 0
+                    }))
+                };
                 await addDoc(collection(db, "fee-structures"), data);
                 toast({ title: 'Fee Structure Added', description: 'The new fee structure has been successfully added.' });
             }
