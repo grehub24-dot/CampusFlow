@@ -1,27 +1,52 @@
 
 'use server'
 
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "./firebase";
+import type { IntegrationSettings } from "@/types";
+
 const FROG_API_BASE_URL = 'https://api.wigal.com.gh/v1';
 
-// These should be stored in environment variables in a real application
-const FROG_API_KEY = process.env.FROG_API_KEY || 'YOUR_FROG_API_KEY';
-const FROG_SENDER_ID = process.env.FROG_SENDER_ID || 'CampusFlow';
+
+async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string }> {
+    const settingsDocRef = doc(db, "settings", "integrations");
+    const docSnap = await getDoc(settingsDocRef);
+
+    if (docSnap.exists()) {
+        const settings = docSnap.data() as IntegrationSettings;
+        return {
+            apiKey: settings.frogApiKey || '',
+            senderId: settings.frogSenderId || 'CampusFlow',
+        };
+    }
+
+    // Fallback or default values if no settings are found
+    return { 
+        apiKey: process.env.FROG_API_KEY || '', 
+        senderId: process.env.FROG_SENDER_ID || 'CampusFlow' 
+    };
+}
 
 
 // This is a server-side function. It will not be exposed to the client.
 export async function sendSms(recipient: string, message: string) {
   const url = `${FROG_API_BASE_URL}/sms/send`;
+  const { apiKey, senderId } = await getFrogCredentials();
+
+  if (!apiKey) {
+    return { success: false, error: "Frog API Key is not configured in settings." };
+  }
   
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${FROG_API_KEY}`
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         to: recipient,
-        from: FROG_SENDER_ID,
+        from: senderId,
         text: message
       })
     });
@@ -42,12 +67,17 @@ export async function sendSms(recipient: string, message: string) {
 
 export async function getBalance() {
     const url = `${FROG_API_BASE_URL}/user/balance`;
+    const { apiKey } = await getFrogCredentials();
+
+    if (!apiKey) {
+      return { success: false, error: "Frog API Key is not configured in settings.", balance: 0 };
+    }
 
     try {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${FROG_API_KEY}`
+                'Authorization': `Bearer ${apiKey}`
             }
         });
 
