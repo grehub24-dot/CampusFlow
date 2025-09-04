@@ -103,4 +103,9 @@ export type Message = {
     status: 'Sent' | 'Failed' | 'Pending';
     date: string;
 };
+
+export type IntegrationSettings = {
+    frogApiKey?: string;
+    frogSenderId?: string;
+}
     

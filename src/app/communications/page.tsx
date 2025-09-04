@@ -154,11 +154,17 @@ export default function CommunicationsPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-         <StatCard 
-            title="SMS Credit Balance"
-            value={balance !== null ? balance.toLocaleString() : <Loader2 className="h-4 w-4 animate-spin" />}
-            icon={Wallet}
-            description="Your current SMS bundle"
+        <StatCard
+          title="SMS Credit Balance"
+          value={
+            balance !== null ? (
+              balance.toLocaleString()
+            ) : (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )
+          }
+          icon={Wallet}
+          description="Your current SMS bundle"
         />
       </div>
 
@@ -173,117 +179,171 @@ export default function CommunicationsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Compose Message</CardTitle>
-              <CardDescription>Select your audience and compose your message below.</CardDescription>
+              <CardDescription>
+                Select your audience and compose your message below.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="recipientType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Recipient Group</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="all">All Students</SelectItem>
+                                <SelectItem value="class">Specific Class</SelectItem>
+                                <SelectItem value="single">Single Student</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                      {recipientType === "class" && (
                         <FormField
-                            control={form.control}
-                            name="recipientType"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Recipient Group</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Students</SelectItem>
-                                        <SelectItem value="class">Specific Class</SelectItem>
-                                        <SelectItem value="single">Single Student</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                </FormItem>
-                            )}
-                        />
-                        {recipientType === 'class' && (
-                             <FormField
-                                control={form.control}
-                                name="classId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Select Class</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a class..." /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                            {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                    </FormItem>
-                                )}
-                            />
-                        )}
-                        {recipientType === 'single' && (
-                             <FormField
-                                control={form.control}
-                                name="studentId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Select Student</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a student..." /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                            {students.map(s => <SelectItem key={s.id} value={s.id}>{s.name} ({s.class})</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                    </FormItem>
-                                )}
-                            />
-                        )}
-                         <FormField
-                            control={form.control}
-                            name="messageType"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Message Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="sms">SMS</SelectItem>
-                                        <SelectItem value="email">Email (Not implemented)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                     <div className="space-y-4">
-                        {messageType === 'email' && (
-                           <FormField
-                                control={form.control}
-                                name="subject"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Subject</FormLabel>
-                                    <FormControl><Input placeholder="e.g., Important School Announcement" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                        )}
-                        <FormField
-                            control={form.control}
-                            name="message"
-                            render={({ field }) => (
+                          control={form.control}
+                          name="classId"
+                          render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Message</FormLabel>
+                              <FormLabel>Select Class</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
                                 <FormControl>
-                                <Textarea
-                                    placeholder="Type your message here..."
-                                    className="resize-y min-h-[150px]"
-                                    {...field}
-                                />
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a class..." />
+                                  </SelectTrigger>
                                 </FormControl>
-                                <FormMessage />
+                                <SelectContent>
+                                  {classes.map((c) => (
+                                    <SelectItem key={c.id} value={c.id}>
+                                      {c.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </FormItem>
-                            )}
+                          )}
                         />
-                     </div>
+                      )}
+                      {recipientType === "single" && (
+                        <FormField
+                          control={form.control}
+                          name="studentId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Select Student</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a student..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {students.map((s) => (
+                                    <SelectItem key={s.id} value={s.id}>
+                                      {s.name} ({s.class})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                      <FormField
+                        control={form.control}
+                        name="messageType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Message Type</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="sms">SMS</SelectItem>
+                                <SelectItem value="email">
+                                  Email (Not implemented)
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      {messageType === "email" && (
+                        <FormField
+                          control={form.control}
+                          name="subject"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Subject</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="e.g., Important School Announcement"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                      <FormField
+                        control={form.control}
+                        name="message"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Message</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Type your message here..."
+                                className="resize-y min-h-[150px]"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
+
                   <div className="flex justify-end">
                     <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                      {isSubmitting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="mr-2 h-4 w-4" />
+                      )}
                       Send Message
                     </Button>
                   </div>
@@ -294,34 +354,46 @@ export default function CommunicationsPage() {
         </TabsContent>
 
         <TabsContent value="purchase">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Purchase SMS/Email Bundles</CardTitle>
-                    <CardDescription>Top up your credits to continue sending communications.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 text-center">
-                    <p className="text-muted-foreground">To purchase more credits, please visit the provider's portal.</p>
-                    <Button asChild>
-                        <a href="https://frogdocs.wigal.com.gh" target="_blank" rel="noopener noreferrer">
-                           <ShoppingCart className="mr-2 h-4 w-4"/> Go to Purchase Portal
-                        </a>
-                    </Button>
-                </CardContent>
-            </Card>
-        </TabsContent>
-        
-        <TabsContent value="history">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Message History</CardTitle>
-                    <CardDescription>A log of all communications sent from the system.</CardDescription>
-                </Header>
-                <CardContent>
-                    <p className="text-center text-muted-foreground py-12">Message history tracking is not yet implemented.</p>
-                </CardContent>
-            </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Purchase SMS/Email Bundles</CardTitle>
+              <CardDescription>
+                Top up your credits to continue sending communications.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-center">
+              <p className="text-muted-foreground">
+                To purchase more credits, please visit the provider's portal.
+              </p>
+              <Button asChild>
+                <a
+                  href="https://frogdocs.wigal.com.gh"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Go to Purchase Portal
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
+        <TabsContent value="history">
+          <Card>
+            <CardHeader>
+              <CardTitle>Message History</CardTitle>
+              <CardDescription>
+                A log of all communications sent from the system.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center text-muted-foreground py-12">
+                Message history tracking is not yet implemented.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </>
   );

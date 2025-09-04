@@ -20,6 +20,7 @@ import { userColumns } from "./user-columns";
 import { AcademicSettings } from './academic-settings';
 import { ClassSettings } from './class-settings';
 import { FeeStructureSettings } from './fee-structure-settings';
+import { IntegrationsSettings } from './integrations-settings';
 
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
@@ -56,6 +57,7 @@ export default function SettingsPage() {
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="fees">Fee Structure</TabsTrigger>
           <TabsTrigger value="users">User Management</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="billing">Billing & Invoices</TabsTrigger>
         </TabsList>
@@ -98,6 +100,10 @@ export default function SettingsPage() {
         
         <TabsContent value="users">
             <UserTable columns={userColumns} data={users} />
+        </TabsContent>
+
+        <TabsContent value="integrations">
+            <IntegrationsSettings />
         </TabsContent>
 
         <TabsContent value="templates">
