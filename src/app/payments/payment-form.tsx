@@ -55,7 +55,7 @@ export default function PaymentForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
   const [receiptNo, setReceiptNo] = useState('');
-  const [amountPaid, setAmountPaid] = useState(0);
+  const [currentAmountPaid, setCurrentAmountPaid] = useState(0);
   const { toast } = useToast();
   const [receiptLabel, setReceiptLabel] = useState('Receipt No');
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
@@ -175,26 +175,30 @@ export default function PaymentForm({
     );
   }, [allFeeItemsForForm, checkedItems]);
   
-  const balance = useMemo(() => totalAmountDue - amountPaid, [totalAmountDue, amountPaid]);
+  const previouslyPaid = useMemo(() => {
+    if (!selectedStudent || !currentTerm) return 0;
+    return payments
+        .filter(p => 
+            p.studentId === selectedStudent.id &&
+            p.academicYear === currentTerm.academicYear &&
+            p.term === currentTerm.session
+        )
+        .reduce((sum, p) => sum + p.amount, 0);
+  }, [selectedStudent, currentTerm, payments]);
+
+  const balance = useMemo(() => totalAmountDue - previouslyPaid - currentAmountPaid, [totalAmountDue, previouslyPaid, currentAmountPaid]);
+
 
   useEffect(() => {
     if (!selectedStudent || !currentTerm) {
-      setAmountPaid(0);
+      setCurrentAmountPaid(0);
       return;
     }
     
-    const studentTermPayments = payments.filter(p => 
-      p.studentId === selectedStudent.id &&
-      p.academicYear === currentTerm.academicYear &&
-      p.term === currentTerm.session
-    );
-    
-    const totalPaidThisTerm = studentTermPayments.reduce((acc, p) => acc + p.amount, 0);
-    const outstandingBalance = totalAmountDue - totalPaidThisTerm;
+    const outstandingBalance = totalAmountDue - previouslyPaid;
+    setCurrentAmountPaid(outstandingBalance > 0 ? outstandingBalance : 0);
 
-    setAmountPaid(outstandingBalance > 0 ? outstandingBalance : 0);
-
-  }, [totalAmountDue, selectedStudent, currentTerm, payments, checkedItems]);
+  }, [totalAmountDue, previouslyPaid, selectedStudent, currentTerm, payments, checkedItems]);
 
   useEffect(() => {
     if (defaultStudentId) setSelectedStudentId(defaultStudentId);
@@ -207,7 +211,7 @@ export default function PaymentForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedStudent || amountPaid <= 0 || totalAmountDue <= 0) return;
+    if (!selectedStudent || currentAmountPaid <= 0 || totalAmountDue <= 0) return;
     setIsSubmitting(true);
 
     try {
@@ -217,7 +221,7 @@ export default function PaymentForm({
       const payload = {
         studentId: selectedStudent.id,
         studentName: selectedStudent.name,
-        amount: amountPaid,
+        amount: currentAmountPaid,
         totalAmountDue: totalAmountDue,
         balance: balance,
         receiptNo: receiptNo,
@@ -237,7 +241,7 @@ export default function PaymentForm({
 
       toast({
         title: 'Payment Recorded',
-        description: `Payment of GHS ${amountPaid.toFixed(
+        description: `Payment of GHS ${currentAmountPaid.toFixed(
           2
         )} for ${selectedStudent.name} was successful.`,
       });
@@ -351,32 +355,42 @@ export default function PaymentForm({
           />
         </div>
       </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="amountPaid">Amount Paid (GHS)</Label>
-          <Input
-            id="amountPaid"
-            type="number"
-            value={amountPaid}
-            onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
-          />
-        </div>
+       
+       <div className="grid grid-cols-2 gap-4">
          <div>
-          <Label>Balance (GHS)</Label>
+          <Label>Previously Paid (GHS)</Label>
           <Input
             type="number"
-            value={parseFloat(balance.toFixed(2))}
+            value={previouslyPaid.toFixed(2)}
             readOnly
-            className="bg-muted font-bold"
+            className="bg-muted"
           />
         </div>
+        <div>
+          <Label htmlFor="currentAmountPaid">Amount to Pay (GHS)</Label>
+          <Input
+            id="currentAmountPaid"
+            type="number"
+            value={currentAmountPaid}
+            onChange={(e) => setCurrentAmountPaid(parseFloat(e.target.value) || 0)}
+          />
+        </div>
+      </div>
+
+      <div>
+        <Label>New Balance (GHS)</Label>
+        <Input
+          type="number"
+          value={balance.toFixed(2)}
+          readOnly
+          className="bg-muted font-bold"
+        />
       </div>
 
       <div className="flex justify-end">
         <Button
           type="submit"
-          disabled={!selectedStudent || amountPaid <= 0 || isSubmitting}
+          disabled={!selectedStudent || currentAmountPaid <= 0 || isSubmitting}
         >
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Record Payment
@@ -385,7 +399,3 @@ export default function PaymentForm({
     </form>
   );
 }
-
-    
-
-    
