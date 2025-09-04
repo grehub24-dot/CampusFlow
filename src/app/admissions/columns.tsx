@@ -17,6 +17,7 @@ import { MoreHorizontal } from "lucide-react"
 
 type ColumnsProps = {
   onViewApplication: (student: Student) => void;
+  onMakePayment: (student: Student) => void;
 }
 
 const calculateAge = (dob: string) => {
@@ -30,7 +31,7 @@ const calculateAge = (dob: string) => {
     return age;
 };
 
-export const getColumns = ({ onViewApplication }: ColumnsProps): ColumnDef<Student>[] => [
+export const getColumns = ({ onViewApplication, onMakePayment }: ColumnsProps): ColumnDef<Student>[] => [
   {
     accessorKey: "name",
     header: "Name",
@@ -85,6 +86,7 @@ export const getColumns = ({ onViewApplication }: ColumnsProps): ColumnDef<Stude
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onViewApplication(student)}>View Application</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onMakePayment(student)}>Make Payment</DropdownMenuItem>
                 <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive">Reject Application</DropdownMenuItem>
@@ -98,4 +100,4 @@ export const getColumns = ({ onViewApplication }: ColumnsProps): ColumnDef<Stude
 
 // We need to export a memoized version of the columns array
 // to prevent react-table from re-rendering unnecessarily.
-export const columns = getColumns({ onViewApplication: () => {} });
+export const columns = getColumns({ onViewApplication: () => {}, onMakePayment: () => {} });

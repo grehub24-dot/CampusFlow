@@ -23,12 +23,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { Student, AcademicTerm, SchoolClass } from '@/types';
+import type { Student, AcademicTerm, SchoolClass, FeeStructure } from '@/types';
 import { AdmittedStudentTable } from './admitted-student-table';
 import { ToastAction } from '@/components/ui/toast';
 import { db } from '@/lib/firebase';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { StudentDetails } from '@/components/student-details';
+import PaymentForm from '../payments/payment-form';
 
 
 const formSchema = z.object({
@@ -283,12 +284,14 @@ function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<
 export default function AdmissionsPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTableLoading, setIsTableLoading] = React.useState(true);
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isAdmissionDialogOpen, setIsAdmissionDialogOpen] = React.useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = React.useState(false);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
   const [admittedStudents, setAdmittedStudents] = React.useState<Student[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const [classes, setClasses] = React.useState<SchoolClass[]>([]);
+  const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -311,10 +314,17 @@ export default function AdmissionsPage() {
         });
         setClasses(classesData);
     });
+    
+    const feeStructuresQuery = collection(db, "fee-structures");
+    const unsubscribeFeeStructures = onSnapshot(feeStructuresQuery, (snapshot) => {
+      const feeStructuresData: FeeStructure[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeStructure));
+      setFeeStructures(feeStructuresData);
+    });
 
     return () => {
       unsubscribeSettings();
       unsubscribeClasses();
+      unsubscribeFeeStructures();
     }
   }, []);
 
@@ -397,7 +407,7 @@ export default function AdmissionsPage() {
             )
         });
         
-        setIsDialogOpen(false);
+        setIsAdmissionDialogOpen(false);
 
     } catch (error) {
         console.error("Error adding document: ", error);
@@ -416,6 +426,11 @@ export default function AdmissionsPage() {
     setIsSheetOpen(true);
   }
 
+  const handleMakePayment = (student: Student) => {
+    setSelectedStudent(student);
+    setIsPaymentDialogOpen(true);
+  }
+
   const admissionStats = {
     totalPayments: admittedStudents.filter(s => s.paymentStatus === 'Paid').length * 500, // Example fee
     pendingInvoices: admittedStudents.filter(s => s.paymentStatus !== 'Paid').length * 500, // Example fee
@@ -427,7 +442,7 @@ export default function AdmissionsPage() {
         title="Admissions"
         description={`Manage student applications for the current term (${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}).`}
       >
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isAdmissionDialogOpen} onOpenChange={setIsAdmissionDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -479,7 +494,7 @@ export default function AdmissionsPage() {
       </div>
       
       <div className="space-y-6">
-        <AdmittedStudentTable data={admittedStudents} onViewApplication={handleViewApplication} />
+        <AdmittedStudentTable data={admittedStudents} onViewApplication={handleViewApplication} onMakePayment={handleMakePayment} />
       </div>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -490,6 +505,26 @@ export default function AdmissionsPage() {
           {selectedStudent && <StudentDetails student={selectedStudent} />}
         </SheetContent>
       </Sheet>
+
+       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Record New Payment</DialogTitle>
+              <DialogDescription>Fill out the form below to record a new financial transaction.</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[70vh] overflow-y-auto p-1">
+                {currentTerm && selectedStudent && (
+                  <PaymentForm 
+                    students={[selectedStudent]} 
+                    feeStructures={feeStructures}
+                    currentTerm={currentTerm}
+                    onSuccess={() => setIsPaymentDialogOpen(false)}
+                    defaultStudentId={selectedStudent.id}
+                  />
+                )}
+            </div>
+          </DialogContent>
+        </Dialog>
     </>
   );
 }

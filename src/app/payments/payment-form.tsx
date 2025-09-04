@@ -19,10 +19,11 @@ interface Props {
   feeStructures: FeeStructure[];
   currentTerm: AcademicTerm;
   onSuccess: () => void;
+  defaultStudentId?: string;
 }
 
-export default function PaymentForm({ students, feeStructures, currentTerm, onSuccess }: Props) {
-  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+export default function PaymentForm({ students, feeStructures, currentTerm, onSuccess, defaultStudentId }: Props) {
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(defaultStudentId || '');
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [total, setTotal] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,6 +73,12 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
     setCheckedItems(initial);
     setTotal(initialTotal);
   }, [displayItems]);
+  
+  useEffect(() => {
+    if (defaultStudentId) {
+        setSelectedStudentId(defaultStudentId)
+    }
+  }, [defaultStudentId]);
 
   const handleToggle = (itemName: string, amount: number) => {
     const isChecked = checkedItems[itemName];
@@ -125,7 +132,7 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor='student-select'>Select a student</Label>
-         <Select onValueChange={setSelectedStudentId} value={selectedStudentId}>
+         <Select onValueChange={setSelectedStudentId} value={selectedStudentId} disabled={!!defaultStudentId}>
             <SelectTrigger id="student-select">
                 <SelectValue placeholder="-- Select --" />
             </SelectTrigger>

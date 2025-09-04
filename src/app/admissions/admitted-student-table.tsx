@@ -29,15 +29,17 @@ import { Input } from "@/components/ui/input"
 interface DataTableProps {
   data: Student[]
   onViewApplication: (student: Student) => void;
+  onMakePayment: (student: Student) => void;
 }
 
 export function AdmittedStudentTable({
   data,
   onViewApplication,
+  onMakePayment,
 }: DataTableProps) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   
-  const columns = React.useMemo(() => getColumns({ onViewApplication }), [onViewApplication]);
+  const columns = React.useMemo(() => getColumns({ onViewApplication, onMakePayment }), [onViewApplication, onMakePayment]);
 
   const table = useReactTable({
     data,
