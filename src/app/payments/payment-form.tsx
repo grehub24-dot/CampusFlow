@@ -295,14 +295,14 @@ export default function PaymentForm({
             id="amountPaid"
             type="number"
             value={amountPaid}
-            onChange={(e) => setAmountPaid(parseFloat(e.target.value))}
+            onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
           />
         </div>
          <div>
           <Label>Balance (GHS)</Label>
           <Input
             type="number"
-            value={balance.toFixed(2)}
+            value={parseFloat(balance.toFixed(2))}
             readOnly
             className="bg-muted font-bold"
           />
