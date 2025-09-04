@@ -18,7 +18,7 @@ const GenerateInsightfulReportsInputSchema = z.object({
   reportType: z
     .string()
     .describe(
-      'The type of report to generate (admissions, student demographics, financial data, academic progress)'
+      'The type of report to generate (admissions, student demographics, financial data, academic progress, executive brief)'
     ),
   additionalInstructions: z
     .string()
@@ -32,7 +32,9 @@ export type GenerateInsightfulReportsInput = z.infer<
 
 const GenerateInsightfulReportsOutputSchema = z.object({
   reportContent: z.string().describe('The generated report content.'),
-  reportFormat: z.string().describe('The format of the report (e.g., text, CSV, chart).'),
+  reportFormat: z
+    .string()
+    .describe('The format of the report (e.g., text, CSV, chart).'),
 });
 
 export type GenerateInsightfulReportsOutput = z.infer<
@@ -52,13 +54,88 @@ const prompt = ai.definePrompt({
   prompt: `You are an AI assistant specialized in generating insightful reports based on provided data.
 
 You will generate a report based on the report type specified by the user, and any additional instructions provided.
-You must also determine the most suitable format for the content requested.  The format should be most suitable for the content, be it text, CSV, or a chart.
+You must also determine the most suitable format for the content requested. The format should be most suitable for the content, be it text, CSV, or a chart.
 
+{{#ifCond reportType '==' 'executive brief'}}
+
+Please generate a report using the following "Executive Brief" template. Use markdown for tables.
+
+**CampusFlow Mini–School Executive Brief**
+(Condensed to two pages for board & PTA circulation)
+School Year 2024/25 • 150 Learners • 15 Staff • 1 Bus • Creche → Primary 5
+
+**📌 Snapshot (as at 05 Sep 2025)**
+| Enrolment | Staffing | Finance (YTD Aug) | Transport |
+|---|---|---|---|
+| 150 learners across 7 grade levels (Creche, Nursery 1–2, KG 1–2, Primary 1–5) | 15 total (9 teachers, 3 assistants, 2 admin, 1 driver) | Revenue: GHS 1.12 M • Surplus: GHS 183 k (16 %) | 1 33-seater bus, 98 % on-time arrival |
+
+**📈 Key Metrics (vs. 2023/24)**
+| Admissions | Finance | Academics |
+|---|---|---|
+| +12 % new intake (17 vs 15) driven by Creche & Primary 1 | Fee collection rate 97 % (up from 93 %) • No arrears > 30 days | Mean grade-point 2.9/4.0 (▲ 0.2) • Zero Primary 5 failures |
+
+**💰 Income & Expenditure (GHS ‘000)**
+| Income | Amount | Expenditure | Amount |
+|---|---|---|---|
+| Tuition & Fees | 1,020 | Staff Salaries & Benefits | 540 |
+| Transport Levy | 80 | Learning Materials | 115 |
+| Misc. (Uniform, Books) | 20 | Bus Operations & Fuel | 85 |
+| Total | 1,120 | Utilities & Maintenance | 97 |
+| | | Admin & Audit | 65 |
+| | | Depreciation / Reserves | 35 |
+| Surplus | 183 | Total | 937 |
+
+**🎯 Immediate Priorities (Next 90 Days)**
+1.  **Teacher Up-skilling** – 3-day phonics workshop for KG staff (budget GHS 4 k).
+2.  **Bus Replacement Fund** – Seed GHS 25 k into sinking fund; target new 52-seater by 2027.
+3.  **Digital Assessment Roll-out** – Deploy tablet-based literacy tests in Primary 3–5 (pilot 40 pupils).
+4.  **Safety Audit** – Fire-drill & first-aid refresher before term break.
+
+**📊 Dashboard KPIs**
+| KPI | Target | Aug 2025 Actual | Status |
+|---|---|---|---|
+| Fee collection rate | ≥ 95 % | 97 % | ✅ |
+| Average class size | ≤ 25 | 21.4 | ✅ |
+| Bus utilization | ≥ 80 % | 91 % | ✅ |
+| Teacher : Pupil ratio | ≥ 1 : 12 | 1 : 10 | ✅ |
+
+*Prepared by: Finance & Admin Office*
+*Next Review: 30 Nov 2025*
+
+{{else}}
 Report Type: {{{reportType}}}
 Additional Instructions: {{{additionalInstructions}}}
-
 Ensure the report is well-structured, easy to understand, and provides valuable insights.
+{{/ifCond}}
 `,
+  helpers: {
+    ifCond: (v1: any, operator: string, v2: any, options: any) => {
+      switch (operator) {
+        case '==':
+          return v1 == v2 ? options.fn(this) : options.inverse(this);
+        case '===':
+          return v1 === v2 ? options.fn(this) : options.inverse(this);
+        case '!=':
+          return v1 != v2 ? options.fn(this) : options.inverse(this);
+        case '!==':
+          return v1 !== v2 ? options.fn(this) : options.inverse(this);
+        case '<':
+          return v1 < v2 ? options.fn(this) : options.inverse(this);
+        case '<=':
+          return v1 <= v2 ? options.fn(this) : options.inverse(this);
+        case '>':
+          return v1 > v2 ? options.fn(this) : options.inverse(this);
+        case '>=':
+          return v1 >= v2 ? options.fn(this) : options.inverse(this);
+        case '&&':
+          return v1 && v2 ? options.fn(this) : options.inverse(this);
+        case '||':
+          return v1 || v2 ? options.fn(this) : options.inverse(this);
+        default:
+          return options.inverse(this);
+      }
+    },
+  },
 });
 
 const generateInsightfulReportsFlow = ai.defineFlow(
@@ -67,8 +144,14 @@ const generateInsightfulReportsFlow = ai.defineFlow(
     inputSchema: GenerateInsightfulReportsInputSchema,
     outputSchema: GenerateInsightfulReportsOutputSchema,
   },
-  async input => {
+  async (input) => {
     const {output} = await prompt(input);
+    if (input.reportType === 'executive brief') {
+      return {
+        reportContent: output!.reportContent,
+        reportFormat: 'text',
+      };
+    }
     return output!;
   }
 );

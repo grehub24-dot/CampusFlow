@@ -87,6 +87,7 @@ export default function ReportsPage() {
                           <SelectItem value="student demographics">Student Demographics</SelectItem>
                           <SelectItem value="financial data">Financial Data</SelectItem>
                           <SelectItem value="academic progress">Academic Progress</SelectItem>
+                          <SelectItem value="executive brief">Executive Brief</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
