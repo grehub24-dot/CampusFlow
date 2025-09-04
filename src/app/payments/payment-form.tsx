@@ -187,7 +187,11 @@ export default function PaymentForm({
         .reduce((sum, p) => sum + p.amount, 0);
   }, [selectedStudent, currentTerm, payments]);
 
-  const balance = useMemo(() => totalAmountDue - previouslyPaid - currentAmountPaid, [totalAmountDue, previouslyPaid, currentAmountPaid]);
+  const balance = useMemo(() => {
+    const calculatedBalance = totalAmountDue - previouslyPaid - currentAmountPaid;
+    return Math.max(0, calculatedBalance);
+  }, [totalAmountDue, previouslyPaid, currentAmountPaid]);
+
   const change = useMemo(() => {
     if (amountTendered > 0 && amountTendered >= currentAmountPaid) {
       return amountTendered - currentAmountPaid;
@@ -326,7 +330,7 @@ export default function PaymentForm({
           )}
         </div>
         {allFeeItemsForForm.length > 0 && (
-          <div className="border-t mt-4 pt-4 flex justify-between items-center font-bold text-2xl">
+          <div className="border-t mt-4 pt-4 flex justify-between items-center font-bold text-3xl">
               <span>Total Bill</span>
               <span>GHS {totalAmountDue.toFixed(2)}</span>
           </div>
@@ -390,7 +394,7 @@ export default function PaymentForm({
                 value={`GHS ${balance.toFixed(2)}`}
                 readOnly
                 className={cn(
-                  "bg-background font-bold h-auto p-2 text-base",
+                  "bg-background font-bold h-auto p-2",
                   balance > 0 ? "text-red-500" : "text-foreground"
                 )}
               />
@@ -413,7 +417,7 @@ export default function PaymentForm({
                 type="text"
                 value={`GHS ${change.toFixed(2)}`}
                 readOnly
-                className="bg-background font-bold text-green-600 text-sm h-auto p-2"
+                className="bg-background font-bold text-green-600 text-base h-auto p-2"
               />
             </div>
           )}
@@ -431,7 +435,3 @@ export default function PaymentForm({
     </form>
   );
 }
-
-    
-
-    
