@@ -5,7 +5,8 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import type { IntegrationSettings } from "@/types";
 
-const FROG_API_BASE_URL = 'https://api.wigal.com.gh/v1';
+const FROG_API_BASE_URL_V1 = 'https://api.wigal.com.gh/v1';
+const FROG_API_BASE_URL_V3 = 'https://frogapi.wigal.com.gh/api/v3';
 
 
 async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string }> {
@@ -14,35 +15,34 @@ async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string 
 
     if (docSnap.exists()) {
         const settings = docSnap.data() as IntegrationSettings;
+        const apiKey = settings.frogApiKey;
+        if (!apiKey) {
+            console.error("Frog API Key is not configured in settings.");
+            throw new Error("Frog API Key is not configured in settings.");
+        }
         return {
-            apiKey: settings.frogApiKey || '',
+            apiKey: apiKey,
             senderId: settings.frogSenderId || 'CampusFlow',
         };
     }
 
     // Fallback or default values if no settings are found
-    return { 
-        apiKey: process.env.FROG_API_KEY || '', 
-        senderId: process.env.FROG_SENDER_ID || 'CampusFlow' 
-    };
+    console.error("Frog API settings are not configured.");
+    throw new Error("Frog API settings are not configured.");
 }
 
 
 // This is a server-side function. It will not be exposed to the client.
 export async function sendSms(recipient: string, message: string) {
-  const url = `${FROG_API_BASE_URL}/sms/send`;
-  const { apiKey, senderId } = await getFrogCredentials();
-
-  if (!apiKey) {
-    return { success: false, error: "Frog API Key is not configured in settings." };
-  }
+  const url = `${FROG_API_BASE_URL_V1}/sms/send`;
   
   try {
+    const { apiKey, senderId } = await getFrogCredentials();
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'API-KEY': apiKey
       },
       body: JSON.stringify({
         to: recipient,
@@ -51,13 +51,12 @@ export async function sendSms(recipient: string, message: string) {
       })
     });
 
+    const data = await response.json();
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Frog API Error:', errorData);
-      throw new Error(errorData.message || 'Failed to send SMS');
+      console.error('Frog API Error:', data);
+      throw new Error(data.message || 'Failed to send SMS');
     }
 
-    const data = await response.json();
     return { success: true, data };
   } catch (error) {
     console.error('Error sending SMS:', error);
@@ -66,30 +65,26 @@ export async function sendSms(recipient: string, message: string) {
 }
 
 export async function getBalance() {
-    const url = `${FROG_API_BASE_URL}/user/balance`;
-    const { apiKey } = await getFrogCredentials();
-
-    if (!apiKey) {
-      return { success: false, error: "Frog API Key is not configured in settings.", balance: 0 };
-    }
-
+    const url = `${FROG_API_BASE_URL_V3}/balance`;
+    
     try {
+        const { apiKey } = await getFrogCredentials();
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${apiKey}`
+                'API-KEY': apiKey
             }
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Frog API Error:', errorData);
-            throw new Error(errorData.message || 'Failed to fetch balance');
-        }
-
+        
         const data = await response.json();
-        // Assuming the balance is in a property called 'balance'
-        return { success: true, balance: data.balance || 0 };
+
+        if (!response.ok || data.status !== 'SUCCESS') {
+            console.error('Frog API Error:', data);
+            throw new Error(data.message || 'Failed to fetch balance');
+        }
+        
+        const smsBalance = data.data?.bundles?.SMS || 0;
+        return { success: true, balance: smsBalance };
     } catch (error) {
         console.error('Error fetching balance:', error);
         return { success: false, error: (error as Error).message, balance: 0 };
