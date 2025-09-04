@@ -216,17 +216,18 @@ export default function PaymentForm({
 
     try {
       const itemsToPay = allFeeItemsForForm.filter((i) => checkedItems[i.name]);
-      const newStatus = balance <= 0 ? 'Paid' : 'Part-Payment';
+      const finalBalance = totalAmountDue - previouslyPaid - currentAmountPaid;
+      const newStatus = finalBalance <= 0 ? 'Paid' : 'Part-Payment';
 
       const payload = {
         studentId: selectedStudent.id,
         studentName: selectedStudent.name,
         amount: currentAmountPaid,
         totalAmountDue: totalAmountDue,
-        balance: balance,
+        balance: finalBalance,
         receiptNo: receiptNo,
         date: new Date().toISOString(),
-        status: newStatus,
+        status: 'Paid', // Payment itself is always considered paid/complete
         paymentMethod,
         academicYear: currentTerm.academicYear,
         term: currentTerm.session,
