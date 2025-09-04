@@ -376,13 +376,7 @@ export default function StudentsPage() {
                 Export
             </Button>
 
-             <Dialog open={isFormDialogOpen} onOpenChange={handleFormDialogClose}>
-              <DialogTrigger asChild>
-                <Button onClick={handleAddNewStudent}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Student
-                </Button>
-              </DialogTrigger>
+            <Dialog open={isFormDialogOpen} onOpenChange={handleFormDialogClose}>
               <DialogContent className="sm:max-w-[800px]">
                 <DialogHeader>
                   <DialogTitle>{selectedStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>
