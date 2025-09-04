@@ -218,7 +218,7 @@ export default function PaymentForm({
       <div>
         <Label htmlFor="student-select">Student</Label>
         <Select
-          onValuechange={setSelectedStudentId}
+          onValueChange={setSelectedStudentId}
           value={selectedStudentId}
           disabled={!!defaultStudentId}
         >
