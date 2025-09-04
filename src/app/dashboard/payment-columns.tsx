@@ -17,9 +17,10 @@ import { MoreHorizontal } from "lucide-react"
 
 type ColumnsProps = {
   onViewPayment: (payment: Payment) => void;
+  onViewStudent: (studentId: string) => void;
 }
 
-export const paymentColumns = ({ onViewPayment }: ColumnsProps): ColumnDef<Payment>[] => [
+export const paymentColumns = ({ onViewPayment, onViewStudent }: ColumnsProps): ColumnDef<Payment>[] => [
   {
     accessorKey: "studentName",
     header: "Student Name",
@@ -74,7 +75,7 @@ export const paymentColumns = ({ onViewPayment }: ColumnsProps): ColumnDef<Payme
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onViewPayment(payment)}>View Payment</DropdownMenuItem>
-                <DropdownMenuItem>View Student</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onViewStudent(payment.studentId)}>View Student</DropdownMenuItem>
             </DropdownMenuContent>
             </DropdownMenu>
         </div>

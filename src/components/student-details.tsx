@@ -5,18 +5,19 @@ import React from 'react';
 import type { Student } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Book, Calendar, Phone, Mail, Home, BadgeInfo, BookOpen, Cake } from 'lucide-react';
+import { User, Book, Calendar, Phone, Mail, Home, BadgeInfo, BookOpen, Cake, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
 
-const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined | null | number }) => (
+const DetailItem = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | undefined | null | number, children?: React.ReactNode }) => (
     <div className="flex items-start gap-3">
         <Icon className="h-5 w-5 text-muted-foreground mt-1" />
         <div>
             <p className="text-sm text-muted-foreground">{label}</p>
-            <p className="font-medium">{value || 'N/A'}</p>
+            {value && <p className="font-medium">{value}</p>}
+            {children && <div className="font-medium">{children}</div>}
         </div>
     </div>
 );
@@ -40,6 +41,7 @@ export function StudentDetails({ student }: StudentDetailsProps) {
   
    const paymentStatusVariant = {
         "Paid": "default",
+        "Part-Payment": "outline",
         "Pending": "secondary",
         "Unpaid": "destructive",
       }[student.paymentStatus || 'Pending'] ?? "secondary" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
@@ -92,7 +94,9 @@ export function StudentDetails({ student }: StudentDetailsProps) {
                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <DetailItem icon={BookOpen} label="Admission Term" value={`${student.admissionTerm || 'N/A'}, ${student.admissionYear || 'N/A'}`} />
                     <DetailItem icon={Calendar} label="Admission Date" value={student.admissionDate ? format(new Date(student.admissionDate), 'PPP') : 'N/A'} />
-                    <DetailItem icon={BadgeInfo} label="Payment Status" value={student.paymentStatus} />
+                    <DetailItem icon={Wallet} label="Payment Status">
+                        <Badge variant={paymentStatusVariant} className="capitalize">{student.paymentStatus || 'Pending'}</Badge>
+                    </DetailItem>
                  </div>
             </div>
 

@@ -20,6 +20,7 @@ import { paymentColumns } from '../dashboard/payment-columns';
 import { invoiceColumns } from '../dashboard/invoice-columns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { PaymentDetails } from '@/components/payment-details';
+import { StudentDetails } from '@/components/student-details';
 
 
 export default function PaymentsPage() {
@@ -32,7 +33,9 @@ export default function PaymentsPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
   const [selectedPayment, setSelectedPayment] = React.useState<Payment | null>(null);
-  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
+  const [isPaymentSheetOpen, setIsPaymentSheetOpen] = React.useState(false);
+  const [isStudentSheetOpen, setIsStudentSheetOpen] = React.useState(false);
 
 
   const { toast } = useToast();
@@ -93,10 +96,24 @@ export default function PaymentsPage() {
   
   const handleViewPayment = (payment: Payment) => {
     setSelectedPayment(payment);
-    setIsSheetOpen(true);
+    setIsPaymentSheetOpen(true);
+  }
+
+  const handleViewStudent = (studentId: string) => {
+    const student = students.find(s => s.id === studentId);
+    if (student) {
+        setSelectedStudent(student);
+        setIsStudentSheetOpen(true);
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find student details.'})
+    }
   }
   
-  const memoizedPaymentColumns = React.useMemo(() => paymentColumns({ onViewPayment: handleViewPayment }), [handleViewPayment]);
+  const memoizedPaymentColumns = React.useMemo(
+      () => paymentColumns({ onViewPayment: handleViewPayment, onViewStudent: handleViewStudent }),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [students]
+  );
 
 
   const totalRevenue = payments.reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0);
@@ -183,12 +200,21 @@ export default function PaymentsPage() {
         </TabsContent>
       </Tabs>
       
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+      <Sheet open={isPaymentSheetOpen} onOpenChange={setIsPaymentSheetOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Payment Details</SheetTitle>
           </SheetHeader>
           {selectedPayment && <PaymentDetails payment={selectedPayment} />}
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={isStudentSheetOpen} onOpenChange={setIsStudentSheetOpen}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Student Details</SheetTitle>
+          </SheetHeader>
+          {selectedStudent && <StudentDetails student={selectedStudent} />}
         </SheetContent>
       </Sheet>
     </>
