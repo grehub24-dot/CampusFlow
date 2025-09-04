@@ -51,7 +51,24 @@ export default function PaymentForm({
   const [receiptNo, setReceiptNo] = useState('');
   const [amountPaid, setAmountPaid] = useState(0);
   const { toast } = useToast();
-  
+  const [receiptLabel, setReceiptLabel] = useState('Receipt No');
+
+  useEffect(() => {
+    switch (paymentMethod) {
+      case 'Momo':
+        setReceiptLabel('Reference No.');
+        break;
+      case 'Bank Transfer':
+        setReceiptLabel('Transfer ID');
+        break;
+      case 'Cheque':
+        setReceiptLabel('Cheque No.');
+        break;
+      default:
+        setReceiptLabel('Receipt No.');
+    }
+  }, [paymentMethod]);
+
   useEffect(() => {
     const feeItemsQuery = query(collection(db, "fee-items"));
     const unsubscribeFeeItems = onSnapshot(feeItemsQuery, (snapshot) => {
@@ -201,7 +218,7 @@ export default function PaymentForm({
       <div>
         <Label htmlFor="student-select">Student</Label>
         <Select
-          onValueChange={setSelectedStudentId}
+          onValuechange={setSelectedStudentId}
           value={selectedStudentId}
           disabled={!!defaultStudentId}
         >
@@ -223,7 +240,7 @@ export default function PaymentForm({
         <div className="space-y-2 border rounded-md p-4">
           {allFeeItemsForForm.length > 0 ? allFeeItemsForForm.map((item) => (
             <div
-              key={item.name}
+              key={item.id}
               className="flex justify-between items-center"
             >
               <div className="flex items-center gap-2">
@@ -263,16 +280,6 @@ export default function PaymentForm({
       
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="receiptNo">Receipt No</Label>
-          <Input
-            id="receiptNo"
-            type="text"
-            value={receiptNo}
-            onChange={(e) => setReceiptNo(e.target.value)}
-            placeholder="e.g. 12345"
-          />
-        </div>
-        <div>
             <Label htmlFor="payment-method">Payment Method</Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
             <SelectTrigger id="payment-method">
@@ -285,6 +292,16 @@ export default function PaymentForm({
                 <SelectItem value="Cheque">Cheque</SelectItem>
             </SelectContent>
             </Select>
+        </div>
+        <div>
+          <Label htmlFor="receiptNo">{receiptLabel}</Label>
+          <Input
+            id="receiptNo"
+            type="text"
+            value={receiptNo}
+            onChange={(e) => setReceiptNo(e.target.value)}
+            placeholder="e.g. 12345"
+          />
         </div>
       </div>
 
