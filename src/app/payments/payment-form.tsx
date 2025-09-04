@@ -23,7 +23,6 @@ interface Props {
 
 export default function PaymentForm({ students, feeStructures, currentTerm, onSuccess, defaultStudentId }: Props) {
   const [selectedStudentId, setSelectedStudentId] = useState<string>(defaultStudentId || '');
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [total, setTotal] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
@@ -36,6 +35,7 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
 
   const matchingStructure = useMemo(() => {
     if (!selectedStudent || !selectedStudent.classId || !currentTerm) return null;
+    // Find the fee structure that matches the student's class and the current term.
     return feeStructures.find(
       fs =>
         fs.classId === selectedStudent.classId &&
@@ -78,18 +78,11 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
 
   useEffect(() => {
     if (!displayItems.length) {
-      setCheckedItems({});
       setTotal(0);
       return;
     }
 
-    const initial: Record<string, boolean> = {};
-    let initialTotal = 0;
-    displayItems.forEach(item => {
-      initial[item.name] = true;
-      initialTotal += item.amount;
-    });
-    setCheckedItems(initial);
+    const initialTotal = displayItems.reduce((sum, item) => sum + item.amount, 0);
     setTotal(initialTotal);
   }, [displayItems]);
   
@@ -105,9 +98,7 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
     setIsSubmitting(true);
 
     try {
-      const itemsToPay = displayItems
-        .filter(item => checkedItems[item.name])
-        .map(item => ({...item, included: true }));
+      const itemsToPay = displayItems.map(item => ({...item, included: true }));
 
       const payload = {
         studentId: selectedStudent.id,
