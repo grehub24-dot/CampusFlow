@@ -4,13 +4,13 @@
 import React from 'react';
 import { collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { FeeStructure, SchoolClass, AcademicTerm } from '@/types';
+import type { FeeStructure, SchoolClass, AcademicTerm, FeeItem } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import type { SubmitHandler } from 'react-hook-form';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Loader2, PlusCircle, MoreHorizontal, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -36,6 +36,7 @@ export function FeeStructureSettings() {
     const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
     const [classes, setClasses] = React.useState<SchoolClass[]>([]);
     const [terms, setTerms] = React.useState<AcademicTerm[]>([]);
+    const [feeItems, setFeeItems] = React.useState<FeeItem[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
@@ -66,11 +67,18 @@ export function FeeStructureSettings() {
             const data: AcademicTerm[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AcademicTerm));
             setTerms(data);
         });
+        
+        const feeItemsQuery = query(collection(db, "fee-items"));
+        const unsubscribeFeeItems = onSnapshot(feeItemsQuery, (snapshot) => {
+            const data: FeeItem[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeItem));
+            setFeeItems(data);
+        });
 
         return () => {
             unsubscribeFeeStructures();
             unsubscribeClasses();
             unsubscribeTerms();
+            unsubscribeFeeItems();
         };
     }, [toast]);
     
@@ -109,19 +117,23 @@ export function FeeStructureSettings() {
             setStructureToDelete(null);
         }
     }
+    
+    const calculateTotal = (items: { feeItemId: string, amount: number }[]) => {
+        return items.reduce((acc, item) => acc + (item.amount || 0), 0);
+    }
 
     const onSubmit: SubmitHandler<FormValues> = async (values) => {
         setIsSubmitting(true);
         try {
+            const feeItemsData = values.items.map(item => ({
+                feeItemId: item.feeItemId,
+                amount: item.amount || 0
+            }));
+
             const data = {
                 classId: values.classId,
                 academicTermId: values.academicTermId,
-                admissionFee: values.admissionFee || 0,
-                schoolFees: values.schoolFees || 0,
-                booksFee: values.booksFee || 0,
-                uniformFee: values.uniformFee || 0,
-                printingFee: values.printingFee || 0,
-                others: values.others || 0,
+                items: feeItemsData
             };
 
             if (selectedFeeStructure) {
@@ -149,7 +161,7 @@ export function FeeStructureSettings() {
                 <div className="flex items-center justify-between">
                     <div>
                         <CardTitle>Fee Structure Management</CardTitle>
-                        <CardDescription>Define fee structures for different classes and academic terms.</CardDescription>
+                        <CardDescription>Define fee amounts for different classes and academic terms.</CardDescription>
                     </div>
                      <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
                         <DialogTrigger asChild>
@@ -168,6 +180,7 @@ export function FeeStructureSettings() {
                                   defaultValues={selectedFeeStructure || undefined}
                                   classes={classes}
                                   terms={terms}
+                                  feeItems={feeItems}
                                />
                             </div>
                             {isSubmitting && (
@@ -186,21 +199,19 @@ export function FeeStructureSettings() {
                             <TableRow>
                                 <TableHead>Class</TableHead>
                                 <TableHead>Term</TableHead>
-                                <TableHead>Admission Fee</TableHead>
-                                <TableHead>School Fees</TableHead>
+                                <TableHead className="text-right">Total Amount</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow><TableCell colSpan={5} className="h-24 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                                <TableRow><TableCell colSpan={4} className="h-24 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
                             ) : feeStructures.length > 0 ? (
                                 feeStructures.map(structure => (
                                     <TableRow key={structure.id}>
                                         <TableCell>{getClassName(structure.classId)}</TableCell>
                                         <TableCell>{getTermName(structure.academicTermId)}</TableCell>
-                                        <TableCell>{structure.admissionFee?.toLocaleString()}</TableCell>
-                                        <TableCell>{structure.schoolFees?.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right">GHS {calculateTotal(structure.items).toLocaleString()}</TableCell>
                                         <TableCell className="text-right">
                                              <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -220,7 +231,7 @@ export function FeeStructureSettings() {
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow><TableCell colSpan={5} className="h-24 text-center">No fee structures found.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={4} className="h-24 text-center">No fee structures found.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>

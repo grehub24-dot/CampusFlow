@@ -28,10 +28,9 @@ export type Student = {
   currentTermNumber?: number;
 };
 
-export type FeeItem = {
+export type PaymentFeeItem = {
     name: string;
     amount: number;
-    included?: boolean;
 }
 
 export type Payment = {
@@ -45,7 +44,7 @@ export type Payment = {
   academicYear?: string;
   term?: string;
   notes?: string;
-  items?: FeeItem[];
+  items?: PaymentFeeItem[];
 };
 
 export type Invoice = {
@@ -84,16 +83,23 @@ export type SchoolClass = {
   category: 'Pre-school' | 'Primary' | 'Junior High School';
 };
 
+export type FeeItem = {
+    id: string;
+    name: string;
+    isOptional: boolean;
+    appliesTo: ('new' | 'term1' | 'term2_3')[];
+}
+
+export type FeeStructureItem = {
+    feeItemId: string;
+    amount: number;
+}
+
 export type FeeStructure = {
-  id: string;
+  id:string;
   classId: string;
   academicTermId: string;
-  admissionFee?: number;
-  schoolFees?: number;
-  booksFee?: number;
-  uniformFee?: number;
-  printingFee?: number;
-  others?: number;
+  items: FeeStructureItem[];
 }
 
 export type Message = {

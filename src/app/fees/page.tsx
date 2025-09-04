@@ -4,7 +4,7 @@
 import React from 'react';
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { FeeStructure, SchoolClass, AcademicTerm } from '@/types';
+import type { FeeStructure, SchoolClass, AcademicTerm, FeeItem } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 import { PageHeader } from "@/components/page-header";
@@ -18,7 +18,7 @@ type FeeSummary = {
     newAdmissionTotal: number;
     term1Total: number;
     term2And3Total: number;
-    printingFee: number;
+    optionalTotal: number;
     hasStructure: boolean;
 }
 
@@ -30,6 +30,7 @@ export default function FeesPage() {
     const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
     const [classes, setClasses] = React.useState<SchoolClass[]>([]);
     const [terms, setTerms] = React.useState<AcademicTerm[]>([]);
+    const [feeItems, setFeeItems] = React.useState<FeeItem[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const { toast } = useToast();
 
@@ -74,6 +75,12 @@ export default function FeesPage() {
              if (feeStructures.length > 0 && classes.length > 0) setIsLoading(false);
         });
         
+        const feeItemsQuery = query(collection(db, "fee-items"));
+        const unsubscribeFeeItems = onSnapshot(feeItemsQuery, (snapshot) => {
+            const data: FeeItem[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeItem));
+            setFeeItems(data);
+        });
+
         // In case collections are empty, we should not keep loading forever
         const timer = setTimeout(() => setIsLoading(false), 5000);
 
@@ -82,29 +89,48 @@ export default function FeesPage() {
             unsubscribeFeeStructures();
             unsubscribeClasses();
             unsubscribeTerms();
+            unsubscribeFeeItems();
         };
     }, [toast]);
 
     const calculateFees = (classId: string): FeeSummary => {
-        // Find the current term to locate the relevant fee structure
         const currentTerm = terms.find(t => t.isCurrent);
         if (!currentTerm) {
-            return { newAdmissionTotal: 0, term1Total: 0, term2And3Total: 0, printingFee: 0, hasStructure: false };
+            return { newAdmissionTotal: 0, term1Total: 0, term2And3Total: 0, optionalTotal: 0, hasStructure: false };
         }
         
         const structure = feeStructures.find(fs => fs.classId === classId && fs.academicTermId === currentTerm.id);
 
         if (!structure) {
-            return { newAdmissionTotal: 0, term1Total: 0, term2And3Total: 0, printingFee: 0, hasStructure: false };
+            return { newAdmissionTotal: 0, term1Total: 0, term2And3Total: 0, optionalTotal: 0, hasStructure: false };
         }
+        
+        let newAdmissionTotal = 0;
+        let term1Total = 0;
+        let term2And3Total = 0;
+        let optionalTotal = 0;
 
-        const { admissionFee = 0, schoolFees = 0, booksFee = 0, uniformFee = 0, others = 0, printingFee = 0 } = structure;
+        structure.items.forEach(item => {
+            const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
+            if (feeItemInfo) {
+                if (feeItemInfo.isOptional) {
+                    optionalTotal += item.amount;
+                } else {
+                    if (feeItemInfo.appliesTo.includes('new')) {
+                        newAdmissionTotal += item.amount;
+                    }
+                    if (feeItemInfo.appliesTo.includes('term1')) {
+                        term1Total += item.amount;
+                    }
+                    if (feeItemInfo.appliesTo.includes('term2_3')) {
+                        term2And3Total += item.amount;
+                    }
+                }
+            }
+        });
 
-        const newAdmissionTotal = admissionFee + schoolFees + booksFee + uniformFee + others;
-        const term1Total = schoolFees + booksFee + others;
-        const term2And3Total = schoolFees + others;
 
-        return { newAdmissionTotal, term1Total, term2And3Total, printingFee, hasStructure: true };
+        return { newAdmissionTotal, term1Total, term2And3Total, optionalTotal, hasStructure: true };
     };
 
     return (
@@ -130,7 +156,7 @@ export default function FeesPage() {
                                     <TableHead className="text-right">New Admission Total</TableHead>
                                     <TableHead className="text-right">Term 1 Total (Continuing)</TableHead>
                                     <TableHead className="text-right">Term 2/3 Total (Continuing)</TableHead>
-                                    <TableHead className="text-right">Printing Fee (Optional)</TableHead>
+                                    <TableHead className="text-right">Optional Items Total</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -151,7 +177,7 @@ export default function FeesPage() {
                                                         <TableCell className="text-right">GHS {fees.newAdmissionTotal.toFixed(2)}</TableCell>
                                                         <TableCell className="text-right">GHS {fees.term1Total.toFixed(2)}</TableCell>
                                                         <TableCell className="text-right">GHS {fees.term2And3Total.toFixed(2)}</TableCell>
-                                                        <TableCell className="text-right">GHS {fees.printingFee.toFixed(2)}</TableCell>
+                                                        <TableCell className="text-right">GHS {fees.optionalTotal.toFixed(2)}</TableCell>
                                                     </>
                                                 ) : (
                                                     <TableCell colSpan={4} className="text-center">

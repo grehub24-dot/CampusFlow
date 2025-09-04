@@ -7,11 +7,13 @@ import {
   collection,
   doc,
   updateDoc,
+  onSnapshot,
+  query
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 
-import type { Student, FeeStructure, FeeItem, AcademicTerm } from '@/types';
+import type { Student, FeeStructure, AcademicTerm, PaymentFeeItem, FeeItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,9 +45,19 @@ export default function PaymentForm({
   const [selectedStudentId, setSelectedStudentId] = useState<string>(
     defaultStudentId || ''
   );
+  const [feeItems, setFeeItems] = useState<FeeItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
   const { toast } = useToast();
+  
+  useEffect(() => {
+    const feeItemsQuery = query(collection(db, "fee-items"));
+    const unsubscribeFeeItems = onSnapshot(feeItemsQuery, (snapshot) => {
+        const data: FeeItem[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeItem));
+        setFeeItems(data);
+    });
+    return () => unsubscribeFeeItems();
+  }, []);
 
   const selectedStudent = useMemo(
     () => students.find((s) => s.id === selectedStudentId),
@@ -61,24 +73,24 @@ export default function PaymentForm({
     );
   }, [feeStructures, selectedStudent, currentTerm]);
 
-
-  const allFeeItems: FeeItem[] = useMemo(() => {
+  const allFeeItemsForForm: PaymentFeeItem[] = useMemo(() => {
     if (!matchingStructure) return [];
-    return [
-      { name: 'Admission Fee', amount: matchingStructure.admissionFee || 0 },
-      { name: 'School Fees', amount: matchingStructure.schoolFees || 0 },
-      { name: 'Books Fee', amount: matchingStructure.booksFee || 0 },
-      { name: 'Uniform Fee', amount: matchingStructure.uniformFee || 0 },
-      { name: 'Printing Fee', amount: matchingStructure.printingFee || 0 },
-      { name: 'Others', amount: matchingStructure.others || 0 },
-    ].filter(item => item.amount > 0); // Only include items with a cost
-  }, [matchingStructure]);
+    
+    return matchingStructure.items.map(item => {
+        const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
+        return {
+            name: feeItemInfo?.name || 'Unknown Fee',
+            amount: item.amount,
+            id: item.feeItemId,
+        };
+    }).filter(item => item.amount > 0);
+  }, [matchingStructure, feeItems]);
 
 
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!selectedStudent || !matchingStructure || !currentTerm) {
+    if (!selectedStudent || !matchingStructure || !currentTerm || feeItems.length === 0) {
       setCheckedItems({});
       return;
     }
@@ -92,45 +104,31 @@ export default function PaymentForm({
 
     let initialChecks: Record<string, boolean> = {};
 
-    if (isNewAdmission) {
-      initialChecks = {
-        'Admission Fee': true,
-        'School Fees': true,
-        'Books Fee': true,
-        'Uniform Fee': true,
-        'Others': true,
-        'Printing Fee': false,
-      };
-    } else if (termNumber === 1) {
-      initialChecks = {
-        'Admission Fee': false,
-        'School Fees': true,
-        'Books Fee': true,
-        'Uniform Fee': false,
-        'Others': true,
-        'Printing Fee': false,
-      };
-    } else { // Term 2 or 3
-       initialChecks = {
-        'Admission Fee': false,
-        'School Fees': true,
-        'Books Fee': false,
-        'Uniform Fee': false,
-        'Others': true,
-        'Printing Fee': false,
-      };
-    }
+    matchingStructure.items.forEach(item => {
+        const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
+        if (feeItemInfo) {
+            if (feeItemInfo.isOptional) {
+                initialChecks[feeItemInfo.name] = false;
+            } else if (isNewAdmission) {
+                initialChecks[feeItemInfo.name] = feeItemInfo.appliesTo.includes('new');
+            } else if (termNumber === 1) {
+                 initialChecks[feeItemInfo.name] = feeItemInfo.appliesTo.includes('term1');
+            } else {
+                 initialChecks[feeItemInfo.name] = feeItemInfo.appliesTo.includes('term2_3');
+            }
+        }
+    });
 
     setCheckedItems(initialChecks);
 
-  }, [selectedStudent, matchingStructure, currentTerm]);
+  }, [selectedStudent, matchingStructure, currentTerm, feeItems]);
 
   const total = useMemo(() => {
-    return allFeeItems.reduce(
+    return allFeeItemsForForm.reduce(
       (sum, item) => (checkedItems[item.name] ? sum + item.amount : sum),
       0
     );
-  }, [allFeeItems, checkedItems]);
+  }, [allFeeItemsForForm, checkedItems]);
 
   useEffect(() => {
     if (defaultStudentId) setSelectedStudentId(defaultStudentId);
@@ -145,7 +143,7 @@ export default function PaymentForm({
     setIsSubmitting(true);
 
     try {
-      const itemsToPay = allFeeItems.filter((i) => checkedItems[i.name]);
+      const itemsToPay = allFeeItemsForForm.filter((i) => checkedItems[i.name]);
 
       const payload = {
         studentId: selectedStudent.id,
@@ -156,7 +154,7 @@ export default function PaymentForm({
         paymentMethod,
         academicYear: currentTerm.academicYear,
         term: currentTerm.session,
-        items: itemsToPay,
+        items: itemsToPay.map(i => ({ name: i.name, amount: i.amount })),
       };
 
       await addDoc(collection(db, 'payments'), payload);
@@ -208,7 +206,7 @@ export default function PaymentForm({
       <div>
         <h3 className="font-medium mb-2">Fee Items</h3>
         <div className="space-y-2 border rounded-md p-4">
-          {allFeeItems.length > 0 ? allFeeItems.map((item) => (
+          {allFeeItemsForForm.length > 0 ? allFeeItemsForForm.map((item) => (
             <div
               key={item.name}
               className="flex justify-between items-center"
@@ -236,7 +234,7 @@ export default function PaymentForm({
             </p>
           )}
 
-          {allFeeItems.length > 0 && (
+          {allFeeItemsForForm.length > 0 && (
             <>
                 <hr className="my-2" />
                 <div className="flex justify-between items-center font-bold">

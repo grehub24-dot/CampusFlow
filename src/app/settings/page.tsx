@@ -21,6 +21,7 @@ import { AcademicSettings } from './academic-settings';
 import { ClassSettings } from './class-settings';
 import { FeeStructureSettings } from './fee-structure-settings';
 import { IntegrationsSettings } from './integrations-settings';
+import { FeeItemsSettings } from './fee-items-settings';
 
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
@@ -51,11 +52,12 @@ export default function SettingsPage() {
         description="Manage your school's information, user accounts, and system settings."
       />
       <Tabs defaultValue="school-info" className="space-y-4">
-        <TabsList>
+        <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="school-info">School Info</TabsTrigger>
           <TabsTrigger value="academic-year">Academic Year</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
-          <TabsTrigger value="fees">Fee Structure</TabsTrigger>
+          <TabsTrigger value="fee-items">Fee Items</TabsTrigger>
+          <TabsTrigger value="fee-structure">Fee Structure</TabsTrigger>
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
@@ -94,7 +96,11 @@ export default function SettingsPage() {
             <ClassSettings />
         </TabsContent>
 
-        <TabsContent value="fees">
+        <TabsContent value="fee-items">
+            <FeeItemsSettings />
+        </TabsContent>
+        
+        <TabsContent value="fee-structure">
             <FeeStructureSettings />
         </TabsContent>
         
