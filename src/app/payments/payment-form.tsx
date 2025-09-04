@@ -36,6 +36,9 @@ interface Props {
   defaultStudentId?: string;
 }
 
+const MANDATORY_NEW_ADMISSION_FEES = ['Admission fees', 'Books', 'Uniforms', 'School Fees'];
+
+
 export default function PaymentForm({
   students,
   feeStructures,
@@ -104,20 +107,34 @@ export default function PaymentForm({
             name: feeItemInfo?.name || 'Unknown Fee',
             amount: item.amount,
             id: item.feeItemId,
+            isOptional: feeItemInfo?.isOptional || false,
         };
     }).filter(item => item.amount > 0);
   }, [matchingStructure, feeItems]);
+
+  const isNewAdmissionForTerm = useMemo(() => {
+    if (!selectedStudent || !currentTerm) return false;
+     // Student is considered new if their admission term matches the current term.
+    const isNew = selectedStudent.admissionTerm === currentTerm.session &&
+                  selectedStudent.admissionYear === currentTerm.academicYear;
+    if (isNew) return true;
+
+    // Also check if any payment has been made for this term. If not, treat as first payment.
+    const paymentsThisTerm = payments.some(p => 
+      p.studentId === selectedStudent.id &&
+      p.academicYear === currentTerm.academicYear &&
+      p.term === currentTerm.session
+    );
+
+    return !paymentsThisTerm;
+
+  }, [selectedStudent, currentTerm, payments]);
 
   useEffect(() => {
     if (!selectedStudent || !matchingStructure || !currentTerm || feeItems.length === 0 || !Array.isArray(matchingStructure.items)) {
       setCheckedItems({});
       return;
     }
-    
-    const isNewAdmission = selectedStudent.isNewAdmission === true || (
-      selectedStudent.admissionTerm === currentTerm.session &&
-      selectedStudent.admissionYear === currentTerm.academicYear
-    );
     
     const termNumber = selectedStudent.currentTermNumber || parseInt(currentTerm.session.split(' ')[0], 10);
 
@@ -126,21 +143,29 @@ export default function PaymentForm({
     matchingStructure.items.forEach(item => {
         const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
         if (feeItemInfo) {
-            if (feeItemInfo.isOptional) {
-                initialChecks[feeItemInfo.name] = false;
-            } else if (isNewAdmission) {
-                initialChecks[feeItemInfo.name] = feeItemInfo.appliesTo.includes('new');
-            } else if (termNumber === 1) {
-                 initialChecks[feeItemInfo.name] = feeItemInfo.appliesTo.includes('term1');
+            if (isNewAdmissionForTerm) {
+                // Logic for new admissions
+                if (MANDATORY_NEW_ADMISSION_FEES.includes(feeItemInfo.name)) {
+                    initialChecks[feeItemInfo.name] = true; // Mandatory and checked
+                } else {
+                     initialChecks[feeItemInfo.name] = !feeItemInfo.isOptional; // Optional fees are unchecked
+                }
             } else {
-                 initialChecks[feeItemInfo.name] = feeItemInfo.appliesTo.includes('term2_3');
+                // Logic for continuing students
+                if (feeItemInfo.isOptional) {
+                    initialChecks[feeItemInfo.name] = false;
+                } else if (termNumber === 1) {
+                    initialChecks[feeItemInfo.name] = feeItemInfo.appliesTo.includes('term1');
+                } else {
+                    initialChecks[feeItemInfo.name] = feeItemInfo.appliesTo.includes('term2_3');
+                }
             }
         }
     });
 
     setCheckedItems(initialChecks);
 
-  }, [selectedStudent, matchingStructure, currentTerm, feeItems]);
+  }, [selectedStudent, matchingStructure, currentTerm, feeItems, isNewAdmissionForTerm]);
 
   const totalAmountDue = useMemo(() => {
     return allFeeItemsForForm.reduce(
@@ -156,29 +181,13 @@ export default function PaymentForm({
       setAmountPaid(0);
       return;
     }
-    // Get all payments for the student for the current term
+    
     const studentTermPayments = payments.filter(p => 
       p.studentId === selectedStudent.id &&
       p.academicYear === currentTerm.academicYear &&
       p.term === currentTerm.session
     );
     
-    // Sum up what has been paid for the currently selected fee items
-    let totalPaidForCheckedItems = 0;
-    const checkedItemNames = Object.keys(checkedItems).filter(key => checkedItems[key]);
-
-    studentTermPayments.forEach(payment => {
-      if (Array.isArray(payment.items)) {
-        payment.items.forEach(paidItem => {
-          if (checkedItemNames.includes(paidItem.name)) {
-            // This is tricky - a single payment can cover multiple items.
-            // A simpler approach is to calculate total paid vs total due for the term.
-          }
-        });
-      }
-    });
-    
-    // Simpler logic: What is the total amount paid vs the total amount due this term
     const totalPaidThisTerm = studentTermPayments.reduce((acc, p) => acc + p.amount, 0);
     const outstandingBalance = totalAmountDue - totalPaidThisTerm;
 
@@ -190,8 +199,10 @@ export default function PaymentForm({
     if (defaultStudentId) setSelectedStudentId(defaultStudentId);
   }, [defaultStudentId]);
 
-  const toggleCheck = (name: string) =>
+  const toggleCheck = (name: string, isMandatory: boolean) => {
+    if (isMandatory) return; // Do not allow unchecking mandatory fees for new admissions
     setCheckedItems((prev) => ({ ...prev, [name]: !prev[name] }));
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,8 +230,6 @@ export default function PaymentForm({
 
       await addDoc(collection(db, 'payments'), payload);
       
-      // Update student's overall payment status only if this payment clears their balance
-      // A more robust implementation would check all outstanding balances. For now, we update based on this single transaction.
       await updateDoc(doc(db, 'students', selectedStudent.id), {
         paymentStatus: newStatus,
       });
@@ -267,31 +276,37 @@ export default function PaymentForm({
       </div>
 
       <div>
-        <h3 className="font-medium mb-2">Fee Items</h3>
+        <h3 className="font-medium mb-2">
+            Fee Items for {currentTerm.session} ({currentTerm.academicYear})
+        </h3>
         <div className="space-y-2 border rounded-md p-4">
-          {allFeeItemsForForm.length > 0 ? allFeeItemsForForm.map((item) => (
-            <div
-              key={item.id}
-              className="flex justify-between items-center"
-            >
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id={item.name}
-                  checked={checkedItems[item.name] ?? false}
-                  onCheckedChange={() => toggleCheck(item.name)}
-                />
-                <Label
-                  htmlFor={item.name}
-                  className="text-sm font-normal cursor-pointer"
+          {allFeeItemsForForm.length > 0 ? allFeeItemsForForm.map((item) => {
+            const isMandatory = isNewAdmissionForTerm && MANDATORY_NEW_ADMISSION_FEES.includes(item.name);
+            return (
+                <div
+                key={item.id}
+                className="flex justify-between items-center"
                 >
-                  {item.name}
-                </Label>
-              </div>
-              <span className="text-sm font-medium">
-                GHS {item.amount.toFixed(2)}
-              </span>
-            </div>
-          )) : (
+                <div className="flex items-center gap-2">
+                    <Checkbox
+                    id={item.name}
+                    checked={checkedItems[item.name] ?? false}
+                    onCheckedChange={() => toggleCheck(item.name, isMandatory)}
+                    disabled={isMandatory}
+                    />
+                    <Label
+                    htmlFor={item.name}
+                    className={cn("text-sm font-normal", !isMandatory && "cursor-pointer")}
+                    >
+                    {item.name} {isMandatory && <span className="text-muted-foreground text-xs">(Mandatory)</span>}
+                    </Label>
+                </div>
+                <span className="text-sm font-medium">
+                    GHS {item.amount.toFixed(2)}
+                </span>
+                </div>
+            )
+          }) : (
             <p className="text-sm text-muted-foreground text-center py-4">
               No fee structure found for this student for the current term.
             </p>
@@ -369,3 +384,5 @@ export default function PaymentForm({
     </form>
   );
 }
+
+    
