@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 
 
@@ -100,12 +99,6 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
     }
   }, [defaultStudentId]);
 
-  const handleToggle = (itemName: string, amount: number) => {
-    const isChecked = checkedItems[itemName];
-    setCheckedItems(prev => ({ ...prev, [itemName]: !isChecked }));
-    setTotal(prev => isChecked ? prev - amount : prev + amount);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudent) return;
@@ -171,23 +164,18 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
           <h3 className="font-medium mb-2">Fee Items</h3>
           <div className="space-y-2 border rounded-md p-4">
             {displayItems.map(item => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between"
-              >
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    id={`fee-item-${item.name}`}
-                    checked={checkedItems[item.name] || false}
-                    onCheckedChange={() => handleToggle(item.name, item.amount)}
-                  />
-                  <Label htmlFor={`fee-item-${item.name}`} className="text-sm font-normal cursor-pointer">
-                    {item.name}
-                  </Label>
-                </div>
-                <span className="text-sm">GHS {item.amount.toFixed(2)}</span>
+              <div key={item.name} className="flex justify-between items-center">
+                <span className="text-sm">{item.name}</span>
+                <span className="text-sm font-medium">
+                  GHS {item.amount.toFixed(2)}
+                </span>
               </div>
             ))}
+            <hr className="my-2" />
+            <div className="flex justify-between items-center font-bold">
+              <span>Grand Total</span>
+              <span>GHS {total.toFixed(2)}</span>
+            </div>
           </div>
         </div>
       )}
