@@ -41,10 +41,10 @@ const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'K
 export function FeeStructureForm({ onSubmit, defaultValues, classes, terms, feeItems }: FeeStructureFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-        classId: defaultValues?.classId || '',
-        academicTermId: defaultValues?.academicTermId || '',
-        items: defaultValues?.items || [],
+    defaultValues: defaultValues || {
+        classId: '',
+        academicTermId: '',
+        items: [],
     },
   });
   
@@ -98,7 +98,7 @@ export function FeeStructureForm({ onSubmit, defaultValues, classes, terms, feeI
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Class</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={!!defaultValues}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select a class..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             {sortedClasses.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -114,7 +114,7 @@ export function FeeStructureForm({ onSubmit, defaultValues, classes, terms, feeI
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Academic Term</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={!!defaultValues}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select a term..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             {terms.map(t => <SelectItem key={t.id} value={t.id}>{`${t.session} (${t.academicYear})`}</SelectItem>)}
