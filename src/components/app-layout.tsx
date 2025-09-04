@@ -35,6 +35,7 @@ import {
 
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
+import { Toaster } from './ui/toaster';
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
