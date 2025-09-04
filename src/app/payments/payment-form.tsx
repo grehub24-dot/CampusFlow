@@ -2,17 +2,28 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  doc,
+  updateDoc,
+} from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+
 import type { Student, FeeStructure, FeeItem, AcademicTerm } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-
 
 interface Props {
   students: Student[];
@@ -22,97 +33,117 @@ interface Props {
   defaultStudentId?: string;
 }
 
-export default function PaymentForm({ students, feeStructures, currentTerm, onSuccess, defaultStudentId }: Props) {
-  const [selectedStudentId, setSelectedStudentId] = useState<string>(defaultStudentId || '');
-  const [total, setTotal] = useState<number>(0);
+export default function PaymentForm({
+  students,
+  feeStructures,
+  currentTerm,
+  onSuccess,
+  defaultStudentId,
+}: Props) {
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(
+    defaultStudentId || ''
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
   const { toast } = useToast();
-  const [feeItems, setFeeItems] = useState<FeeItem[]>([]);
-
 
   const selectedStudent = useMemo(
-    () => students.find(s => s.id === selectedStudentId),
+    () => students.find((s) => s.id === selectedStudentId),
     [students, selectedStudentId]
   );
 
   const matchingStructure = useMemo(() => {
     if (!selectedStudent || !selectedStudent.classId || !currentTerm) return null;
-    // Find the fee structure that matches the student's class and the current term.
     return feeStructures.find(
-      fs =>
+      (fs) =>
         fs.classId === selectedStudent.classId &&
         fs.academicTermId === currentTerm.id
     );
   }, [feeStructures, selectedStudent, currentTerm]);
 
+
+  const allFeeItems: FeeItem[] = useMemo(() => {
+    if (!matchingStructure) return [];
+    return [
+      { name: 'Admission Fee', amount: matchingStructure.admissionFee || 0 },
+      { name: 'School Fees', amount: matchingStructure.schoolFees || 0 },
+      { name: 'Books Fee', amount: matchingStructure.booksFee || 0 },
+      { name: 'Uniform Fee', amount: matchingStructure.uniformFee || 0 },
+      { name: 'Printing Fee', amount: matchingStructure.printingFee || 0 },
+      { name: 'Others', amount: matchingStructure.others || 0 },
+    ].filter(item => item.amount > 0); // Only include items with a cost
+  }, [matchingStructure]);
+
+
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+
   useEffect(() => {
-    if (!matchingStructure || !selectedStudent) {
-      setFeeItems([]);
+    if (!selectedStudent || !matchingStructure || !currentTerm) {
+      setCheckedItems({});
       return;
     }
 
-    const allItems: FeeItem[] = [];
+    const isNewAdmission = selectedStudent.admissionTerm === currentTerm.session &&
+                         selectedStudent.admissionYear === currentTerm.academicYear;
     
-    // ADMISSION FEE – check if new student
-    if (matchingStructure.admissionFee) {
-        allItems.push({ name: 'Admission Fee', amount: matchingStructure.admissionFee, included: !!selectedStudent.isNewAdmission });
+    const termNumber = parseInt(currentTerm.session.split(' ')[0], 10);
+
+    let initialChecks: Record<string, boolean> = {};
+
+    if (isNewAdmission) {
+      initialChecks = {
+        'Admission Fee': true,
+        'School Fees': true,
+        'Books Fee': true,
+        'Uniform Fee': true,
+        'Others': true,
+        'Printing Fee': false,
+      };
+    } else if (termNumber === 1) {
+      initialChecks = {
+        'Admission Fee': false,
+        'School Fees': true,
+        'Books Fee': true,
+        'Uniform Fee': false,
+        'Others': true,
+        'Printing Fee': false,
+      };
+    } else { // Term 2 or 3
+       initialChecks = {
+        'Admission Fee': false,
+        'School Fees': true,
+        'Books Fee': false,
+        'Uniform Fee': false,
+        'Others': true,
+        'Printing Fee': false,
+      };
     }
 
-    // Always include school fees
-    if (matchingStructure.schoolFees) {
-      allItems.push({ name: 'School Fees', amount: matchingStructure.schoolFees, included: true });
-    }
-    
-    // BOOKS & UNIFORM – check if NOT (old student AND 1st term)
-    const skipBooksUniform = !selectedStudent.isNewAdmission && selectedStudent.currentTermNumber === 1;
+    setCheckedItems(initialChecks);
 
-    if (matchingStructure.booksFee) {
-        allItems.push({ name: 'Books Fee', amount: matchingStructure.booksFee, included: !skipBooksUniform });
-    }
-    if (matchingStructure.uniformFee) {
-        allItems.push({ name: 'Uniform Fee', amount: matchingStructure.uniformFee, included: !skipBooksUniform });
-    }
+  }, [selectedStudent, matchingStructure, currentTerm]);
 
-    // Always include printing fees
-    if (matchingStructure.printingFee) {
-      allItems.push({ name: 'Printing Fee', amount: matchingStructure.printingFee, included: true });
-    }
-    if (matchingStructure.others) {
-      allItems.push({ name: 'Others', amount: matchingStructure.others, included: true });
-    }
-
-    setFeeItems(allItems);
-  }, [matchingStructure, selectedStudent]);
-
-
-  useEffect(() => {
-    const newTotal = feeItems.reduce((sum, item) => item.included ? sum + item.amount : sum, 0);
-    setTotal(newTotal);
-  }, [feeItems]);
-  
-  useEffect(() => {
-    if (defaultStudentId) {
-        setSelectedStudentId(defaultStudentId)
-    }
-  }, [defaultStudentId]);
-  
-  const handleFeeItemToggle = (itemName: string) => {
-    setFeeItems(prevItems =>
-      prevItems.map(item =>
-        item.name === itemName ? { ...item, included: !item.included } : item
-      )
+  const total = useMemo(() => {
+    return allFeeItems.reduce(
+      (sum, item) => (checkedItems[item.name] ? sum + item.amount : sum),
+      0
     );
-  };
+  }, [allFeeItems, checkedItems]);
 
+  useEffect(() => {
+    if (defaultStudentId) setSelectedStudentId(defaultStudentId);
+  }, [defaultStudentId]);
+
+  const toggleCheck = (name: string) =>
+    setCheckedItems((prev) => ({ ...prev, [name]: !prev[name] }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedStudent) return;
+    if (!selectedStudent || total <= 0) return;
     setIsSubmitting(true);
 
     try {
-      const itemsToPay = feeItems.filter(item => item.included);
+      const itemsToPay = allFeeItems.filter((i) => checkedItems[i.name]);
 
       const payload = {
         studentId: selectedStudent.id,
@@ -120,26 +151,30 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
         amount: total,
         date: new Date().toISOString(),
         status: 'Paid',
-        paymentMethod: paymentMethod,
+        paymentMethod,
         academicYear: currentTerm.academicYear,
         term: currentTerm.session,
         items: itemsToPay,
       };
 
-      await addDoc(collection(db, "payments"), payload);
-      await updateDoc(doc(db, "students", selectedStudent.id), { paymentStatus: 'Paid' });
+      await addDoc(collection(db, 'payments'), payload);
+      await updateDoc(doc(db, 'students', selectedStudent.id), {
+        paymentStatus: 'Paid',
+      });
 
       toast({
         title: 'Payment Recorded',
-        description: `Payment of GHS ${total.toFixed(2)} for ${selectedStudent.name} was successful.`,
+        description: `Payment of GHS ${total.toFixed(
+          2
+        )} for ${selectedStudent.name} was successful.`,
       });
       onSuccess();
     } catch (error) {
-      console.error("Error recording payment: ", error);
+      console.error('Error recording payment: ', error);
       toast({
-        variant: "destructive",
-        title: "Save Error",
-        description: "Could not record the payment. Please try again.",
+        variant: 'destructive',
+        title: 'Save Error',
+        description: 'Could not record the payment. Please try again.',
       });
     } finally {
       setIsSubmitting(false);
@@ -148,53 +183,68 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor='student-select'>Select a student</Label>
-         <Select onValueChange={setSelectedStudentId} value={selectedStudentId} disabled={!!defaultStudentId}>
-            <SelectTrigger id="student-select">
-                <SelectValue placeholder="-- Select --" />
-            </SelectTrigger>
-            <SelectContent>
-            {students.map(stu => (
-                <SelectItem key={stu.id} value={stu.id}>
+      <div>
+        <Label htmlFor="student-select">Student</Label>
+        <Select
+          onValueChange={setSelectedStudentId}
+          value={selectedStudentId}
+          disabled={!!defaultStudentId}
+        >
+          <SelectTrigger id="student-select">
+            <SelectValue placeholder="-- Select --" />
+          </SelectTrigger>
+          <SelectContent>
+            {students.map((stu) => (
+              <SelectItem key={stu.id} value={stu.id}>
                 {stu.name} ({stu.class})
-                </SelectItem>
+              </SelectItem>
             ))}
-            </SelectContent>
+          </SelectContent>
         </Select>
       </div>
 
-      {feeItems.length > 0 && (
-        <div>
-          <h3 className="font-medium mb-2">Fee Items</h3>
-          <div className="space-y-2 border rounded-md p-4">
-            {feeItems.map(item => (
-              <div key={item.name} className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <Checkbox
-                        id={item.name}
-                        checked={item.included}
-                        onCheckedChange={() => handleFeeItemToggle(item.name)}
-                    />
-                    <Label htmlFor={item.name} className="text-sm font-normal cursor-pointer">{item.name}</Label>
-                </div>
-                <span className="text-sm font-medium">
-                  GHS {item.amount.toFixed(2)}
-                </span>
+      <div>
+        <h3 className="font-medium mb-2">Fee Items</h3>
+        <div className="space-y-2 border rounded-md p-4">
+          {allFeeItems.length > 0 ? allFeeItems.map((item) => (
+            <div
+              key={item.name}
+              className="flex justify-between items-center"
+            >
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={item.name}
+                  checked={checkedItems[item.name] ?? false}
+                  onCheckedChange={() => toggleCheck(item.name)}
+                />
+                <Label
+                  htmlFor={item.name}
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  {item.name}
+                </Label>
               </div>
-            ))}
-            <hr className="my-2" />
-            <div className="flex justify-between items-center font-bold">
-              <span>Grand Total</span>
-              <span>GHS {total.toFixed(2)}</span>
+              <span className="text-sm font-medium">
+                GHS {item.amount.toFixed(2)}
+              </span>
             </div>
-          </div>
+          )) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No fee structure found for this student for the current term.
+            </p>
+          )}
+
+          {allFeeItems.length > 0 && (
+            <>
+                <hr className="my-2" />
+                <div className="flex justify-between items-center font-bold">
+                    <span>Grand Total</span>
+                    <span>GHS {total.toFixed(2)}</span>
+                </div>
+            </>
+          )}
         </div>
-      )}
-      
-      {selectedStudent && feeItems.length === 0 && (
-        <p className="text-sm text-muted-foreground p-4 text-center border rounded-md">No fee structure found for this student's class and the current term.</p>
-      )}
+      </div>
 
       <div>
         <Label htmlFor="payment-method">Payment Method</Label>
@@ -210,7 +260,7 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
           </SelectContent>
         </Select>
       </div>
-      
+
       <div>
         <Label className="block font-medium mb-1">Total Amount (GHS)</Label>
         <Input
@@ -223,11 +273,11 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
 
       <div className="flex justify-end">
         <Button
-            type="submit"
-            disabled={!selectedStudent || total <= 0 || isSubmitting}
+          type="submit"
+          disabled={!selectedStudent || total <= 0 || isSubmitting}
         >
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Record Payment
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Record Payment
         </Button>
       </div>
     </form>
