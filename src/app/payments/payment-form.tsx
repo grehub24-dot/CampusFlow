@@ -13,7 +13,7 @@ import {
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 
-import type { Student, FeeStructure, AcademicTerm, PaymentFeeItem, FeeItem } from '@/types';
+import type { Student, FeeStructure, AcademicTerm, PaymentFeeItem, FeeItem, Payment } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +30,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 interface Props {
   students: Student[];
   feeStructures: FeeStructure[];
+  payments: Payment[];
   currentTerm: AcademicTerm;
   onSuccess: () => void;
   defaultStudentId?: string;
@@ -38,6 +39,7 @@ interface Props {
 export default function PaymentForm({
   students,
   feeStructures,
+  payments,
   currentTerm,
   onSuccess,
   defaultStudentId,
@@ -52,6 +54,7 @@ export default function PaymentForm({
   const [amountPaid, setAmountPaid] = useState(0);
   const { toast } = useToast();
   const [receiptLabel, setReceiptLabel] = useState('Receipt No');
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     switch (paymentMethod) {
@@ -105,9 +108,6 @@ export default function PaymentForm({
     }).filter(item => item.amount > 0);
   }, [matchingStructure, feeItems]);
 
-
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
-
   useEffect(() => {
     if (!selectedStudent || !matchingStructure || !currentTerm || feeItems.length === 0 || !Array.isArray(matchingStructure.items)) {
       setCheckedItems({});
@@ -152,8 +152,39 @@ export default function PaymentForm({
   const balance = useMemo(() => totalAmountDue - amountPaid, [totalAmountDue, amountPaid]);
 
   useEffect(() => {
-    setAmountPaid(totalAmountDue);
-  }, [totalAmountDue]);
+    if (!selectedStudent || !currentTerm) {
+      setAmountPaid(0);
+      return;
+    }
+    // Get all payments for the student for the current term
+    const studentTermPayments = payments.filter(p => 
+      p.studentId === selectedStudent.id &&
+      p.academicYear === currentTerm.academicYear &&
+      p.term === currentTerm.session
+    );
+    
+    // Sum up what has been paid for the currently selected fee items
+    let totalPaidForCheckedItems = 0;
+    const checkedItemNames = Object.keys(checkedItems).filter(key => checkedItems[key]);
+
+    studentTermPayments.forEach(payment => {
+      if (Array.isArray(payment.items)) {
+        payment.items.forEach(paidItem => {
+          if (checkedItemNames.includes(paidItem.name)) {
+            // This is tricky - a single payment can cover multiple items.
+            // A simpler approach is to calculate total paid vs total due for the term.
+          }
+        });
+      }
+    });
+    
+    // Simpler logic: What is the total amount paid vs the total amount due this term
+    const totalPaidThisTerm = studentTermPayments.reduce((acc, p) => acc + p.amount, 0);
+    const outstandingBalance = totalAmountDue - totalPaidThisTerm;
+
+    setAmountPaid(outstandingBalance > 0 ? outstandingBalance : 0);
+
+  }, [totalAmountDue, selectedStudent, currentTerm, payments, checkedItems]);
 
   useEffect(() => {
     if (defaultStudentId) setSelectedStudentId(defaultStudentId);

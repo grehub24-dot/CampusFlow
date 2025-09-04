@@ -4,7 +4,7 @@
 import React from 'react';
 import { collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, deleteDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Student, AcademicTerm, SchoolClass, FeeStructure } from '@/types';
+import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import type { SubmitHandler } from 'react-hook-form';
 import Papa from 'papaparse';
@@ -40,6 +40,7 @@ export default function StudentsPage() {
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const [classes, setClasses] = React.useState<SchoolClass[]>([]);
   const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
+  const [payments, setPayments] = React.useState<Payment[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = React.useState(false);
@@ -87,11 +88,21 @@ export default function StudentsPage() {
       setFeeStructures(feeStructuresData);
     });
 
+    const paymentsQuery = collection(db, "payments");
+    const unsubscribePayments = onSnapshot(paymentsQuery, (querySnapshot) => {
+      const paymentsData: Payment[] = [];
+      querySnapshot.forEach((doc) => {
+        paymentsData.push({ id: doc.id, ...doc.data() } as Payment);
+      });
+      setPayments(paymentsData);
+    });
+
     return () => {
       unsubscribe();
       unsubscribeSettings();
       unsubscribeClasses();
       unsubscribeFeeStructures();
+      unsubscribePayments();
     };
   }, [toast]);
 
@@ -463,6 +474,7 @@ export default function StudentsPage() {
                   <PaymentForm 
                     students={[selectedStudent]} 
                     feeStructures={feeStructures}
+                    payments={payments}
                     currentTerm={currentTerm}
                     onSuccess={() => setIsPaymentDialogOpen(false)}
                     defaultStudentId={selectedStudent.id}

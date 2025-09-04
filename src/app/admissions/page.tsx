@@ -23,7 +23,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { Student, AcademicTerm, SchoolClass, FeeStructure } from '@/types';
+import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment } from '@/types';
 import { AdmittedStudentTable } from './admitted-student-table';
 import { ToastAction } from '@/components/ui/toast';
 import { db } from '@/lib/firebase';
@@ -296,6 +296,7 @@ export default function AdmissionsPage() {
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const [classes, setClasses] = React.useState<SchoolClass[]>([]);
   const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
+  const [payments, setPayments] = React.useState<Payment[]>([]);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -339,11 +340,21 @@ export default function AdmissionsPage() {
       const feeStructuresData: FeeStructure[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeStructure));
       setFeeStructures(feeStructuresData);
     });
+    
+    const paymentsQuery = collection(db, "payments");
+    const unsubscribePayments = onSnapshot(paymentsQuery, (querySnapshot) => {
+      const paymentsData: Payment[] = [];
+      querySnapshot.forEach((doc) => {
+        paymentsData.push({ id: doc.id, ...doc.data() } as Payment);
+      });
+      setPayments(paymentsData);
+    });
 
     return () => {
       unsubscribeSettings();
       unsubscribeClasses();
       unsubscribeFeeStructures();
+      unsubscribePayments();
     }
   }, []);
 
@@ -546,6 +557,7 @@ export default function AdmissionsPage() {
                   <PaymentForm 
                     students={[selectedStudent]} 
                     feeStructures={feeStructures}
+                    payments={payments}
                     currentTerm={currentTerm}
                     onSuccess={() => setIsPaymentDialogOpen(false)}
                     defaultStudentId={selectedStudent.id}

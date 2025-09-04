@@ -113,6 +113,7 @@ export default function PaymentsPage() {
                   <PaymentForm 
                     students={students} 
                     feeStructures={feeStructures}
+                    payments={payments}
                     currentTerm={currentTerm}
                     onSuccess={() => setIsFormDialogOpen(false)}
                   />
