@@ -282,6 +282,9 @@ function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<
   )
 }
 
+const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
+const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'Kindergarten 2'];
+
 export default function AdmissionsPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTableLoading, setIsTableLoading] = React.useState(true);
