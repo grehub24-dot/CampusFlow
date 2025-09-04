@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 interface Props {
@@ -27,6 +28,8 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
   const { toast } = useToast();
+  const [feeItems, setFeeItems] = useState<FeeItem[]>([]);
+
 
   const selectedStudent = useMemo(
     () => students.find(s => s.id === selectedStudentId),
@@ -43,54 +46,65 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
     );
   }, [feeStructures, selectedStudent, currentTerm]);
 
-  const displayItems: FeeItem[] = useMemo(() => {
-    if (!matchingStructure || !selectedStudent) return [];
-
-    const items: FeeItem[] = [];
-
-    // Always include school & printing fees
-    if (matchingStructure.schoolFees)
-      items.push({ name: 'School Fees', amount: matchingStructure.schoolFees });
-    if (matchingStructure.printingFee)
-      items.push({ name: 'Printing Fee', amount: matchingStructure.printingFee });
-    if (matchingStructure.others)
-      items.push({ name: 'Others', amount: matchingStructure.others });
-
-    // ADMISSION FEE – only for new students
-    if (selectedStudent.isNewAdmission && matchingStructure.admissionFee) {
-      items.push({ name: 'Admission Fee', amount: matchingStructure.admissionFee });
+  useEffect(() => {
+    if (!matchingStructure || !selectedStudent) {
+      setFeeItems([]);
+      return;
     }
 
-    // BOOKS & UNIFORM – only if NOT (old student AND 1st term)
-    const skipBooksUniform =
-      !selectedStudent.isNewAdmission && selectedStudent.currentTermNumber === 1;
-
-    if (!skipBooksUniform) {
-      if (matchingStructure.booksFee)
-        items.push({ name: 'Books Fee', amount: matchingStructure.booksFee });
-      if (matchingStructure.uniformFee)
-        items.push({ name: 'Uniform Fee', amount: matchingStructure.uniformFee });
+    const allItems: FeeItem[] = [];
+    
+    // ADMISSION FEE – check if new student
+    if (matchingStructure.admissionFee) {
+        allItems.push({ name: 'Admission Fee', amount: matchingStructure.admissionFee, included: !!selectedStudent.isNewAdmission });
     }
 
-    return items;
+    // Always include school fees
+    if (matchingStructure.schoolFees) {
+      allItems.push({ name: 'School Fees', amount: matchingStructure.schoolFees, included: true });
+    }
+    
+    // BOOKS & UNIFORM – check if NOT (old student AND 1st term)
+    const skipBooksUniform = !selectedStudent.isNewAdmission && selectedStudent.currentTermNumber === 1;
+
+    if (matchingStructure.booksFee) {
+        allItems.push({ name: 'Books Fee', amount: matchingStructure.booksFee, included: !skipBooksUniform });
+    }
+    if (matchingStructure.uniformFee) {
+        allItems.push({ name: 'Uniform Fee', amount: matchingStructure.uniformFee, included: !skipBooksUniform });
+    }
+
+    // Always include printing fees
+    if (matchingStructure.printingFee) {
+      allItems.push({ name: 'Printing Fee', amount: matchingStructure.printingFee, included: true });
+    }
+    if (matchingStructure.others) {
+      allItems.push({ name: 'Others', amount: matchingStructure.others, included: true });
+    }
+
+    setFeeItems(allItems);
   }, [matchingStructure, selectedStudent]);
 
 
   useEffect(() => {
-    if (!displayItems.length) {
-      setTotal(0);
-      return;
-    }
-
-    const initialTotal = displayItems.reduce((sum, item) => sum + item.amount, 0);
-    setTotal(initialTotal);
-  }, [displayItems]);
+    const newTotal = feeItems.reduce((sum, item) => item.included ? sum + item.amount : sum, 0);
+    setTotal(newTotal);
+  }, [feeItems]);
   
   useEffect(() => {
     if (defaultStudentId) {
         setSelectedStudentId(defaultStudentId)
     }
   }, [defaultStudentId]);
+  
+  const handleFeeItemToggle = (itemName: string) => {
+    setFeeItems(prevItems =>
+      prevItems.map(item =>
+        item.name === itemName ? { ...item, included: !item.included } : item
+      )
+    );
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,7 +112,7 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
     setIsSubmitting(true);
 
     try {
-      const itemsToPay = displayItems.map(item => ({...item, included: true }));
+      const itemsToPay = feeItems.filter(item => item.included);
 
       const payload = {
         studentId: selectedStudent.id,
@@ -150,13 +164,20 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
         </Select>
       </div>
 
-      {displayItems.length > 0 && (
+      {feeItems.length > 0 && (
         <div>
           <h3 className="font-medium mb-2">Fee Items</h3>
           <div className="space-y-2 border rounded-md p-4">
-            {displayItems.map(item => (
+            {feeItems.map(item => (
               <div key={item.name} className="flex justify-between items-center">
-                <span className="text-sm">{item.name}</span>
+                <div className="flex items-center gap-2">
+                    <Checkbox
+                        id={item.name}
+                        checked={item.included}
+                        onCheckedChange={() => handleFeeItemToggle(item.name)}
+                    />
+                    <Label htmlFor={item.name} className="text-sm font-normal cursor-pointer">{item.name}</Label>
+                </div>
                 <span className="text-sm font-medium">
                   GHS {item.amount.toFixed(2)}
                 </span>
@@ -171,7 +192,7 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
         </div>
       )}
       
-      {selectedStudent && displayItems.length === 0 && (
+      {selectedStudent && feeItems.length === 0 && (
         <p className="text-sm text-muted-foreground p-4 text-center border rounded-md">No fee structure found for this student's class and the current term.</p>
       )}
 
