@@ -12,7 +12,7 @@ export type Student = {
   admissionDate: string;
   admissionTerm?: string;
   admissionYear?: string;
-  paymentStatus?: 'Paid' | 'Pending' | 'Unpaid';
+  paymentStatus?: 'Paid' | 'Part-Payment' | 'Pending' | 'Unpaid';
   // From form
   firstName: string;
   lastName: string;
@@ -37,9 +37,12 @@ export type Payment = {
   id: string;
   studentName: string;
   studentId: string;
-  amount: number;
+  amount: number; // This is the amount paid
+  totalAmountDue: number;
+  balance: number;
+  receiptNo?: string;
   date: string;
-  status: 'Paid' | 'Pending' | 'Failed';
+  status: 'Paid' | 'Part-Payment' | 'Pending' | 'Failed';
   paymentMethod?: 'Cash' | 'Bank Transfer' | 'Mobile Money' | 'Card' | 'Cheque';
   academicYear?: string;
   term?: string;

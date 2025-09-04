@@ -22,7 +22,7 @@ export const paymentColumns: ColumnDef<Payment>[] = [
   },
   {
     accessorKey: "amount",
-    header: "Amount",
+    header: "Amount Paid",
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("amount"))
       const formatted = new Intl.NumberFormat("en-US", {
@@ -47,6 +47,7 @@ export const paymentColumns: ColumnDef<Payment>[] = [
       const status = row.getValue("status") as string;
       const variant = {
         "Paid": "default",
+        "Part-Payment": "outline",
         "Pending": "secondary",
         "Failed": "destructive",
       }[status] ?? "default" as "default" | "secondary" | "destructive" | "outline" | null | undefined;

@@ -48,6 +48,8 @@ export default function PaymentForm({
   const [feeItems, setFeeItems] = useState<FeeItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
+  const [receiptNo, setReceiptNo] = useState('');
+  const [amountPaid, setAmountPaid] = useState(0);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -123,12 +125,18 @@ export default function PaymentForm({
 
   }, [selectedStudent, matchingStructure, currentTerm, feeItems]);
 
-  const total = useMemo(() => {
+  const totalAmountDue = useMemo(() => {
     return allFeeItemsForForm.reduce(
       (sum, item) => (checkedItems[item.name] ? sum + item.amount : sum),
       0
     );
   }, [allFeeItemsForForm, checkedItems]);
+  
+  const balance = useMemo(() => totalAmountDue - amountPaid, [totalAmountDue, amountPaid]);
+
+  useEffect(() => {
+    setAmountPaid(totalAmountDue);
+  }, [totalAmountDue]);
 
   useEffect(() => {
     if (defaultStudentId) setSelectedStudentId(defaultStudentId);
@@ -139,18 +147,22 @@ export default function PaymentForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedStudent || total <= 0) return;
+    if (!selectedStudent || amountPaid <= 0 || totalAmountDue <= 0) return;
     setIsSubmitting(true);
 
     try {
       const itemsToPay = allFeeItemsForForm.filter((i) => checkedItems[i.name]);
+      const newStatus = balance <= 0 ? 'Paid' : 'Part-Payment';
 
       const payload = {
         studentId: selectedStudent.id,
         studentName: selectedStudent.name,
-        amount: total,
+        amount: amountPaid,
+        totalAmountDue: totalAmountDue,
+        balance: balance,
+        receiptNo: receiptNo,
         date: new Date().toISOString(),
-        status: 'Paid',
+        status: newStatus,
         paymentMethod,
         academicYear: currentTerm.academicYear,
         term: currentTerm.session,
@@ -158,13 +170,16 @@ export default function PaymentForm({
       };
 
       await addDoc(collection(db, 'payments'), payload);
+      
+      // Update student's overall payment status only if this payment clears their balance
+      // A more robust implementation would check all outstanding balances. For now, we update based on this single transaction.
       await updateDoc(doc(db, 'students', selectedStudent.id), {
-        paymentStatus: 'Paid',
+        paymentStatus: newStatus,
       });
 
       toast({
         title: 'Payment Recorded',
-        description: `Payment of GHS ${total.toFixed(
+        description: `Payment of GHS ${amountPaid.toFixed(
           2
         )} for ${selectedStudent.name} was successful.`,
       });
@@ -238,43 +253,66 @@ export default function PaymentForm({
             <>
                 <hr className="my-2" />
                 <div className="flex justify-between items-center font-bold">
-                    <span>Grand Total</span>
-                    <span>GHS {total.toFixed(2)}</span>
+                    <span>Total Amount Due</span>
+                    <span>GHS {totalAmountDue.toFixed(2)}</span>
                 </div>
             </>
           )}
         </div>
       </div>
-
-      <div>
-        <Label htmlFor="payment-method">Payment Method</Label>
-        <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-          <SelectTrigger id="payment-method">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Cash">Cash</SelectItem>
-            <SelectItem value="Momo">Mobile Money</SelectItem>
-            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-            <SelectItem value="Cheque">Cheque</SelectItem>
-          </SelectContent>
-        </Select>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="receiptNo">Receipt No</Label>
+          <Input
+            id="receiptNo"
+            type="text"
+            value={receiptNo}
+            onChange={(e) => setReceiptNo(e.target.value)}
+            placeholder="e.g. 12345"
+          />
+        </div>
+        <div>
+            <Label htmlFor="payment-method">Payment Method</Label>
+            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+            <SelectTrigger id="payment-method">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="Cash">Cash</SelectItem>
+                <SelectItem value="Momo">Mobile Money</SelectItem>
+                <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                <SelectItem value="Cheque">Cheque</SelectItem>
+            </SelectContent>
+            </Select>
+        </div>
       </div>
 
-      <div>
-        <Label className="block font-medium mb-1">Total Amount (GHS)</Label>
-        <Input
-          type="number"
-          value={total.toFixed(2)}
-          readOnly
-          className="bg-muted"
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="amountPaid">Amount Paid (GHS)</Label>
+          <Input
+            id="amountPaid"
+            type="number"
+            value={amountPaid}
+            onChange={(e) => setAmountPaid(parseFloat(e.target.value))}
+          />
+        </div>
+         <div>
+          <Label>Balance (GHS)</Label>
+          <Input
+            type="number"
+            value={balance.toFixed(2)}
+            readOnly
+            className="bg-muted font-bold"
+          />
+        </div>
       </div>
 
       <div className="flex justify-end">
         <Button
           type="submit"
-          disabled={!selectedStudent || total <= 0 || isSubmitting}
+          disabled={!selectedStudent || amountPaid <= 0 || isSubmitting}
         >
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Record Payment
