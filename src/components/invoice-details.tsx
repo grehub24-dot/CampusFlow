@@ -3,10 +3,11 @@
 
 import React from 'react';
 import type { Invoice } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { User, Calendar, Hash, Banknote, Tag, Landmark, Phone } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { User, Calendar, Hash, Banknote, Tag, Landmark, Phone, Printer, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { Separator } from './ui/separator';
+import { Button } from './ui/button';
 
 const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined | null }) => (
     <div className="flex items-start gap-3">
@@ -27,8 +28,12 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
     return <div>Loading...</div>;
   }
 
+  const handlePrint = () => {
+    window.print();
+  }
+
   return (
-    <div className="p-1 pt-4">
+    <div className="p-1 pt-4 printable-area">
       <Card className="shadow-none border-0">
         <CardHeader>
             <div className="flex justify-between items-start">
@@ -105,8 +110,17 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                     </div>
                 </div>
             </div>
-
         </CardContent>
+         <CardFooter className="justify-end gap-2 no-print">
+            <Button variant="outline" onClick={handlePrint}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print
+            </Button>
+            <Button onClick={handlePrint}>
+                <Download className="mr-2 h-4 w-4" />
+                Export as PDF
+            </Button>
+        </CardFooter>
       </Card>
     </div>
   );
