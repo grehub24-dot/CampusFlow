@@ -52,7 +52,7 @@ export function FeeStructureForm({ onSubmit, defaultValues, classes, terms, feeI
 
   React.useEffect(() => {
     const initialItems = feeItems.map(item => {
-        const existingItem = defaultValues?.items.find(i => i.feeItemId === item.id);
+        const existingItem = defaultValues?.items?.find(i => i.feeItemId === item.id);
         return {
             feeItemId: item.id,
             amount: existingItem?.amount || 0,
