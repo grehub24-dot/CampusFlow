@@ -119,6 +119,7 @@ export function FeeStructureSettings() {
     }
     
     const calculateTotal = (items: { feeItemId: string, amount: number }[]) => {
+        if (!Array.isArray(items)) return 0;
         return items.reduce((acc, item) => acc + (item.amount || 0), 0);
     }
 
