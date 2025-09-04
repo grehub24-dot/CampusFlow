@@ -330,7 +330,7 @@ export default function PaymentForm({
           )}
         </div>
         {allFeeItemsForForm.length > 0 && (
-          <div className="border-t mt-4 pt-4 flex justify-between items-center font-bold text-3xl">
+          <div className="border-t mt-4 pt-4 flex justify-between items-center font-bold text-2xl">
               <span>Total Bill</span>
               <span>GHS {totalAmountDue.toFixed(2)}</span>
           </div>
@@ -394,7 +394,7 @@ export default function PaymentForm({
                 value={`GHS ${balance.toFixed(2)}`}
                 readOnly
                 className={cn(
-                  "bg-background font-bold h-auto p-2",
+                  "bg-background font-bold h-auto p-2 text-xl",
                   balance > 0 ? "text-red-500" : "text-foreground"
                 )}
               />
@@ -406,7 +406,7 @@ export default function PaymentForm({
                 type="number"
                 value={amountTendered || ''}
                 onChange={(e) => setAmountTendered(parseFloat(e.target.value) || 0)}
-                 className="bg-background font-bold text-blue-600 text-xl h-auto p-2"
+                 className="bg-background font-bold text-blue-600 text-2xl h-auto p-2"
               />
             </div>
           </div>
@@ -417,7 +417,7 @@ export default function PaymentForm({
                 type="text"
                 value={`GHS ${change.toFixed(2)}`}
                 readOnly
-                className="bg-background font-bold text-green-600 text-base h-auto p-2"
+                className="bg-background font-bold text-green-600 text-xl h-auto p-2"
               />
             </div>
           )}
