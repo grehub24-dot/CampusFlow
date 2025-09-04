@@ -23,12 +23,21 @@ import StatCard from '@/components/dashboard/stat-card';
 import { Input } from '@/components/ui/input';
 
 const messageFormSchema = z.object({
-  recipientType: z.enum(['all', 'class', 'single']),
+  recipientType: z.enum(['all', 'class', 'single', 'manual']),
   classId: z.string().optional(),
   studentId: z.string().optional(),
+  manualPhone: z.string().optional(),
   messageType: z.enum(['sms', 'email']),
   subject: z.string().optional(), // For email
   message: z.string().min(10, 'Message must be at least 10 characters.'),
+}).refine(data => {
+    if (data.recipientType === 'manual') {
+        return !!data.manualPhone && data.manualPhone.length > 0;
+    }
+    return true;
+}, {
+    message: 'Phone number is required for manual entry.',
+    path: ['manualPhone'],
 });
 
 type MessageFormValues = z.infer<typeof messageFormSchema>;
@@ -105,6 +114,8 @@ export default function CommunicationsPage() {
       } else if (values.recipientType === 'single' && values.studentId) {
          const student = students.find(s => s.id === values.studentId);
          if (student && student.guardianPhone) recipients.push(student.guardianPhone);
+      } else if (values.recipientType === 'manual' && values.manualPhone) {
+        recipients.push(values.manualPhone);
       }
 
       const uniqueRecipients = [...new Set(recipients)];
@@ -210,6 +221,7 @@ export default function CommunicationsPage() {
                                 <SelectItem value="all">All Students</SelectItem>
                                 <SelectItem value="class">Specific Class</SelectItem>
                                 <SelectItem value="single">Single Student</SelectItem>
+                                <SelectItem value="manual">Manual Entry</SelectItem>
                               </SelectContent>
                             </Select>
                           </FormItem>
@@ -267,6 +279,21 @@ export default function CommunicationsPage() {
                                   ))}
                                 </SelectContent>
                               </Select>
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                      {recipientType === "manual" && (
+                        <FormField
+                          control={form.control}
+                          name="manualPhone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone Number</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter phone number" {...field} />
+                              </FormControl>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
