@@ -32,6 +32,8 @@ import {
 import { ClassForm, type FormValues } from './class-settings-form';
 
 const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
+const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'Kindergarten 2'];
+
 
 export function ClassSettings() {
     const [classes, setClasses] = React.useState<SchoolClass[]>([]);
@@ -43,7 +45,7 @@ export function ClassSettings() {
     const { toast } = useToast();
 
     React.useEffect(() => {
-        const q = query(collection(db, "classes"), orderBy("name"));
+        const q = query(collection(db, "classes"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const classesData: SchoolClass[] = [];
             querySnapshot.forEach((doc) => {
@@ -128,6 +130,20 @@ export function ClassSettings() {
         acc[category].push(currentClass);
         return acc;
     }, {} as Record<string, SchoolClass[]>);
+
+    // Sort the classes within each category
+    for (const category in groupedClasses) {
+        groupedClasses[category].sort((a, b) => {
+            if (category === 'Pre-school') {
+                const preAIndex = preSchoolOrder.indexOf(a.name);
+                const preBIndex = preSchoolOrder.indexOf(b.name);
+                if (preAIndex !== -1 && preBIndex !== -1) return preAIndex - preBIndex;
+                if (preAIndex !== -1) return -1;
+                if (preBIndex !== -1) return 1;
+            }
+            return a.name.localeCompare(b.name);
+        });
+    }
 
     return (
         <Card>

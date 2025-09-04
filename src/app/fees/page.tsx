@@ -23,6 +23,8 @@ type FeeSummary = {
 }
 
 const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
+const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'Kindergarten 2'];
+
 
 export default function FeesPage() {
     const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
@@ -47,9 +49,18 @@ export default function FeesPage() {
         const unsubscribeClasses = onSnapshot(classesQuery, (snapshot) => {
             const data: SchoolClass[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SchoolClass));
             const sortedData = data.sort((a, b) => {
-                const catA = categoryOrder.indexOf(a.category);
-                const catB = categoryOrder.indexOf(b.category);
-                if (catA !== catB) return catA - catB;
+                const catAIndex = categoryOrder.indexOf(a.category);
+                const catBIndex = categoryOrder.indexOf(b.category);
+                if (catAIndex !== catBIndex) return catAIndex - catBIndex;
+
+                if (a.category === 'Pre-school') {
+                    const preAIndex = preSchoolOrder.indexOf(a.name);
+                    const preBIndex = preSchoolOrder.indexOf(b.name);
+                    if (preAIndex !== -1 && preBIndex !== -1) return preAIndex - preBIndex;
+                    if (preAIndex !== -1) return -1;
+                    if (preBIndex !== -1) return 1;
+                }
+
                 return a.name.localeCompare(b.name);
             });
             setClasses(sortedData);
