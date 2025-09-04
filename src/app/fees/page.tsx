@@ -110,24 +110,26 @@ export default function FeesPage() {
         let term2And3Total = 0;
         let optionalTotal = 0;
 
-        structure.items.forEach(item => {
-            const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
-            if (feeItemInfo) {
-                if (feeItemInfo.isOptional) {
-                    optionalTotal += item.amount;
-                } else {
-                    if (feeItemInfo.appliesTo.includes('new')) {
-                        newAdmissionTotal += item.amount;
-                    }
-                    if (feeItemInfo.appliesTo.includes('term1')) {
-                        term1Total += item.amount;
-                    }
-                    if (feeItemInfo.appliesTo.includes('term2_3')) {
-                        term2And3Total += item.amount;
+        if (Array.isArray(structure.items)) {
+            structure.items.forEach(item => {
+                const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
+                if (feeItemInfo) {
+                    if (feeItemInfo.isOptional) {
+                        optionalTotal += item.amount;
+                    } else {
+                        if (feeItemInfo.appliesTo.includes('new')) {
+                            newAdmissionTotal += item.amount;
+                        }
+                        if (feeItemInfo.appliesTo.includes('term1')) {
+                            term1Total += item.amount;
+                        }
+                        if (feeItemInfo.appliesTo.includes('term2_3')) {
+                            term2And3Total += item.amount;
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
 
 
         return { newAdmissionTotal, term1Total, term2And3Total, optionalTotal, hasStructure: true };
