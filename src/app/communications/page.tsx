@@ -55,6 +55,10 @@ export default function CommunicationsPage() {
       recipientType: 'all',
       messageType: 'sms',
       message: '',
+      classId: '',
+      studentId: '',
+      manualPhone: '',
+      subject: '',
     },
   });
   
