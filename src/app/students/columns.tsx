@@ -20,6 +20,7 @@ type ColumnsProps = {
   onEdit: (student: Student) => void;
   onViewDetails: (student: Student) => void;
   onDelete: (student: Student) => void;
+  onPay: (student: Student) => void;
 }
 
 const calculateAge = (dob: string) => {
@@ -34,7 +35,7 @@ const calculateAge = (dob: string) => {
 };
 
 
-export const getColumns = ({ onEdit, onViewDetails, onDelete }: ColumnsProps): ColumnDef<Student>[] => [
+export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay }: ColumnsProps): ColumnDef<Student>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -139,26 +140,36 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete }: ColumnsProps): C
       const student = row.original
       
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(student.id)}
+        <div className="flex items-center justify-end gap-2">
+           <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPay(student)}
+                disabled={student.paymentStatus === 'Paid'}
             >
-              Copy student ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onViewDetails(student)}>View details</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(student)}>Edit student</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDelete(student)} className="text-destructive">Delete student</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+                Pay
+            </Button>
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(student.id)}
+                >
+                Copy student ID
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onViewDetails(student)}>View details</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit(student)}>Edit student</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDelete(student)} className="text-destructive">Delete student</DropdownMenuItem>
+            </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
       )
     },
   },

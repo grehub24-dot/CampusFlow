@@ -44,6 +44,7 @@ interface DataTableProps {
   onEdit: (student: Student) => void;
   onViewDetails: (student: Student) => void;
   onDelete: (student: Student) => void;
+  onPay: (student: Student) => void;
 }
 
 const statusOptions = [
@@ -63,6 +64,7 @@ export function DataTable({
   onEdit,
   onViewDetails,
   onDelete,
+  onPay,
 }: DataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -84,7 +86,7 @@ export function DataTable({
     return () => unsubscribeClasses();
   }, [])
   
-  const columns = React.useMemo(() => getColumns({ onEdit, onViewDetails, onDelete }), [onEdit, onViewDetails, onDelete]);
+  const columns = React.useMemo(() => getColumns({ onEdit, onViewDetails, onDelete, onPay }), [onEdit, onViewDetails, onDelete, onPay]);
 
   const table = useReactTable({
     data,

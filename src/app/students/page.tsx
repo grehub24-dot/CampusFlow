@@ -4,7 +4,7 @@
 import React from 'react';
 import { collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, deleteDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Student, AcademicTerm, SchoolClass } from '@/types';
+import type { Student, AcademicTerm, SchoolClass, FeeStructure } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import type { SubmitHandler } from 'react-hook-form';
 import Papa from 'papaparse';
@@ -33,13 +33,16 @@ import { DataTable } from "./data-table";
 import StatCard from '@/components/dashboard/stat-card';
 import ClassEnrollmentChart from './class-enrollment-chart';
 import { StudentForm, type FormValues } from './student-form';
+import PaymentForm from '../payments/payment-form';
 
 export default function StudentsPage() {
   const [students, setStudents] = React.useState<Student[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const [classes, setClasses] = React.useState<SchoolClass[]>([]);
+  const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = React.useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = React.useState(false);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -77,11 +80,18 @@ export default function StudentsPage() {
       const classesData: SchoolClass[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SchoolClass));
       setClasses(classesData);
     });
+    
+    const feeStructuresQuery = collection(db, "fee-structures");
+    const unsubscribeFeeStructures = onSnapshot(feeStructuresQuery, (snapshot) => {
+      const feeStructuresData: FeeStructure[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeStructure));
+      setFeeStructures(feeStructuresData);
+    });
 
     return () => {
       unsubscribe();
       unsubscribeSettings();
       unsubscribeClasses();
+      unsubscribeFeeStructures();
     };
   }, [toast]);
 
@@ -98,6 +108,11 @@ export default function StudentsPage() {
   const handleViewDetails = (student: Student) => {
     setSelectedStudent(student);
     setIsSheetOpen(true);
+  }
+  
+  const handlePay = (student: Student) => {
+    setSelectedStudent(student);
+    setIsPaymentDialogOpen(true);
   }
 
   const handleDeleteStudent = (student: Student) => {
@@ -399,7 +414,7 @@ export default function StudentsPage() {
         <ClassEnrollmentChart data={students} />
       </div>
 
-      <DataTable data={students} onEdit={handleEditStudent} onViewDetails={handleViewDetails} onDelete={handleDeleteStudent} />
+      <DataTable data={students} onEdit={handleEditStudent} onViewDetails={handleViewDetails} onDelete={handleDeleteStudent} onPay={handlePay} />
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
@@ -425,6 +440,26 @@ export default function StudentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Record New Payment</DialogTitle>
+              <DialogDescription>Fill out the form below to record a new financial transaction.</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[70vh] overflow-y-auto p-1">
+                {currentTerm && selectedStudent && (
+                  <PaymentForm 
+                    students={[selectedStudent]} 
+                    feeStructures={feeStructures}
+                    currentTerm={currentTerm}
+                    onSuccess={() => setIsPaymentDialogOpen(false)}
+                    defaultStudentId={selectedStudent.id}
+                  />
+                )}
+            </div>
+          </DialogContent>
+        </Dialog>
     </>
   );
 }
