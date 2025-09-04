@@ -228,7 +228,9 @@ export default function PaymentForm({
     try {
       const itemsToPay = allFeeItemsForForm.filter((i) => checkedItems[i.name]);
       const finalBalance = totalAmountDue - previouslyPaid - currentAmountPaid;
-      const newStatus = finalBalance <= 0 ? 'Paid' : 'Part-Payment';
+      
+      const totalPaidForTerm = previouslyPaid + currentAmountPaid;
+      const newStatus = totalPaidForTerm >= totalAmountDue ? 'Paid' : 'Part-Payment';
 
       const payload = {
         studentId: selectedStudent.id,
@@ -330,7 +332,7 @@ export default function PaymentForm({
           )}
         </div>
         {allFeeItemsForForm.length > 0 && (
-          <div className="border-t mt-4 pt-4 flex justify-between items-center font-bold text-xl">
+          <div className="border-t mt-4 pt-4 flex justify-between items-center font-bold text-lg">
               <span>Total Bill</span>
               <span>GHS {totalAmountDue.toFixed(2)}</span>
           </div>
@@ -407,7 +409,7 @@ export default function PaymentForm({
                 type="number"
                 value={amountTendered || ''}
                 onChange={(e) => setAmountTendered(parseFloat(e.target.value) || 0)}
-                 className="bg-background font-bold text-blue-600 text-2xl h-auto p-2"
+                 className="bg-background font-bold text-blue-600 text-3xl h-auto p-2"
               />
             </div>
           </div>
@@ -418,7 +420,7 @@ export default function PaymentForm({
                 type="text"
                 value={`GHS ${change.toFixed(2)}`}
                 readOnly
-                className="bg-background font-bold text-green-600 text-2xl h-auto p-2"
+                className="bg-background font-bold text-green-600 text-3xl h-auto p-2"
               />
             </div>
           )}
