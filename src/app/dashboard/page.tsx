@@ -18,12 +18,16 @@ import { paymentColumns } from "./payment-columns";
 import { PendingInvoicesTable } from "./pending-invoices-table";
 import { invoiceColumns } from "./invoice-columns";
 import { useToast } from '@/hooks/use-toast';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { PaymentDetails } from '@/components/payment-details';
 
 export default function Dashboard() {
   const [students, setStudents] = React.useState<Student[]>([]);
   const [payments, setPayments] = React.useState<Payment[]>([]);
   const [invoices, setInvoices] = React.useState<Invoice[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
+  const [selectedPayment, setSelectedPayment] = React.useState<Payment | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -74,6 +78,14 @@ export default function Dashboard() {
         unsubscribeInvoices();
     };
   }, [toast]);
+  
+  const handleViewPayment = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setIsSheetOpen(true);
+  }
+  
+  const memoizedPaymentColumns = React.useMemo(() => paymentColumns({ onViewPayment: handleViewPayment }), [handleViewPayment]);
+
 
   const overallStats = {
     totalStudents: students.length,
@@ -186,7 +198,7 @@ export default function Dashboard() {
             </Card>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <RecentPaymentsTable columns={paymentColumns} data={payments} />
+              <RecentPaymentsTable columns={memoizedPaymentColumns} data={payments} />
               <PendingInvoicesTable columns={invoiceColumns} data={invoices} />
           </div>
         </TabsContent>
@@ -230,6 +242,15 @@ export default function Dashboard() {
             </div>
         </TabsContent>
       </Tabs>
+      
+       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Payment Details</SheetTitle>
+          </SheetHeader>
+          {selectedPayment && <PaymentDetails payment={selectedPayment} />}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

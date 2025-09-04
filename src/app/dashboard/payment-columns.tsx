@@ -15,7 +15,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal } from "lucide-react"
 
-export const paymentColumns: ColumnDef<Payment>[] = [
+type ColumnsProps = {
+  onViewPayment: (payment: Payment) => void;
+}
+
+export const paymentColumns = ({ onViewPayment }: ColumnsProps): ColumnDef<Payment>[] => [
   {
     accessorKey: "studentName",
     header: "Student Name",
@@ -57,6 +61,7 @@ export const paymentColumns: ColumnDef<Payment>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
+      const payment = row.original;
       return (
         <div className="text-right">
             <DropdownMenu>
@@ -68,7 +73,7 @@ export const paymentColumns: ColumnDef<Payment>[] = [
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>View Payment</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onViewPayment(payment)}>View Payment</DropdownMenuItem>
                 <DropdownMenuItem>View Student</DropdownMenuItem>
             </DropdownMenuContent>
             </DropdownMenu>

@@ -18,6 +18,8 @@ import { RecentPaymentsTable } from '../dashboard/recent-payments-table';
 import { PendingInvoicesTable } from '../dashboard/pending-invoices-table';
 import { paymentColumns } from '../dashboard/payment-columns';
 import { invoiceColumns } from '../dashboard/invoice-columns';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { PaymentDetails } from '@/components/payment-details';
 
 
 export default function PaymentsPage() {
@@ -29,6 +31,9 @@ export default function PaymentsPage() {
 
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
+  const [selectedPayment, setSelectedPayment] = React.useState<Payment | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+
 
   const { toast } = useToast();
 
@@ -85,6 +90,14 @@ export default function PaymentsPage() {
       unsubscribeFeeStructures();
     };
   }, []);
+  
+  const handleViewPayment = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setIsSheetOpen(true);
+  }
+  
+  const memoizedPaymentColumns = React.useMemo(() => paymentColumns({ onViewPayment: handleViewPayment }), [handleViewPayment]);
+
 
   const totalRevenue = payments.reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0);
   const pendingInvoicesTotal = invoices.reduce((acc, i) => acc + i.amount, 0);
@@ -163,12 +176,21 @@ export default function PaymentsPage() {
           <TabsTrigger value="invoices">Pending Invoices</TabsTrigger>
         </TabsList>
         <TabsContent value="payments">
-          <RecentPaymentsTable columns={paymentColumns} data={payments} />
+          <RecentPaymentsTable columns={memoizedPaymentColumns} data={payments} />
         </TabsContent>
         <TabsContent value="invoices">
           <PendingInvoicesTable columns={invoiceColumns} data={invoices} />
         </TabsContent>
       </Tabs>
+      
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Payment Details</SheetTitle>
+          </SheetHeader>
+          {selectedPayment && <PaymentDetails payment={selectedPayment} />}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
