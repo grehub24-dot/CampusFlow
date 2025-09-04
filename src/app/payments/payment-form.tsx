@@ -45,17 +45,37 @@ export default function PaymentForm({ students, feeStructures, currentTerm, onSu
   }, [feeStructures, selectedStudent, currentTerm]);
 
   const displayItems: FeeItem[] = useMemo(() => {
-    if (!matchingStructure) return [];
-    
-    const allItems: FeeItem[] = [];
-    if (matchingStructure.schoolFees) allItems.push({ name: 'School Fees', amount: matchingStructure.schoolFees });
-    if (matchingStructure.booksFee) allItems.push({ name: 'Books Fee', amount: matchingStructure.booksFee });
-    if (matchingStructure.uniformFee) allItems.push({ name: 'Uniform Fee', amount: matchingStructure.uniformFee });
-    if (matchingStructure.printingFee) allItems.push({ name: 'Printing Fee', amount: matchingStructure.printingFee });
-    if (matchingStructure.others) allItems.push({ name: 'Others', amount: matchingStructure.others });
-    
-    return allItems;
-  }, [matchingStructure]);
+    if (!matchingStructure || !selectedStudent) return [];
+
+    const items: FeeItem[] = [];
+
+    // Always include school & printing fees
+    if (matchingStructure.schoolFees)
+      items.push({ name: 'School Fees', amount: matchingStructure.schoolFees });
+    if (matchingStructure.printingFee)
+      items.push({ name: 'Printing Fee', amount: matchingStructure.printingFee });
+    if (matchingStructure.others)
+      items.push({ name: 'Others', amount: matchingStructure.others });
+
+    // ADMISSION FEE – only for new students
+    if (selectedStudent.isNewAdmission && matchingStructure.admissionFee) {
+      items.push({ name: 'Admission Fee', amount: matchingStructure.admissionFee });
+    }
+
+    // BOOKS & UNIFORM – only if NOT (old student AND 1st term)
+    const skipBooksUniform =
+      !selectedStudent.isNewAdmission && selectedStudent.currentTermNumber === 1;
+
+    if (!skipBooksUniform) {
+      if (matchingStructure.booksFee)
+        items.push({ name: 'Books Fee', amount: matchingStructure.booksFee });
+      if (matchingStructure.uniformFee)
+        items.push({ name: 'Uniform Fee', amount: matchingStructure.uniformFee });
+    }
+
+    return items;
+  }, [matchingStructure, selectedStudent]);
+
 
   useEffect(() => {
     if (!displayItems.length) {

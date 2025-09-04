@@ -21,6 +21,10 @@ export type Student = {
   guardianEmail?: string;
   previousSchool?: string;
   notes?: string;
+
+  // For fee calculation logic
+  isNewAdmission?: boolean;
+  currentTermNumber?: number;
 };
 
 export type FeeItem = {

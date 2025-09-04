@@ -427,7 +427,16 @@ export default function AdmissionsPage() {
   }
 
   const handlePay = (student: Student) => {
-    setSelectedStudent(student);
+    if (currentTerm) {
+        const studentForPayment = {
+            ...student,
+            isNewAdmission: student.admissionTerm === currentTerm.session && student.admissionYear === currentTerm.academicYear,
+            currentTermNumber: parseInt(currentTerm.session.split(' ')[0], 10)
+        }
+        setSelectedStudent(studentForPayment);
+    } else {
+        setSelectedStudent(student);
+    }
     setIsPaymentDialogOpen(true);
   }
 
