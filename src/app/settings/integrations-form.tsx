@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 const formSchema = z.object({
   frogApiKey: z.string().optional(),
   frogSenderId: z.string().optional(),
+  frogUsername: z.string().optional(),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -32,6 +33,7 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
     defaultValues: {
       frogApiKey: defaultValues?.frogApiKey || '',
       frogSenderId: defaultValues?.frogSenderId || '',
+      frogUsername: defaultValues?.frogUsername || '',
     }
   });
 
@@ -39,6 +41,7 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
     form.reset({
       frogApiKey: defaultValues?.frogApiKey || '',
       frogSenderId: defaultValues?.frogSenderId || '',
+      frogUsername: defaultValues?.frogUsername || '',
     })
   }, [defaultValues, form]);
 
@@ -51,6 +54,19 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
                 <CardTitle>Frog SMS API</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+                <FormField
+                    control={form.control}
+                    name="frogUsername"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Enter your Frog API Username" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField
                     control={form.control}
                     name="frogApiKey"

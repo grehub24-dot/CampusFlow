@@ -9,20 +9,22 @@ const FROG_API_BASE_URL_V1 = 'https://api.wigal.com.gh/v1';
 const FROG_API_BASE_URL_V3 = 'https://frogapi.wigal.com.gh/api/v3';
 
 
-async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string }> {
+async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string, username: string }> {
     const settingsDocRef = doc(db, "settings", "integrations");
     const docSnap = await getDoc(settingsDocRef);
 
     if (docSnap.exists()) {
         const settings = docSnap.data() as IntegrationSettings;
         const apiKey = settings.frogApiKey;
-        if (!apiKey) {
-            console.error("Frog API Key is not configured in settings.");
-            throw new Error("Frog API Key is not configured in settings.");
+        const username = settings.frogUsername;
+        if (!apiKey || !username) {
+            console.error("Frog API Key or Username is not configured in settings.");
+            throw new Error("Frog API Key or Username is not configured in settings.");
         }
         return {
             apiKey: apiKey,
             senderId: settings.frogSenderId || 'CampusFlow',
+            username: username,
         };
     }
 
@@ -68,11 +70,12 @@ export async function getBalance() {
     const url = `${FROG_API_BASE_URL_V3}/balance`;
     
     try {
-        const { apiKey } = await getFrogCredentials();
+        const { apiKey, username } = await getFrogCredentials();
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'API-KEY': apiKey
+                'API-KEY': apiKey,
+                'USERNAME': username,
             }
         });
         

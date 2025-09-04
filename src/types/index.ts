@@ -107,5 +107,6 @@ export type Message = {
 export type IntegrationSettings = {
     frogApiKey?: string;
     frogSenderId?: string;
+    frogUsername?: string;
 }
     
