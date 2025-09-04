@@ -56,6 +56,7 @@ export default function PaymentForm({
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
   const [receiptNo, setReceiptNo] = useState('');
   const [currentAmountPaid, setCurrentAmountPaid] = useState(0);
+  const [amountTendered, setAmountTendered] = useState(0);
   const { toast } = useToast();
   const [receiptLabel, setReceiptLabel] = useState('Receipt No');
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
@@ -187,6 +188,7 @@ export default function PaymentForm({
   }, [selectedStudent, currentTerm, payments]);
 
   const balance = useMemo(() => totalAmountDue - previouslyPaid - currentAmountPaid, [totalAmountDue, previouslyPaid, currentAmountPaid]);
+  const change = useMemo(() => amountTendered - currentAmountPaid, [amountTendered, currentAmountPaid]);
 
 
   useEffect(() => {
@@ -321,8 +323,8 @@ export default function PaymentForm({
           {allFeeItemsForForm.length > 0 && (
             <>
                 <hr className="my-2" />
-                <div className="flex justify-between items-center font-bold">
-                    <span>Total Amount Due</span>
+                <div className="flex justify-between items-center font-bold text-lg">
+                    <span>Total Bill</span>
                     <span>GHS {totalAmountDue.toFixed(2)}</span>
                 </div>
             </>
@@ -378,14 +380,39 @@ export default function PaymentForm({
         </div>
       </div>
 
-      <div>
-        <Label>New Balance (GHS)</Label>
-        <Input
-          type="number"
-          value={balance.toFixed(2)}
-          readOnly
-          className="bg-muted font-bold"
-        />
+       <div className="border p-4 rounded-md bg-muted/50 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>New Balance (GHS)</Label>
+              <Input
+                type="text"
+                value={balance.toFixed(2)}
+                readOnly
+                className="bg-background font-bold text-lg h-auto p-2"
+              />
+            </div>
+            <div>
+              <Label htmlFor="amountTendered">Amount Tendered (GHS)</Label>
+              <Input
+                id="amountTendered"
+                type="number"
+                value={amountTendered || ''}
+                onChange={(e) => setAmountTendered(parseFloat(e.target.value) || 0)}
+                 className="bg-background"
+              />
+            </div>
+          </div>
+          {amountTendered > 0 && (
+             <div >
+              <Label>Change (GHS)</Label>
+              <Input
+                type="text"
+                value={change > 0 ? change.toFixed(2) : '0.00'}
+                readOnly
+                className="bg-background font-bold text-green-600 text-lg h-auto p-2"
+              />
+            </div>
+          )}
       </div>
 
       <div className="flex justify-end">
@@ -400,3 +427,5 @@ export default function PaymentForm({
     </form>
   );
 }
+
+    
