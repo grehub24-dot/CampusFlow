@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, Wallet, ShoppingCart, MessageSquare, Mail } from 'lucide-react';
+import { Loader2, Send, Wallet, ShoppingCart } from 'lucide-react';
 import StatCard from '@/components/dashboard/stat-card';
 import { Input } from '@/components/ui/input';
 
@@ -64,15 +64,25 @@ export default function CommunicationsPage() {
     });
 
     const fetchBalance = async () => {
-      const result = await getBalance();
-      if (result.success) {
-        setBalance(result.balance);
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'API Error',
-          description: 'Could not fetch credit balance.'
-        });
+      try {
+        const result = await getBalance();
+        if (result.success) {
+          setBalance(result.balance);
+        } else {
+          console.error("API Error fetching balance:", result.error);
+          toast({
+            variant: 'destructive',
+            title: 'API Error',
+            description: 'Could not fetch SMS credit balance.'
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch balance:", error);
+         toast({
+            variant: 'destructive',
+            title: 'API Error',
+            description: 'Could not fetch SMS credit balance.'
+          });
       }
     };
 
@@ -86,20 +96,18 @@ export default function CommunicationsPage() {
 
   const onSubmit: SubmitHandler<MessageFormValues> = async (values) => {
     setIsSubmitting(true);
-    // This is a simplified implementation. A real-world scenario would involve
-    // batching requests, handling failures gracefully, and confirming costs.
     try {
       let recipients: string[] = [];
       if (values.recipientType === 'all') {
-        recipients = students.map(s => s.guardianPhone);
+        recipients = students.map(s => s.guardianPhone).filter(Boolean);
       } else if (values.recipientType === 'class' && values.classId) {
-        recipients = students.filter(s => s.classId === values.classId).map(s => s.guardianPhone);
+        recipients = students.filter(s => s.classId === values.classId).map(s => s.guardianPhone).filter(Boolean);
       } else if (values.recipientType === 'single' && values.studentId) {
          const student = students.find(s => s.id === values.studentId);
-         if (student) recipients.push(student.guardianPhone);
+         if (student && student.guardianPhone) recipients.push(student.guardianPhone);
       }
 
-      const uniqueRecipients = [...new Set(recipients)].filter(Boolean);
+      const uniqueRecipients = [...new Set(recipients)];
       
       if (uniqueRecipients.length === 0) {
         toast({ variant: 'destructive', title: 'No Recipients', description: 'Could not find any valid recipients for the selected criteria.' });
@@ -107,16 +115,15 @@ export default function CommunicationsPage() {
         return;
       }
       
-      // For now, we only implement SMS sending
       if (values.messageType === 'sms') {
         // In a real app, you would not send requests one by one.
-        // This is for demonstration purposes.
-        for (const phone of uniqueRecipients.slice(0, 5)) { // Limit to 5 for demo
-            await sendSms(phone, values.message);
-        }
+        // This is for demonstration purposes. Consider batching or a different strategy.
+        const promises = uniqueRecipients.slice(0, 5).map(phone => sendSms(phone, values.message));
+        await Promise.all(promises);
+
         toast({
           title: 'Messages Sent',
-          description: `SMS sent to ${uniqueRecipients.length} recipients. (Demo limited to 5)`,
+          description: `SMS dispatched to ${uniqueRecipients.length} recipients. (Demo limited to 5 for now)`,
         });
       } else {
          toast({
@@ -308,7 +315,7 @@ export default function CommunicationsPage() {
                 <CardHeader>
                     <CardTitle>Message History</CardTitle>
                     <CardDescription>A log of all communications sent from the system.</CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent>
                     <p className="text-center text-muted-foreground py-12">Message history tracking is not yet implemented.</p>
                 </CardContent>
@@ -319,3 +326,5 @@ export default function CommunicationsPage() {
     </>
   );
 }
+
+    
