@@ -188,7 +188,12 @@ export default function PaymentForm({
   }, [selectedStudent, currentTerm, payments]);
 
   const balance = useMemo(() => totalAmountDue - previouslyPaid - currentAmountPaid, [totalAmountDue, previouslyPaid, currentAmountPaid]);
-  const change = useMemo(() => amountTendered - currentAmountPaid, [amountTendered, currentAmountPaid]);
+  const change = useMemo(() => {
+    if (amountTendered > 0 && amountTendered >= currentAmountPaid) {
+      return amountTendered - currentAmountPaid;
+    }
+    return 0;
+  }, [amountTendered, currentAmountPaid]);
 
 
   useEffect(() => {
@@ -374,7 +379,7 @@ export default function PaymentForm({
           <Input
             id="currentAmountPaid"
             type="number"
-            value={currentAmountPaid}
+            value={currentAmountPaid || ''}
             onChange={(e) => setCurrentAmountPaid(parseFloat(e.target.value) || 0)}
           />
         </div>
@@ -407,7 +412,7 @@ export default function PaymentForm({
               <Label>Change (GHS)</Label>
               <Input
                 type="text"
-                value={change > 0 ? change.toFixed(2) : '0.00'}
+                value={change.toFixed(2)}
                 readOnly
                 className="bg-background font-bold text-green-600 text-lg h-auto p-2"
               />
