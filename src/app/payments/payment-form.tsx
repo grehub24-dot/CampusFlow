@@ -214,6 +214,26 @@ export default function PaymentForm({
   useEffect(() => {
     if (defaultStudentId) setSelectedStudentId(defaultStudentId);
   }, [defaultStudentId]);
+  
+  useEffect(() => {
+    const correctStatusIfNeeded = async () => {
+      if (selectedStudent && selectedStudent.paymentStatus !== 'Paid' && totalAmountDue > 0 && previouslyPaid >= totalAmountDue) {
+        try {
+          await updateDoc(doc(db, 'students', selectedStudent.id), {
+            paymentStatus: 'Paid',
+          });
+          toast({
+            title: 'Status Corrected',
+            description: `${selectedStudent.name}'s status was updated to Paid due to overpayment.`,
+          });
+        } catch (error) {
+           console.error('Error correcting student status: ', error);
+        }
+      }
+    };
+    correctStatusIfNeeded();
+  }, [selectedStudent, previouslyPaid, totalAmountDue, toast]);
+
 
   const toggleCheck = (name: string, isMandatory: boolean) => {
     if (isMandatory) return; // Do not allow unchecking mandatory fees for new admissions
@@ -227,9 +247,9 @@ export default function PaymentForm({
 
     try {
       const itemsToPay = allFeeItemsForForm.filter((i) => checkedItems[i.name]);
-      const finalBalance = totalAmountDue - previouslyPaid - currentAmountPaid;
       
       const totalPaidForTerm = previouslyPaid + currentAmountPaid;
+      const finalBalance = totalAmountDue - totalPaidForTerm;
       const newStatus = totalPaidForTerm >= totalAmountDue ? 'Paid' : 'Part-Payment';
 
       const payload = {
@@ -237,7 +257,7 @@ export default function PaymentForm({
         studentName: selectedStudent.name,
         amount: currentAmountPaid,
         totalAmountDue: totalAmountDue,
-        balance: finalBalance,
+        balance: Math.max(0, finalBalance),
         receiptNo: receiptNo,
         date: new Date().toISOString(),
         status: 'Paid', // Payment itself is always considered paid/complete
@@ -398,7 +418,7 @@ export default function PaymentForm({
                 readOnly
                 className={cn(
                   "bg-background font-bold h-auto p-2 text-2xl",
-                  balance > 0 ? "text-red-500" : "text-foreground"
+                  balance > 0 ? "text-red-500" : "text-green-600"
                 )}
               />
             </div>
