@@ -74,7 +74,7 @@ export default function PaymentForm({
   }, [feeStructures, selectedStudent, currentTerm]);
 
   const allFeeItemsForForm: PaymentFeeItem[] = useMemo(() => {
-    if (!matchingStructure || !Array.isArray(matchingStructure.items)) return [];
+    if (!matchingStructure || !Array.isArray(matchingStructure.items) || feeItems.length === 0) return [];
     
     return matchingStructure.items.map(item => {
         const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
