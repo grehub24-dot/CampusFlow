@@ -62,6 +62,21 @@ function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<
       notes: '',
     },
   });
+
+  const dob = form.watch('dateOfBirth');
+  
+  const calculateAge = (birthDate?: Date) => {
+    if (!birthDate) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+  };
+
+  const age = React.useMemo(() => calculateAge(dob), [dob]);
   
   const customOnSubmit: SubmitHandler<FormValues> = (values) => {
     const selectedClass = classes.find(c => c.id === values.admissionClassId);
@@ -111,7 +126,7 @@ function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<
               name="dateOfBirth"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Date of Birth</FormLabel>
+                  <FormLabel>Date of Birth {age !== null && <span className="text-muted-foreground">({age} years old)</span>}</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
