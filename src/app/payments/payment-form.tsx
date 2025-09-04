@@ -74,7 +74,7 @@ export default function PaymentForm({
   }, [feeStructures, selectedStudent, currentTerm]);
 
   const allFeeItemsForForm: PaymentFeeItem[] = useMemo(() => {
-    if (!matchingStructure) return [];
+    if (!matchingStructure || !Array.isArray(matchingStructure.items)) return [];
     
     return matchingStructure.items.map(item => {
         const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
@@ -90,7 +90,7 @@ export default function PaymentForm({
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!selectedStudent || !matchingStructure || !currentTerm || feeItems.length === 0) {
+    if (!selectedStudent || !matchingStructure || !currentTerm || feeItems.length === 0 || !Array.isArray(matchingStructure.items)) {
       setCheckedItems({});
       return;
     }
