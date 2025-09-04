@@ -149,17 +149,21 @@ export function FeeStructureSettings() {
                 amount: item.amount || 0
             }));
 
-            const data = {
-                classId: values.classId,
-                academicTermId: values.academicTermId,
-                items: feeItemsData
-            };
-
             if (selectedFeeStructure) {
+                const data = {
+                    classId: selectedFeeStructure.classId,
+                    academicTermId: selectedFeeStructure.academicTermId,
+                    items: feeItemsData
+                };
                 const docRef = doc(db, "fee-structures", selectedFeeStructure.id);
                 await updateDoc(docRef, data);
                 toast({ title: 'Fee Structure Updated', description: 'The fee structure has been successfully updated.' });
             } else {
+                 const data = {
+                    classId: values.classId,
+                    academicTermId: values.academicTermId,
+                    items: feeItemsData
+                };
                 await addDoc(collection(db, "fee-structures"), data);
                 toast({ title: 'Fee Structure Added', description: 'The new fee structure has been successfully added.' });
             }

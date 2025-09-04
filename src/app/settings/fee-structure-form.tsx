@@ -20,8 +20,8 @@ const feeStructureItemSchema = z.object({
 });
 
 const formSchema = z.object({
-  classId: z.string(),
-  academicTermId: z.string(),
+  classId: z.string().min(1, "Class is required."),
+  academicTermId: z.string().min(1, "Academic term is required."),
   items: z.array(feeStructureItemSchema),
 });
 
