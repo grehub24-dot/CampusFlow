@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { PaymentDetails } from '@/components/payment-details';
 import { StudentDetails } from '@/components/student-details';
+import { InvoiceDetails } from '@/components/invoice-details';
 
 export default function Dashboard() {
   const [students, setStudents] = React.useState<Student[]>([]);
@@ -30,9 +31,11 @@ export default function Dashboard() {
   const [feeItems, setFeeItems] = React.useState<FeeItem[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const [selectedPayment, setSelectedPayment] = React.useState<Payment | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null);
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
   const [isPaymentSheetOpen, setIsPaymentSheetOpen] = React.useState(false);
   const [isStudentSheetOpen, setIsStudentSheetOpen] = React.useState(false);
+  const [isInvoiceSheetOpen, setIsInvoiceSheetOpen] = React.useState(false);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -103,7 +106,8 @@ export default function Dashboard() {
   }
   
   const handleViewInvoice = (invoice: Invoice) => {
-    handleViewStudent(invoice.studentId);
+    setSelectedInvoice(invoice);
+    setIsInvoiceSheetOpen(true);
   }
 
   const handleSendReminder = async (invoice: Invoice) => {
@@ -149,18 +153,25 @@ export default function Dashboard() {
       const isNew = student.admissionTerm === currentTerm.session && student.admissionYear === currentTerm.academicYear;
       const termNumber = parseInt(currentTerm.session.split(' ')[0], 10);
 
-      const totalAmountDue = structure.items.reduce((total, item) => {
+      const applicableFeeItems = structure.items.map(item => {
           const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
-          if (!feeItemInfo || feeItemInfo.isOptional) return total;
+          if (!feeItemInfo) return null;
           
-          if (isNew) {
-            if (feeItemInfo.appliesTo.includes('new')) return total + item.amount;
-          } else {
-            if (termNumber === 1 && feeItemInfo.appliesTo.includes('term1')) return total + item.amount;
-            if (termNumber > 1 && feeItemInfo.appliesTo.includes('term2_3')) return total + item.amount;
+          let isApplicable = false;
+          if (!feeItemInfo.isOptional) {
+              if (isNew) {
+                  if (feeItemInfo.appliesTo.includes('new')) isApplicable = true;
+              } else {
+                  if (termNumber === 1 && feeItemInfo.appliesTo.includes('term1')) isApplicable = true;
+                  if (termNumber > 1 && feeItemInfo.appliesTo.includes('term2_3')) isApplicable = true;
+              }
           }
-          return total;
-      }, 0);
+
+          return isApplicable ? { name: feeItemInfo.name, amount: item.amount } : null;
+      }).filter(Boolean) as { name: string, amount: number }[];
+
+
+      const totalAmountDue = applicableFeeItems.reduce((total, item) => total + item.amount, 0);
 
       const totalPaid = payments
         .filter(p => p.studentId === student.id && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session)
@@ -173,8 +184,12 @@ export default function Dashboard() {
           id: student.id,
           studentId: student.id,
           studentName: student.name,
+          studentClass: student.class,
           amount: balance,
           dueDate: currentTerm.endDate,
+          items: applicableFeeItems,
+          totalAmount: totalAmountDue,
+          amountPaid: totalPaid,
         };
       }
       
@@ -354,6 +369,15 @@ export default function Dashboard() {
             <SheetTitle>Student Details</SheetTitle>
           </SheetHeader>
           {selectedStudent && <StudentDetails student={selectedStudent} />}
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={isInvoiceSheetOpen} onOpenChange={setIsInvoiceSheetOpen}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Invoice Details</SheetTitle>
+          </SheetHeader>
+          {selectedInvoice && <InvoiceDetails invoice={selectedInvoice} />}
         </SheetContent>
       </Sheet>
     </>

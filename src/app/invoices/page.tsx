@@ -14,7 +14,7 @@ import StatCard from '@/components/dashboard/stat-card';
 import { PendingInvoicesTable } from '../dashboard/pending-invoices-table';
 import { getInvoiceColumns } from './columns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { StudentDetails } from '@/components/student-details';
+import { InvoiceDetails } from '@/components/invoice-details';
 
 
 export default function InvoicesPage() {
@@ -25,8 +25,8 @@ export default function InvoicesPage() {
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
 
   const [isLoading, setIsLoading] = React.useState(true);
-  const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
-  const [isStudentSheetOpen, setIsStudentSheetOpen] = React.useState(false);
+  const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null);
+  const [isInvoiceSheetOpen, setIsInvoiceSheetOpen] = React.useState(false);
 
 
   const { toast } = useToast();
@@ -76,18 +76,9 @@ export default function InvoicesPage() {
     };
   }, []);
 
-  const handleViewStudent = (studentId: string) => {
-    const student = students.find(s => s.id === studentId);
-    if (student) {
-        setSelectedStudent(student);
-        setIsStudentSheetOpen(true);
-    } else {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not find student details.'})
-    }
-  }
-
   const handleViewInvoice = (invoice: Invoice) => {
-    handleViewStudent(invoice.studentId);
+    setSelectedInvoice(invoice);
+    setIsInvoiceSheetOpen(true);
   }
 
   const handleSendReminder = async (invoice: Invoice) => {
@@ -120,19 +111,26 @@ export default function InvoicesPage() {
       
       const isNew = student.admissionTerm === currentTerm.session && student.admissionYear === currentTerm.academicYear;
       const termNumber = parseInt(currentTerm.session.split(' ')[0], 10);
-
-      const totalAmountDue = structure.items.reduce((total, item) => {
+      
+      const applicableFeeItems = structure.items.map(item => {
           const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
-          if (!feeItemInfo || feeItemInfo.isOptional) return total;
+          if (!feeItemInfo) return null;
           
-          if (isNew) {
-            if (feeItemInfo.appliesTo.includes('new')) return total + item.amount;
-          } else {
-            if (termNumber === 1 && feeItemInfo.appliesTo.includes('term1')) return total + item.amount;
-            if (termNumber > 1 && feeItemInfo.appliesTo.includes('term2_3')) return total + item.amount;
+          let isApplicable = false;
+          if (!feeItemInfo.isOptional) {
+              if (isNew) {
+                  if (feeItemInfo.appliesTo.includes('new')) isApplicable = true;
+              } else {
+                  if (termNumber === 1 && feeItemInfo.appliesTo.includes('term1')) isApplicable = true;
+                  if (termNumber > 1 && feeItemInfo.appliesTo.includes('term2_3')) isApplicable = true;
+              }
           }
-          return total;
-      }, 0);
+
+          return isApplicable ? { name: feeItemInfo.name, amount: item.amount } : null;
+      }).filter(Boolean) as { name: string, amount: number }[];
+
+
+      const totalAmountDue = applicableFeeItems.reduce((total, item) => total + item.amount, 0);
 
       const totalPaid = payments
         .filter(p => p.studentId === student.id && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session)
@@ -145,8 +143,12 @@ export default function InvoicesPage() {
           id: student.id,
           studentId: student.id,
           studentName: student.name,
+          studentClass: student.class,
           amount: balance,
           dueDate: currentTerm.endDate,
+          items: applicableFeeItems,
+          totalAmount: totalAmountDue,
+          amountPaid: totalPaid,
         };
       }
       
@@ -199,12 +201,12 @@ export default function InvoicesPage() {
         <PendingInvoicesTable columns={memoizedInvoiceColumns} data={pendingInvoices} />
       </div>
       
-      <Sheet open={isStudentSheetOpen} onOpenChange={setIsStudentSheetOpen}>
+       <Sheet open={isInvoiceSheetOpen} onOpenChange={setIsInvoiceSheetOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Student Details</SheetTitle>
+            <SheetTitle>Invoice Details</SheetTitle>
           </SheetHeader>
-          {selectedStudent && <StudentDetails student={selectedStudent} />}
+          {selectedInvoice && <InvoiceDetails invoice={selectedInvoice} />}
         </SheetContent>
       </Sheet>
     </>

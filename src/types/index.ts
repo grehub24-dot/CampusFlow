@@ -52,10 +52,14 @@ export type Payment = {
 
 export type Invoice = {
   id: string;
-  studentName: string;
   studentId: string;
-  amount: number;
+  studentName: string;
+  studentClass?: string;
+  amount: number; // outstanding balance
   dueDate: string;
+  items: { name: string, amount: number }[];
+  totalAmount: number; // total bill for the term
+  amountPaid: number; // total paid so far for the term
 };
 
 export type User = {
