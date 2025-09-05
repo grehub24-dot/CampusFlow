@@ -125,3 +125,8 @@ export type IntegrationSettings = {
     frogSenderId?: string;
     frogUsername?: string;
 }
+
+export type AdmissionSettings = {
+    prefix?: string;
+    padding?: number;
+}

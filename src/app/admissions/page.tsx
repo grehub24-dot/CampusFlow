@@ -24,7 +24,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment } from '@/types';
+import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment, AdmissionSettings } from '@/types';
 import { AdmittedStudentTable } from './admitted-student-table';
 import { ToastAction } from '@/components/ui/toast';
 import { db } from '@/lib/firebase';
@@ -425,19 +425,27 @@ export default function AdmissionsPage() {
 
         await runTransaction(db, async (transaction) => {
             const studentsCollectionRef = collection(db, "students");
-            const lastStudentQuery = query(studentsCollectionRef, orderBy("admissionId", "desc"), limit(1));
-            const lastStudentSnapshot = await getDocs(lastStudentQuery);
+            const admissionSettingsRef = doc(db, 'settings', 'admission');
+
+            const [lastStudentSnapshot, admissionSettingsDoc] = await Promise.all([
+                getDocs(query(studentsCollectionRef, orderBy("admissionId", "desc"), limit(1))),
+                transaction.get(admissionSettingsRef)
+            ]);
+
+            const settings = admissionSettingsDoc.data() as AdmissionSettings || { prefix: 'ADM', padding: 4 };
+            const prefix = settings.prefix || 'ADM';
+            const padding = settings.padding || 4;
             
             let nextNumber = 1;
-            const prefix = "ADM";
-            const padding = 4;
 
             if (!lastStudentSnapshot.empty) {
                 const lastStudentDoc = lastStudentSnapshot.docs[0];
                 const lastAdmissionId = lastStudentDoc.data().admissionId as string;
-                const lastNumberMatch = lastAdmissionId.match(/\d+$/);
-                if (lastNumberMatch) {
-                    nextNumber = parseInt(lastNumberMatch[0], 10) + 1;
+                if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
+                    const lastNumberMatch = lastAdmissionId.match(/\d+$/);
+                    if (lastNumberMatch) {
+                        nextNumber = parseInt(lastNumberMatch[0], 10) + 1;
+                    }
                 }
             }
             
