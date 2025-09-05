@@ -217,6 +217,7 @@ export default function Dashboard() {
           id: student.id,
           studentId: student.id,
           studentName: student.name,
+          admissionId: student.admissionId,
           studentClass: student.class,
           amount: balance,
           dueDate: currentTerm.endDate,
@@ -443,7 +444,3 @@ export default function Dashboard() {
     </>
   );
 }
-
-    
-
-    

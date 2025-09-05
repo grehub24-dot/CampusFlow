@@ -53,6 +53,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
             <Separator />
             <div className="grid md:grid-cols-2 gap-6">
                 <DetailItem icon={User} label="Student Name" value={invoice.studentName} />
+                <DetailItem icon={Hash} label="Admission ID" value={invoice.admissionId} />
                 <DetailItem icon={Calendar} label="Due Date" value={format(new Date(invoice.dueDate), 'PPP')} />
             </div>
             

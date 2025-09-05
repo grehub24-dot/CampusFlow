@@ -55,6 +55,7 @@ export type Invoice = {
   id: string;
   studentId: string;
   studentName: string;
+  admissionId?: string;
   studentClass?: string;
   amount: number; // outstanding balance
   dueDate: string;

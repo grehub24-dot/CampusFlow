@@ -24,6 +24,10 @@ export const getInvoiceColumns = ({ onViewInvoice, onSendReminder, onPay }: Colu
     accessorKey: "studentName",
     header: "Student Name",
   },
+    {
+    accessorKey: "admissionId",
+    header: "Admission ID",
+  },
   {
     accessorKey: "amount",
     header: "Amount",
