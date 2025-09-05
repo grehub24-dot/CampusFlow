@@ -467,7 +467,7 @@ export default function AdmissionsPage() {
             transaction.set(newStudentDocRef, newStudentData);
             
             // Update the next admission number in settings
-            transaction.set(admissionSettingsRef, { nextNumber: nextNumber + 1 }, { merge: true });
+            transaction.update(admissionSettingsRef, { nextNumber: nextNumber + 1 });
         });
 
         toast({

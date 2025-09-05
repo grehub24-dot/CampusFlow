@@ -117,7 +117,10 @@ export function AdmissionSettings() {
             if (doc.exists()) {
                 setSettings(doc.data() as AdmissionSettingsType);
             } else {
-                setSettings(null); // No settings found
+                // If no settings exist, create them with default values
+                const defaultSettings = { prefix: 'ADM', nextNumber: 1, padding: 4 };
+                setDoc(settingsDocRef, defaultSettings);
+                setSettings(defaultSettings);
             }
             setIsLoading(false);
         }, (error) => {
