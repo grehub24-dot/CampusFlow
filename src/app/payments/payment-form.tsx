@@ -250,7 +250,8 @@ export default function PaymentForm({
       
       const totalPaidForTerm = previouslyPaid + currentAmountPaid;
       const finalBalance = totalAmountDue - totalPaidForTerm;
-      const newStatus = totalPaidForTerm >= totalAmountDue ? 'Paid' : 'Part-Payment';
+      const newStudentStatus = totalPaidForTerm >= totalAmountDue ? 'Paid' : 'Part-Payment';
+      const newPaymentStatus = totalPaidForTerm >= totalAmountDue ? 'Full Payment' : 'Part Payment';
 
       const payload = {
         studentId: selectedStudent.id,
@@ -260,7 +261,7 @@ export default function PaymentForm({
         balance: Math.max(0, finalBalance),
         receiptNo: receiptNo,
         date: new Date().toISOString(),
-        status: 'Paid', // Payment itself is always considered paid/complete
+        status: newPaymentStatus,
         paymentMethod,
         academicYear: currentTerm.academicYear,
         term: currentTerm.session,
@@ -270,7 +271,7 @@ export default function PaymentForm({
       await addDoc(collection(db, 'payments'), payload);
       
       await updateDoc(doc(db, 'students', selectedStudent.id), {
-        paymentStatus: newStatus,
+        paymentStatus: newStudentStatus,
       });
 
       toast({

@@ -51,9 +51,8 @@ export const paymentColumns = ({ onViewPayment, onViewStudent }: ColumnsProps): 
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
       const variant = {
-        "Paid": "default",
-        "Part-Payment": "outline",
-        "Pending": "secondary",
+        "Full Payment": "default",
+        "Part Payment": "outline",
         "Failed": "destructive",
       }[status] ?? "default" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
       return <Badge variant={variant} className="capitalize">{status}</Badge>;

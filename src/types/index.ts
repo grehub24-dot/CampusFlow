@@ -42,7 +42,7 @@ export type Payment = {
   balance: number;
   receiptNo?: string;
   date: string;
-  status: 'Paid' | 'Part-Payment' | 'Pending' | 'Failed';
+  status: 'Full Payment' | 'Part Payment' | 'Failed';
   paymentMethod?: 'Cash' | 'Bank Transfer' | 'Mobile Money' | 'Card' | 'Cheque';
   academicYear?: string;
   term?: string;
