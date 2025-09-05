@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React from 'react';
@@ -7,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, onSnapshot, query, orderBy, where } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, where, doc, runTransaction } from "firebase/firestore";
 
 
 import { PageHeader } from "@/components/page-header";
@@ -23,7 +24,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment } from '@/types';
+import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment, AdmissionSettings } from '@/types';
 import { AdmittedStudentTable } from './admitted-student-table';
 import { ToastAction } from '@/components/ui/toast';
 import { db } from '@/lib/firebase';
@@ -418,31 +419,59 @@ export default function AdmissionsPage() {
         setIsSubmitting(false);
         return;
     }
-    try {
-        const newStudentData = {
-            name: `${values.firstName} ${values.lastName}`,
-            class: values.admissionClass,
-            classId: values.admissionClassId,
-            classCategory: values.admissionClassCategory,
-            gender: values.gender,
-            status: 'Active',
-            paymentStatus: 'Pending',
-            email: `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
-            admissionDate: new Date().toISOString(),
-            admissionTerm: currentTerm.session,
-            admissionYear: currentTerm.academicYear,
-            dateOfBirth: values.dateOfBirth.toISOString(),
-            firstName: values.firstName,
-            lastName: values.lastName,
-            guardianName: values.guardianName,
-            guardianPhone: values.guardianPhone,
-            guardianEmail: values.guardianEmail,
-            previousSchool: values.previousSchool,
-            notes: values.notes,
-        };
 
-        const docRef = await addDoc(collection(db, "students"), newStudentData);
+    try {
+        const admissionSettingsRef = doc(db, "settings", "admission");
         
+        const newStudentDocRef = doc(collection(db, "students")); // Create a new doc ref to get ID
+
+        await runTransaction(db, async (transaction) => {
+            const admissionSettingsDoc = await transaction.get(admissionSettingsRef);
+            
+            let nextNumber = 1;
+            let prefix = "ADM";
+            let padding = 4;
+
+            if (admissionSettingsDoc.exists()) {
+                const settings = admissionSettingsDoc.data() as AdmissionSettings;
+                nextNumber = settings.nextNumber || 1;
+                prefix = settings.prefix || "ADM";
+                padding = settings.padding || 4;
+            }
+
+            const admissionId = `${prefix}-${String(nextNumber).padStart(padding, '0')}`;
+
+            const newStudentData = {
+                name: `${values.firstName} ${values.lastName}`,
+                admissionId: admissionId,
+                class: values.admissionClass,
+                classId: values.admissionClassId,
+                classCategory: values.admissionClassCategory,
+                gender: values.gender,
+                status: 'Active' as const,
+                paymentStatus: 'Pending' as const,
+                email: `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
+                admissionDate: new Date().toISOString(),
+                admissionTerm: currentTerm.session,
+                admissionYear: currentTerm.academicYear,
+                dateOfBirth: values.dateOfBirth.toISOString(),
+                firstName: values.firstName,
+                lastName: values.lastName,
+                guardianName: values.guardianName,
+                guardianPhone: values.guardianPhone,
+                guardianEmail: values.guardianEmail,
+                previousSchool: values.previousSchool,
+                notes: values.notes,
+            };
+
+            transaction.set(newStudentDocRef, newStudentData);
+            
+            // Update the next admission number in settings
+            transaction.set(admissionSettingsRef, { nextNumber: nextNumber + 1 }, { merge: true });
+
+            return newStudentData;
+        });
+
         toast({
             title: 'Application Submitted',
             description: `${values.firstName} ${values.lastName}'s application has been successfully submitted.`,
@@ -450,10 +479,9 @@ export default function AdmissionsPage() {
         
         setIsAdmissionDialogOpen(false);
 
-        // Open payment dialog for the new student
         const newStudentForPayment: Student = {
-            id: docRef.id,
-            ...newStudentData,
+            id: newStudentDocRef.id,
+            ...(await (await getDoc(newStudentDocRef)).data() as Omit<Student, 'id'>),
             isNewAdmission: true,
             currentTermNumber: parseInt(currentTerm.session.split(' ')[0], 10)
         }

@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
@@ -58,6 +59,10 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay }: ColumnsPr
     ),
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    accessorKey: "admissionId",
+    header: "Admission ID",
   },
   {
     accessorKey: "name",

@@ -2,6 +2,7 @@
 
 export type Student = {
   id: string; // This is the Firestore document ID
+  admissionId?: string; // Add this new field
   name: string;
   class: string;
   classId: string; // Ensure this is always present
@@ -124,3 +125,8 @@ export type IntegrationSettings = {
     frogUsername?: string;
 }
     
+export type AdmissionSettings = {
+    prefix?: string;
+    nextNumber?: number;
+    padding?: number;
+}
