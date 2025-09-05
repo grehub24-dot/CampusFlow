@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import React from 'react';
@@ -155,6 +154,14 @@ export function StudentForm({ onSubmit, defaultValues, classes }: StudentFormPro
                 </FormItem>
               )}
             />
+            {defaultValues?.admissionId && (
+              <FormItem>
+                <FormLabel>Admission ID</FormLabel>
+                <FormControl>
+                  <Input readOnly disabled value={defaultValues.admissionId} />
+                </FormControl>
+              </FormItem>
+            )}
             <FormField
               control={form.control}
               name="email"
