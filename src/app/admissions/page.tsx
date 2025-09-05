@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, onSnapshot, query, orderBy, where, doc, runTransaction, getDoc } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, where, doc, runTransaction, getDoc, limit, getDocs } from "firebase/firestore";
 
 
 import { PageHeader } from "@/components/page-header";
@@ -24,7 +24,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment, AdmissionSettings } from '@/types';
+import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment } from '@/types';
 import { AdmittedStudentTable } from './admitted-student-table';
 import { ToastAction } from '@/components/ui/toast';
 import { db } from '@/lib/firebase';
@@ -421,24 +421,26 @@ export default function AdmissionsPage() {
     }
 
     try {
-        const admissionSettingsRef = doc(db, "settings", "admission");
-        
         const newStudentDocRef = doc(collection(db, "students")); // Create a new doc ref to get ID
 
         await runTransaction(db, async (transaction) => {
-            const admissionSettingsDoc = await transaction.get(admissionSettingsRef);
+            const studentsCollectionRef = collection(db, "students");
+            const lastStudentQuery = query(studentsCollectionRef, orderBy("admissionId", "desc"), limit(1));
+            const lastStudentSnapshot = await getDocs(lastStudentQuery);
             
             let nextNumber = 1;
-            let prefix = "ADM";
-            let padding = 4;
+            const prefix = "ADM";
+            const padding = 4;
 
-            if (admissionSettingsDoc.exists()) {
-                const settings = admissionSettingsDoc.data() as AdmissionSettings;
-                nextNumber = settings.nextNumber || 1;
-                prefix = settings.prefix || "ADM";
-                padding = settings.padding || 4;
+            if (!lastStudentSnapshot.empty) {
+                const lastStudentDoc = lastStudentSnapshot.docs[0];
+                const lastAdmissionId = lastStudentDoc.data().admissionId as string;
+                const lastNumberMatch = lastAdmissionId.match(/\d+$/);
+                if (lastNumberMatch) {
+                    nextNumber = parseInt(lastNumberMatch[0], 10) + 1;
+                }
             }
-
+            
             const admissionId = `${prefix}-${String(nextNumber).padStart(padding, '0')}`;
 
             const newStudentData = {
@@ -465,9 +467,6 @@ export default function AdmissionsPage() {
             };
 
             transaction.set(newStudentDocRef, newStudentData);
-            
-            // Update the next admission number in settings
-            transaction.update(admissionSettingsRef, { nextNumber: nextNumber + 1 });
         });
 
         toast({
