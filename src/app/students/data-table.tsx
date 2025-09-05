@@ -12,6 +12,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  Row,
   useReactTable,
 } from "@tanstack/react-table"
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
@@ -33,7 +34,7 @@ import {
   } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Trash2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { DataTableFacetedFilter } from "./data-table-faceted-filter"
 import { getColumns } from "./columns"
@@ -45,6 +46,7 @@ interface DataTableProps {
   onViewDetails: (student: Student) => void;
   onDelete: (student: Student) => void;
   onPay: (student: Student) => void;
+  onDeleteSelected: (students: Student[]) => void;
 }
 
 const statusOptions = [
@@ -57,6 +59,7 @@ const paymentStatusOptions = [
     { label: "Paid", value: "Paid" },
     { label: "Pending", value: "Pending" },
     { label: "Unpaid", value: "Unpaid" },
+    { label: "Part-Payment", value: "Part-Payment" },
 ]
 
 export function DataTable({
@@ -65,6 +68,7 @@ export function DataTable({
   onViewDetails,
   onDelete,
   onPay,
+  onDeleteSelected,
 }: DataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -116,6 +120,11 @@ export function DataTable({
     classes.map(c => ({ label: c.name, value: c.name }))
   , [classes]);
 
+  const handleDeleteSelected = () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original as Student);
+    onDeleteSelected(selectedRows);
+  }
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -143,32 +152,40 @@ export function DataTable({
                 title="Class"
                 options={classOptions}
             />
-            <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto">
-                Columns <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                    return (
-                    <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                        }
-                    >
-                        {column.id.replace(/([A-Z])/g, ' $1')}
-                    </DropdownMenuCheckboxItem>
-                    )
-                })}
-            </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="ml-auto flex items-center gap-2">
+                {table.getFilteredSelectedRowModel().rows.length > 0 && (
+                     <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete ({table.getFilteredSelectedRowModel().rows.length})
+                    </Button>
+                )}
+                <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="ml-auto">
+                    Columns <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    {table
+                    .getAllColumns()
+                    .filter((column) => column.getCanHide())
+                    .map((column) => {
+                        return (
+                        <DropdownMenuCheckboxItem
+                            key={column.id}
+                            className="capitalize"
+                            checked={column.getIsVisible()}
+                            onCheckedChange={(value) =>
+                            column.toggleVisibility(!!value)
+                            }
+                        >
+                            {column.id.replace(/([A-Z])/g, ' $1')}
+                        </DropdownMenuCheckboxItem>
+                        )
+                    })}
+                </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </div>
         <div className="rounded-md border">
           <Table>

@@ -110,11 +110,11 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay }: ColumnsPr
       return (
         <Badge 
           className={cn(
-            "capitalize",
-            status === 'Paid' && 'bg-green-600 text-white hover:bg-green-700',
-            status === 'Part-Payment' && 'bg-amber-500 text-white hover:bg-amber-600',
-            status === 'Unpaid' && 'bg-red-600 text-white hover:bg-red-700',
-            status === 'Pending' && 'bg-gray-500 text-white'
+            "capitalize text-white",
+            status === 'Paid' ? 'bg-green-600 hover:bg-green-700' :
+            status === 'Part-Payment' ? 'bg-amber-500 hover:bg-amber-600' :
+            status === 'Unpaid' ? 'bg-red-600 hover:bg-red-700' :
+            'bg-gray-500'
           )}
         >
           {status}

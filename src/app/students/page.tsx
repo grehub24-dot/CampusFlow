@@ -12,7 +12,7 @@ import Papa from 'papaparse';
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Upload, Download, Users, User, UserPlus, Loader2 } from "lucide-react";
+import { Upload, Download, Users, User, UserPlus, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -49,6 +49,7 @@ export default function StudentsPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
   const [studentToDelete, setStudentToDelete] = React.useState<Student | null>(null);
+  const [studentsToDelete, setStudentsToDelete] = React.useState<Student[]>([]);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -106,11 +107,6 @@ export default function StudentsPage() {
     };
   }, [toast]);
 
-  const handleAddNewStudent = () => {
-    setSelectedStudent(null);
-    setIsFormDialogOpen(true);
-  };
-
   const handleEditStudent = (student: Student) => {
     setSelectedStudent(student);
     setIsFormDialogOpen(true);
@@ -138,6 +134,10 @@ export default function StudentsPage() {
   const handleDeleteStudent = (student: Student) => {
     setStudentToDelete(student);
   }
+  
+  const handleDeleteSelected = (selectedStudents: Student[]) => {
+    setStudentsToDelete(selectedStudents);
+  }
 
   const handleConfirmDelete = async () => {
     if (!studentToDelete) return;
@@ -160,6 +160,35 @@ export default function StudentsPage() {
         setStudentToDelete(null);
     }
   };
+
+  const handleConfirmBulkDelete = async () => {
+    if (studentsToDelete.length === 0) return;
+    setIsSubmitting(true);
+    const batch = writeBatch(db);
+    studentsToDelete.forEach(student => {
+        const docRef = doc(db, "students", student.id);
+        batch.delete(docRef);
+    });
+
+    try {
+        await batch.commit();
+        toast({
+            title: `Deleted ${studentsToDelete.length} students`,
+            description: "The selected students have been successfully deleted.",
+        });
+    } catch (error) {
+        console.error("Error performing bulk delete: ", error);
+        toast({
+            variant: "destructive",
+            title: "Bulk Delete Failed",
+            description: "Could not delete the selected students. Please try again.",
+        });
+    } finally {
+        setIsSubmitting(false);
+        setStudentsToDelete([]);
+    }
+  };
+
 
   const handleFormDialogClose = (open: boolean) => {
       if (!open) {
@@ -430,7 +459,14 @@ export default function StudentsPage() {
         <ClassEnrollmentChart data={students} />
       </div>
 
-      <DataTable data={students} onEdit={handleEditStudent} onViewDetails={handleViewDetails} onDelete={handleDeleteStudent} onPay={handlePay} />
+      <DataTable 
+        data={students} 
+        onEdit={handleEditStudent} 
+        onViewDetails={handleViewDetails} 
+        onDelete={handleDeleteStudent} 
+        onPay={handlePay}
+        onDeleteSelected={handleDeleteSelected}
+      />
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
@@ -456,6 +492,22 @@ export default function StudentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <AlertDialog open={studentsToDelete.length > 0} onOpenChange={(open) => !open && setStudentsToDelete([])}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the {studentsToDelete.length} selected student(s).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setStudentsToDelete([])}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmBulkDelete} disabled={isSubmitting}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
        <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
