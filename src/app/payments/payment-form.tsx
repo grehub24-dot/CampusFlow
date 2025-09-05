@@ -55,7 +55,7 @@ export default function PaymentForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
   const [receiptNo, setReceiptNo] = useState('');
-  const [currentAmountPaid, setCurrentAmountPaid] = useState(0);
+  const [payingAmount, setPayingAmount] = useState(0);
   const [amountTendered, setAmountTendered] = useState(0);
   const { toast } = useToast();
   const [receiptLabel, setReceiptLabel] = useState('Receipt No.');
@@ -187,29 +187,31 @@ export default function PaymentForm({
         .reduce((sum, p) => sum + p.amount, 0);
   }, [selectedStudent, currentTerm, payments]);
 
-  const balance = useMemo(() => {
-    const calculatedBalance = totalAmountDue - previouslyPaid - currentAmountPaid;
-    return Math.max(0, calculatedBalance);
-  }, [totalAmountDue, previouslyPaid, currentAmountPaid]);
+  const outstandingBalance = useMemo(() => {
+      const balance = totalAmountDue - previouslyPaid;
+      return Math.max(0, balance);
+  }, [totalAmountDue, previouslyPaid]);
+  
+  const newBalance = useMemo(() => {
+    const balance = outstandingBalance - payingAmount;
+    return Math.max(0, balance);
+  }, [outstandingBalance, payingAmount]);
 
   const change = useMemo(() => {
-    if (amountTendered > 0 && amountTendered >= currentAmountPaid) {
-      return amountTendered - currentAmountPaid;
+    if (amountTendered > 0 && amountTendered >= payingAmount) {
+      return amountTendered - payingAmount;
     }
     return 0;
-  }, [amountTendered, currentAmountPaid]);
+  }, [amountTendered, payingAmount]);
 
 
   useEffect(() => {
     if (!selectedStudent || !currentTerm) {
-      setCurrentAmountPaid(0);
+      setPayingAmount(0);
       return;
     }
-    
-    const outstandingBalance = totalAmountDue - previouslyPaid;
-    setCurrentAmountPaid(outstandingBalance > 0 ? outstandingBalance : 0);
-
-  }, [totalAmountDue, previouslyPaid, selectedStudent, currentTerm, payments, checkedItems]);
+    setPayingAmount(outstandingBalance > 0 ? outstandingBalance : 0);
+  }, [outstandingBalance, selectedStudent, currentTerm]);
 
   useEffect(() => {
     if (defaultStudentId) setSelectedStudentId(defaultStudentId);
@@ -242,23 +244,21 @@ export default function PaymentForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedStudent || currentAmountPaid <= 0 || totalAmountDue <= 0) return;
+    if (!selectedStudent || payingAmount <= 0 || totalAmountDue <= 0) return;
     setIsSubmitting(true);
 
     try {
       const itemsToPay = allFeeItemsForForm.filter((i) => checkedItems[i.name]);
       
-      const totalPaidForTerm = previouslyPaid + currentAmountPaid;
-      const finalBalance = totalAmountDue - totalPaidForTerm;
-      const newStudentStatus = totalPaidForTerm >= totalAmountDue ? 'Paid' : 'Part-Payment';
-      const newPaymentStatus = totalPaidForTerm >= totalAmountDue ? 'Full Payment' : 'Part Payment';
+      const newPaymentStatus = payingAmount < outstandingBalance ? 'Part Payment' : 'Full Payment';
+      const newStudentStatus = newBalance <= 0 ? 'Paid' : 'Part-Payment';
 
       const payload = {
         studentId: selectedStudent.id,
         studentName: selectedStudent.name,
-        amount: currentAmountPaid,
+        amount: payingAmount,
         totalAmountDue: totalAmountDue,
-        balance: Math.max(0, finalBalance),
+        balance: newBalance,
         receiptNo: receiptNo,
         date: new Date().toISOString(),
         status: newPaymentStatus,
@@ -276,7 +276,7 @@ export default function PaymentForm({
 
       toast({
         title: 'Payment Recorded',
-        description: `Payment of GHS ${currentAmountPaid.toFixed(
+        description: `Payment of GHS ${payingAmount.toFixed(
           2
         )} for ${selectedStudent.name} was successful.`,
       });
@@ -403,13 +403,12 @@ export default function PaymentForm({
           />
         </div>
         <div>
-          <Label htmlFor="currentAmountPaid">Amount to Pay (GHS)</Label>
+          <Label>Outstanding Balance (GHS)</Label>
           <Input
-            id="currentAmountPaid"
             type="number"
-            value={currentAmountPaid || ''}
-            onChange={(e) => setCurrentAmountPaid(parseFloat(e.target.value) || 0)}
-            className="text-red-500 font-bold"
+            value={outstandingBalance.toFixed(2)}
+            readOnly
+            className="font-bold"
           />
         </div>
       </div>
@@ -417,45 +416,57 @@ export default function PaymentForm({
        <div className="border p-4 rounded-md bg-muted/50 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
+              <Label htmlFor="payingAmount">Paying Amount (GHS)</Label>
+              <Input
+                id="payingAmount"
+                type="number"
+                value={payingAmount || ''}
+                onChange={(e) => setPayingAmount(parseFloat(e.target.value) || 0)}
+                 className="bg-background font-bold text-blue-600 text-3xl h-auto p-2"
+              />
+            </div>
+            <div>
               <Label>New Balance</Label>
               <Input
                 type="text"
-                value={`GHS ${balance.toFixed(2)}`}
+                value={`GHS ${newBalance.toFixed(2)}`}
                 readOnly
                 className={cn(
                   "bg-background font-bold h-auto p-2 text-2xl",
-                  balance > 0 ? "text-red-500" : "text-green-600"
+                  newBalance > 0 ? "text-red-500" : "text-green-600"
                 )}
               />
             </div>
-             <div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <Label htmlFor="amountTendered">Amount Tendered</Label>
               <Input
                 id="amountTendered"
                 type="number"
                 value={amountTendered || ''}
                 onChange={(e) => setAmountTendered(parseFloat(e.target.value) || 0)}
-                 className="bg-background font-bold text-blue-600 text-3xl h-auto p-2"
+                 className="bg-background"
               />
             </div>
-          </div>
-          {amountTendered > 0 && (
+            {amountTendered > 0 && (
              <div >
               <Label>Change</Label>
               <Input
                 type="text"
                 value={`GHS ${change.toFixed(2)}`}
                 readOnly
-                className="bg-background font-bold text-green-600 text-3xl h-auto p-2"
+                className="bg-background font-bold text-green-600"
               />
             </div>
-          )}
+            )}
+          </div>
       </div>
 
       <div className="flex justify-end">
         <Button
           type="submit"
-          disabled={!selectedStudent || currentAmountPaid <= 0 || isSubmitting}
+          disabled={!selectedStudent || payingAmount <= 0 || isSubmitting}
         >
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Record Payment
