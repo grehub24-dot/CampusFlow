@@ -62,20 +62,18 @@ export const getColumns = ({ onViewApplication, onPay }: ColumnsProps): ColumnDe
     header: "Payment Status",
     cell: ({ row }) => {
       const status = row.getValue("paymentStatus") as string;
-      const variant = {
-        "Paid": "default",
-        "Part-Payment": "outline",
-        "Pending": "secondary",
-        "Unpaid": "destructive",
-      }[status] ?? "secondary" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
       
       return (
-        <Badge variant={variant} className={cn(
-            status === 'Paid' && 'bg-green-600 hover:bg-green-700',
-            status === 'Part-Payment' && 'border-amber-500 text-amber-500',
-            "capitalize"
-        )}>
-            {status || 'Pending'}
+        <Badge 
+          className={cn(
+            "capitalize",
+            status === 'Paid' && 'bg-green-600 text-white hover:bg-green-700',
+            status === 'Part-Payment' && 'bg-amber-500 text-white hover:bg-amber-600',
+            status === 'Unpaid' && 'bg-red-600 text-white hover:bg-red-700',
+            status === 'Pending' && 'bg-gray-500 text-white'
+          )}
+        >
+          {status || 'Pending'}
         </Badge>
       );
     }

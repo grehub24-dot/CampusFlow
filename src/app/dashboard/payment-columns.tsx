@@ -51,16 +51,19 @@ export const paymentColumns = ({ onViewPayment, onViewStudent }: ColumnsProps): 
     header: "Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
-      const variant = {
-        "Full Payment": "default",
-        "Part Payment": "outline",
-        "Failed": "destructive",
-      }[status] ?? "default" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
-      return <Badge variant={variant} className={cn(
-        status === 'Full Payment' && 'bg-green-600 hover:bg-green-700',
-        status === 'Part Payment' && 'border-orange-500 text-orange-500',
-        "capitalize"
-      )}>{status}</Badge>;
+      
+      return (
+        <Badge 
+          className={cn(
+            "capitalize",
+            status === 'Full Payment' && 'bg-green-600 text-white hover:bg-green-700',
+            status === 'Part Payment' && 'bg-orange-500 text-white hover:bg-orange-600',
+            status === 'Failed' && 'bg-destructive text-destructive-foreground'
+          )}
+        >
+          {status}
+        </Badge>
+      );
     }
   },
   {
