@@ -154,14 +154,18 @@ export function StudentForm({ onSubmit, defaultValues, classes }: StudentFormPro
                 </FormItem>
               )}
             />
+          </div>
             {defaultValues?.admissionId && (
-              <FormItem>
-                <FormLabel>Admission ID</FormLabel>
-                <FormControl>
-                  <Input readOnly disabled value={defaultValues.admissionId} />
-                </FormControl>
-              </FormItem>
+              <div className="pt-4">
+                <FormItem>
+                  <FormLabel>Admission ID</FormLabel>
+                  <FormControl>
+                    <Input readOnly disabled value={defaultValues.admissionId} />
+                  </FormControl>
+                </FormItem>
+              </div>
             )}
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
             <FormField
               control={form.control}
               name="email"
