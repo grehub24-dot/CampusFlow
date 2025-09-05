@@ -553,7 +553,7 @@ export default function StudentsPage() {
             <DialogHeader>
               <DialogTitle>Record New Payment</DialogTitle>
               <DialogDescription>Fill out the form below to record a new financial transaction.</DialogDescription>
-            </Header>
+            </DialogHeader>
             <div className="max-h-[70vh] overflow-y-auto p-1">
                 {currentTerm && selectedStudent && (
                   <PaymentForm 
@@ -571,8 +571,3 @@ export default function StudentsPage() {
     </>
   );
 }
-
-    
-
-    
-
