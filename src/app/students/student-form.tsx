@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React from 'react';
@@ -39,14 +40,14 @@ export type FormValues = z.infer<typeof formSchema>;
 type StudentFormProps = {
     onSubmit: SubmitHandler<FormValues & { admissionClass: string, admissionClassCategory: string }>;
     defaultValues?: Student;
+    classes: SchoolClass[];
 }
 
 const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
 const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'Kindergarten 2'];
 
 
-export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
-  const [classes, setClasses] = React.useState<SchoolClass[]>([]);
+export function StudentForm({ onSubmit, defaultValues, classes }: StudentFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -78,30 +79,6 @@ export function StudentForm({ onSubmit, defaultValues }: StudentFormProps) {
   };
 
   const age = React.useMemo(() => calculateAge(dob), [dob]);
-
-  React.useEffect(() => {
-    const classesQuery = query(collection(db, "classes"));
-    const unsubscribeClasses = onSnapshot(classesQuery, (snapshot) => {
-        const classesData: SchoolClass[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SchoolClass));
-        const sortedData = classesData.sort((a, b) => {
-            const catAIndex = categoryOrder.indexOf(a.category);
-            const catBIndex = categoryOrder.indexOf(b.category);
-            if (catAIndex !== catBIndex) return catAIndex - catBIndex;
-
-            if (a.category === 'Pre-school') {
-                const preAIndex = preSchoolOrder.indexOf(a.name);
-                const preBIndex = preSchoolOrder.indexOf(b.name);
-                if (preAIndex !== -1 && preBIndex !== -1) return preAIndex - preBIndex;
-                if (preAIndex !== -1) return -1;
-                if (preBIndex !== -1) return 1;
-            }
-
-            return a.name.localeCompare(b.name);
-        });
-        setClasses(sortedData);
-    });
-    return () => unsubscribeClasses();
-  }, [])
 
   React.useEffect(() => {
     if (defaultValues) {

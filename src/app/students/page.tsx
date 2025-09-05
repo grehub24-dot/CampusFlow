@@ -1,10 +1,11 @@
 
+
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, deleteDoc, query, where, getDocs } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, deleteDoc, query, where, getDocs, runTransaction } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment } from '@/types';
+import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment, AdmissionSettings } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import type { SubmitHandler } from 'react-hook-form';
 import Papa from 'papaparse';
@@ -83,7 +84,7 @@ export default function StudentsPage() {
       setClasses(classesData);
     });
     
-    const feeStructuresQuery = collection(db, "fee-structures");
+    const feeStructuresQuery = query(collection(db, "fee-structures"));
     const unsubscribeFeeStructures = onSnapshot(feeStructuresQuery, (snapshot) => {
       const feeStructuresData: FeeStructure[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeStructure));
       setFeeStructures(feeStructuresData);
@@ -228,28 +229,7 @@ export default function StudentsPage() {
                 description: `${studentData.name}'s details have been successfully updated.`,
             });
         } else {
-            // Add new student
-            if (!currentTerm) {
-                toast({
-                    variant: "destructive",
-                    title: "No Active Term",
-                    description: "Cannot add a student because no academic term is set as current.",
-                });
-                setIsSubmitting(false);
-                return;
-            }
-
-            const newStudentData = {
-                ...studentData,
-                admissionDate: new Date().toISOString(),
-                admissionTerm: currentTerm.session,
-                admissionYear: currentTerm.academicYear,
-            };
-            await addDoc(collection(db, "students"), newStudentData);
-            toast({
-                title: 'Student Added',
-                description: `${studentData.name} has been successfully added.`,
-            });
+            // This form is now for editing only, adding is done via admissions.
         }
         
         setIsFormDialogOpen(false);
@@ -306,44 +286,64 @@ export default function StudentsPage() {
             }
 
             try {
-                const batch = writeBatch(db);
                 let importedCount = 0;
                 let failedCount = 0;
 
-                newStudents.forEach(student => {
+                const admissionSettingsRef = doc(db, "settings", "admission");
+
+                for (const student of newStudents) {
                     const studentClass = classes.find(c => c.name.trim().toLowerCase() === student.class?.trim().toLowerCase());
                     
                     if (!student.firstName || !student.lastName || !studentClass) {
                         failedCount++;
-                        return; // Skip invalid records
+                        continue; // Skip invalid records
                     }
 
-                    const docRef = doc(collection(db, "students")); // Automatically generate ID
-                    const studentData = {
-                        firstName: student.firstName,
-                        lastName: student.lastName,
-                        name: `${student.firstName} ${student.lastName}`,
-                        class: studentClass.name,
-                        classId: studentClass.id || '',
-                        classCategory: studentClass.category || '',
-                        gender: student.gender === 'Male' || student.gender === 'Female' ? student.gender : 'Other',
-                        email: student.email || '',
-                        guardianName: student.guardianName || '',
-                        guardianPhone: student.guardianPhone || '',
-                        guardianEmail: student.guardianEmail || '',
-                        admissionDate: new Date().toISOString(),
-                        admissionTerm: currentTerm.session,
-                        admissionYear: currentTerm.academicYear,
-                        status: student.status || 'Active',
-                        paymentStatus: student.paymentStatus || 'Pending',
-                        dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString() : new Date().toISOString(),
-                    };
-                    batch.set(docRef, studentData);
-                    importedCount++;
-                });
+                    await runTransaction(db, async (transaction) => {
+                        const newStudentDocRef = doc(collection(db, "students"));
+                        let admissionId = student.admissionId;
 
-                await batch.commit();
-                
+                        if (!admissionId) {
+                            const admissionSettingsDoc = await transaction.get(admissionSettingsRef);
+                            let nextNumber = 1;
+                            let prefix = "ADM";
+                            let padding = 4;
+                            if (admissionSettingsDoc.exists()) {
+                                const settings = admissionSettingsDoc.data() as AdmissionSettings;
+                                nextNumber = settings.nextNumber || 1;
+                                prefix = settings.prefix || "ADM";
+                                padding = settings.padding || 4;
+                            }
+                            admissionId = `${prefix}-${String(nextNumber).padStart(padding, '0')}`;
+                            transaction.set(admissionSettingsRef, { nextNumber: nextNumber + 1 }, { merge: true });
+                        }
+                        
+                        const studentData = {
+                            admissionId: admissionId,
+                            firstName: student.firstName,
+                            lastName: student.lastName,
+                            name: `${student.firstName} ${student.lastName}`,
+                            class: studentClass.name,
+                            classId: studentClass.id || '',
+                            classCategory: studentClass.category || '',
+                            gender: student.gender === 'Male' || student.gender === 'Female' ? student.gender : 'Other',
+                            email: student.email || '',
+                            guardianName: student.guardianName || '',
+                            guardianPhone: student.guardianPhone || '',
+                            guardianEmail: student.guardianEmail || '',
+                            admissionDate: new Date().toISOString(),
+                            admissionTerm: currentTerm.session,
+                            admissionYear: currentTerm.academicYear,
+                            status: student.status || 'Active',
+                            paymentStatus: student.paymentStatus || 'Pending',
+                            dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString() : new Date().toISOString(),
+                        };
+                        transaction.set(newStudentDocRef, studentData);
+                    });
+                    
+                    importedCount++;
+                }
+
                 toast({
                     title: "Import Complete",
                     description: `${importedCount} students imported successfully. ${failedCount > 0 ? `${failedCount} records failed.` : ''}`,
@@ -412,7 +412,7 @@ export default function StudentsPage() {
                                <Download className="h-4 w-4" /> Download Sample CSV Template
                             </a>
                              <p className="text-muted-foreground mt-1">
-                                Required columns: firstName, lastName, class, gender, dateOfBirth.
+                                Required columns: firstName, lastName, class, gender, dateOfBirth. `admissionId` is optional.
                             </p>
                         </div>
                     </div>
@@ -470,6 +470,23 @@ export default function StudentsPage() {
         onPay={handlePay}
         onDeleteSelected={handleDeleteSelected}
       />
+
+       <Dialog open={isFormDialogOpen} onOpenChange={handleFormDialogClose}>
+          <DialogContent className="sm:max-w-[800px]">
+            <DialogHeader>
+              <DialogTitle>Edit Student Details</DialogTitle>
+              <DialogDescription>Update the information for the selected student.</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[70vh] overflow-y-auto p-1">
+              <StudentForm onSubmit={onSubmit} defaultValues={selectedStudent || undefined} classes={classes} />
+            </div>
+            {isSubmitting && (
+              <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
@@ -535,5 +552,7 @@ export default function StudentsPage() {
     </>
   );
 }
+
+    
 
     
