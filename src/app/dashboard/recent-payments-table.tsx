@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -28,6 +29,7 @@ export function RecentPaymentsTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
+  const router = useRouter();
   const table = useReactTable({
     data,
     columns,
@@ -86,7 +88,7 @@ export function RecentPaymentsTable<TData, TValue>({
           </Table>
         </div>
         <div className="flex items-center justify-end space-x-2 py-4">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => router.push('/payments')}>
                 View All Payments
             </Button>
         </div>
@@ -94,3 +96,5 @@ export function RecentPaymentsTable<TData, TValue>({
     </Card>
   )
 }
+
+    

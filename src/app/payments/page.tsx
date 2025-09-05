@@ -2,7 +2,7 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot, doc, addDoc, updateDoc, query, where } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, updateDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { Student, Payment, Invoice, AcademicTerm, FeeStructure } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -62,7 +62,7 @@ export default function PaymentsPage() {
       setStudents(studentsData);
     });
 
-    const paymentsQuery = collection(db, "payments");
+    const paymentsQuery = query(collection(db, "payments"), orderBy("date", "desc"));
     const unsubscribePayments = onSnapshot(paymentsQuery, (querySnapshot) => {
       const paymentsData: Payment[] = [];
       querySnapshot.forEach((doc) => {
@@ -215,3 +215,5 @@ export default function PaymentsPage() {
     </>
   );
 }
+
+    

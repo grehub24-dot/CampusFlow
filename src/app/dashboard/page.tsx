@@ -2,13 +2,14 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy, limit } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { Student, Payment, Invoice, AcademicTerm, FeeStructure, FeeItem } from '@/types';
 import { sendSms } from '@/lib/frog-api';
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Users, Milestone, Calendar, BookOpen, Wallet, Clock } from "lucide-react";
 import StatCard from "@/components/dashboard/stat-card";
@@ -23,10 +24,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { PaymentDetails } from '@/components/payment-details';
 import { StudentDetails } from '@/components/student-details';
 import { InvoiceDetails } from '@/components/invoice-details';
+import PaymentForm from '../payments/payment-form';
 
 export default function Dashboard() {
   const [students, setStudents] = React.useState<Student[]>([]);
   const [payments, setPayments] = React.useState<Payment[]>([]);
+  const [recentPayments, setRecentPayments] = React.useState<Payment[]>([]);
   const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
   const [feeItems, setFeeItems] = React.useState<FeeItem[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
@@ -36,6 +39,7 @@ export default function Dashboard() {
   const [isPaymentSheetOpen, setIsPaymentSheetOpen] = React.useState(false);
   const [isStudentSheetOpen, setIsStudentSheetOpen] = React.useState(false);
   const [isInvoiceSheetOpen, setIsInvoiceSheetOpen] = React.useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = React.useState(false);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -61,13 +65,22 @@ export default function Dashboard() {
       toast({ variant: "destructive", title: "Error", description: "Could not fetch students." });
     });
     
-    const paymentsQuery = collection(db, "payments");
-    const unsubscribePayments = onSnapshot(paymentsQuery, (querySnapshot) => {
+    const allPaymentsQuery = query(collection(db, "payments"), orderBy("date", "desc"));
+    const unsubscribePayments = onSnapshot(allPaymentsQuery, (querySnapshot) => {
       const paymentsData: Payment[] = [];
       querySnapshot.forEach((doc) => {
         paymentsData.push({ id: doc.id, ...doc.data() } as Payment);
       });
       setPayments(paymentsData);
+    });
+
+    const recentPaymentsQuery = query(collection(db, "payments"), orderBy("date", "desc"), limit(5));
+     const unsubscribeRecentPayments = onSnapshot(recentPaymentsQuery, (querySnapshot) => {
+      const paymentsData: Payment[] = [];
+      querySnapshot.forEach((doc) => {
+        paymentsData.push({ id: doc.id, ...doc.data() } as Payment);
+      });
+      setRecentPayments(paymentsData);
     });
 
     const feeStructuresQuery = query(collection(db, "fee-structures"));
@@ -85,6 +98,7 @@ export default function Dashboard() {
         unsubscribeSettings();
         unsubscribeStudents();
         unsubscribePayments();
+        unsubscribeRecentPayments();
         unsubscribeFeeStructures();
         unsubscribeFeeItems();
     };
@@ -106,8 +120,23 @@ export default function Dashboard() {
   }
   
   const handleViewInvoice = (invoice: Invoice) => {
-    setSelectedInvoice(invoice);
-    setIsInvoiceSheetOpen(true);
+    // When an invoice is clicked, open the payment form for that student
+    const student = students.find(s => s.id === invoice.studentId);
+    if (student) {
+        if (currentTerm) {
+            const studentForPayment = {
+                ...student,
+                isNewAdmission: student.admissionTerm === currentTerm.session && student.admissionYear === currentTerm.academicYear,
+                currentTermNumber: parseInt(currentTerm.session.split(' ')[0], 10)
+            }
+            setSelectedStudent(studentForPayment);
+        } else {
+            setSelectedStudent(student);
+        }
+        setIsPaymentDialogOpen(true);
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find student to process payment.' });
+    }
   }
 
   const handleSendReminder = async (invoice: Invoice) => {
@@ -314,7 +343,7 @@ export default function Dashboard() {
             </Card>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <RecentPaymentsTable columns={memoizedPaymentColumns} data={payments} />
+              <RecentPaymentsTable columns={memoizedPaymentColumns} data={recentPayments} />
               <PendingInvoicesTable columns={memoizedInvoiceColumns} data={pendingInvoices} />
           </div>
         </TabsContent>
@@ -386,6 +415,31 @@ export default function Dashboard() {
           {selectedInvoice && <InvoiceDetails invoice={selectedInvoice} />}
         </SheetContent>
       </Sheet>
+
+       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Record New Payment</DialogTitle>
+              <DialogDescription>Fill out the form below to record a new financial transaction.</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[70vh] overflow-y-auto p-1">
+                {currentTerm && selectedStudent && (
+                  <PaymentForm 
+                    students={[selectedStudent]} 
+                    feeStructures={feeStructures}
+                    payments={payments}
+                    currentTerm={currentTerm}
+                    onSuccess={() => setIsPaymentDialogOpen(false)}
+                    defaultStudentId={selectedStudent.id}
+                  />
+                )}
+            </div>
+          </DialogContent>
+        </Dialog>
     </>
   );
 }
+
+    
+
+    
