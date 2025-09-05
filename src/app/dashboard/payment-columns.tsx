@@ -55,7 +55,11 @@ export const paymentColumns = ({ onViewPayment, onViewStudent }: ColumnsProps): 
         "Part Payment": "outline",
         "Failed": "destructive",
       }[status] ?? "default" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
-      return <Badge variant={variant} className="capitalize">{status}</Badge>;
+      return <Badge variant={variant} className={cn(
+        status === 'Full Payment' && 'bg-green-600 hover:bg-green-700',
+        status === 'Part Payment' && 'border-orange-500 text-orange-500',
+        "capitalize"
+      )}>{status}</Badge>;
     }
   },
   {

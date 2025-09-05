@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 type ColumnsProps = {
   onViewApplication: (student: Student) => void;
@@ -63,10 +64,20 @@ export const getColumns = ({ onViewApplication, onPay }: ColumnsProps): ColumnDe
       const status = row.getValue("paymentStatus") as string;
       const variant = {
         "Paid": "default",
+        "Part-Payment": "outline",
         "Pending": "secondary",
         "Unpaid": "destructive",
       }[status] ?? "secondary" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
-      return <Badge variant={variant} className="capitalize">{status || 'Pending'}</Badge>;
+      
+      return (
+        <Badge variant={variant} className={cn(
+            status === 'Paid' && 'bg-green-600 hover:bg-green-700',
+            status === 'Part-Payment' && 'border-amber-500 text-amber-500',
+            "capitalize"
+        )}>
+            {status || 'Pending'}
+        </Badge>
+      );
     }
   },
   {

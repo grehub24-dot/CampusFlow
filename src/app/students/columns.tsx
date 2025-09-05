@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal, ArrowUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 type ColumnsProps = {
   onEdit: (student: Student) => void;
@@ -107,10 +108,20 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay }: ColumnsPr
       const status = row.getValue("paymentStatus") as string || "Pending";
       const variant = {
         "Paid": "default",
+        "Part-Payment": "outline",
         "Pending": "secondary",
         "Unpaid": "destructive",
       }[status] ?? "secondary" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
-      return <Badge variant={variant} className="capitalize">{status}</Badge>;
+      
+      return (
+        <Badge variant={variant} className={cn(
+            status === 'Paid' && 'bg-green-600 hover:bg-green-700',
+            status === 'Part-Payment' && 'border-amber-500 text-amber-500',
+            "capitalize"
+        )}>
+            {status || 'Pending'}
+        </Badge>
+      );
     },
      filterFn: (row, id, value) => {
       const status = row.getValue(id) as string || "Pending";
