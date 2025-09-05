@@ -307,14 +307,30 @@ export default function StudentsPage() {
 
             try {
                 const batch = writeBatch(db);
+                let importedCount = 0;
+                let failedCount = 0;
+
                 newStudents.forEach(student => {
+                    const studentClass = classes.find(c => c.name.trim().toLowerCase() === student.class?.trim().toLowerCase());
+                    
+                    if (!student.firstName || !student.lastName || !studentClass) {
+                        failedCount++;
+                        return; // Skip invalid records
+                    }
+
                     const docRef = doc(collection(db, "students")); // Automatically generate ID
-                    const studentClass = classes.find(c => c.name.toLowerCase() === student.class?.toLowerCase());
                     const studentData = {
-                        ...student,
+                        firstName: student.firstName,
+                        lastName: student.lastName,
                         name: `${student.firstName} ${student.lastName}`,
-                        classId: studentClass?.id || '',
-                        classCategory: studentClass?.category || '',
+                        class: studentClass.name,
+                        classId: studentClass.id || '',
+                        classCategory: studentClass.category || '',
+                        gender: student.gender === 'Male' || student.gender === 'Female' ? student.gender : 'Other',
+                        email: student.email || '',
+                        guardianName: student.guardianName || '',
+                        guardianPhone: student.guardianPhone || '',
+                        guardianEmail: student.guardianEmail || '',
                         admissionDate: new Date().toISOString(),
                         admissionTerm: currentTerm.session,
                         admissionYear: currentTerm.academicYear,
@@ -323,12 +339,14 @@ export default function StudentsPage() {
                         dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString() : new Date().toISOString(),
                     };
                     batch.set(docRef, studentData);
+                    importedCount++;
                 });
 
                 await batch.commit();
+                
                 toast({
-                    title: "Import Successful",
-                    description: `${newStudents.length} students have been successfully imported.`,
+                    title: "Import Complete",
+                    description: `${importedCount} students imported successfully. ${failedCount > 0 ? `${failedCount} records failed.` : ''}`,
                 });
             } catch (error) {
                 console.error("Error importing students: ", error);
@@ -384,12 +402,19 @@ export default function StudentsPage() {
                         <DialogTitle>Import Students</DialogTitle>
                         <DialogDescription>Upload a CSV file to add multiple students at once.</DialogDescription>
                     </DialogHeader>
-                    <div className="grid w-full max-w-sm items-center gap-1.5 py-4">
-                        <Label htmlFor="csv-file">CSV File</Label>
-                        <Input id="csv-file" type="file" accept=".csv" onChange={handleImport} disabled={isSubmitting} />
-                        <p className="text-sm text-muted-foreground">
-                            Ensure your CSV has columns: firstName, lastName, email, gender, dateOfBirth, class, guardianName, guardianPhone, etc.
-                        </p>
+                    <div className="space-y-4 py-4">
+                        <div className="grid w-full max-w-sm items-center gap-1.5">
+                            <Label htmlFor="csv-file">CSV File</Label>
+                            <Input id="csv-file" type="file" accept=".csv" onChange={handleImport} disabled={isSubmitting} />
+                        </div>
+                        <div className="text-sm">
+                            <a href="/template.csv" download className="text-primary hover:underline font-medium flex items-center gap-1">
+                               <Download className="h-4 w-4" /> Download Sample CSV Template
+                            </a>
+                             <p className="text-muted-foreground mt-1">
+                                Required columns: firstName, lastName, class, gender, dateOfBirth.
+                            </p>
+                        </div>
                     </div>
                     {isSubmitting && (
                         <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
@@ -404,28 +429,6 @@ export default function StudentsPage() {
                 <Download className="mr-2 h-4 w-4" />
                 Export
             </Button>
-
-            <Dialog open={isFormDialogOpen} onOpenChange={handleFormDialogClose}>
-              <DialogContent className="sm:max-w-[800px]">
-                <DialogHeader>
-                  <DialogTitle>{selectedStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>
-                  <DialogDescription>
-                    {selectedStudent ? "Update the student's details below." : "Fill out the details below to add a new student."}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="max-h-[70vh] overflow-y-auto p-1">
-                   <StudentForm 
-                      onSubmit={onSubmit} 
-                      defaultValues={selectedStudent || undefined}
-                   />
-                </div>
-                 {isSubmitting && !isImportDialogOpen && (
-                    <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                )}
-              </DialogContent>
-            </Dialog>
         </div>
       </PageHeader>
 
@@ -532,3 +535,5 @@ export default function StudentsPage() {
     </>
   );
 }
+
+    
