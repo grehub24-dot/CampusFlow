@@ -12,6 +12,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
@@ -23,6 +26,7 @@ type ColumnsProps = {
   onViewDetails: (student: Student) => void;
   onDelete: (student: Student) => void;
   onPay: (student: Student) => void;
+  onStatusChange: (student: Student, status: 'Active' | 'Inactive' | 'Graduated') => void;
 }
 
 const calculateAge = (dob: string) => {
@@ -37,7 +41,7 @@ const calculateAge = (dob: string) => {
 };
 
 
-export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay }: ColumnsProps): ColumnDef<Student>[] => [
+export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay, onStatusChange }: ColumnsProps): ColumnDef<Student>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -180,6 +184,15 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay }: ColumnsPr
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onViewDetails(student)}>View details</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onEdit(student)}>Edit student</DropdownMenuItem>
+                 <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem onClick={() => onStatusChange(student, 'Active')} disabled={student.status === 'Active'}>Active</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onStatusChange(student, 'Inactive')} disabled={student.status === 'Inactive'}>Inactive</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onStatusChange(student, 'Graduated')} disabled={student.status === 'Graduated'}>Graduated</DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onDelete(student)} className="text-destructive">Delete student</DropdownMenuItem>
             </DropdownMenuContent>
             </DropdownMenu>

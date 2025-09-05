@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -47,6 +48,7 @@ interface DataTableProps {
   onDelete: (student: Student) => void;
   onPay: (student: Student) => void;
   onDeleteSelected: (students: Student[]) => void;
+  onStatusChange: (student: Student, status: 'Active' | 'Inactive' | 'Graduated') => void;
 }
 
 const statusOptions = [
@@ -69,6 +71,7 @@ export function DataTable({
   onDelete,
   onPay,
   onDeleteSelected,
+  onStatusChange,
 }: DataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -90,7 +93,7 @@ export function DataTable({
     return () => unsubscribeClasses();
   }, [])
   
-  const columns = React.useMemo(() => getColumns({ onEdit, onViewDetails, onDelete, onPay }), [onEdit, onViewDetails, onDelete, onPay]);
+  const columns = React.useMemo(() => getColumns({ onEdit, onViewDetails, onDelete, onPay, onStatusChange }), [onEdit, onViewDetails, onDelete, onPay, onStatusChange]);
 
   const table = useReactTable({
     data,

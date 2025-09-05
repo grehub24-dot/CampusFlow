@@ -140,6 +140,24 @@ export default function StudentsPage() {
     setStudentsToDelete(selectedStudents);
   }
 
+  const handleStatusChange = async (student: Student, status: 'Active' | 'Inactive' | 'Graduated') => {
+    const studentDocRef = doc(db, "students", student.id);
+    try {
+        await updateDoc(studentDocRef, { status: status });
+        toast({
+            title: 'Status Updated',
+            description: `${student.name}'s status has been changed to ${status}.`,
+        });
+    } catch (error) {
+         console.error("Error updating status: ", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not update the student's status. Please try again.",
+        });
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!studentToDelete) return;
     setIsSubmitting(true);
@@ -469,6 +487,7 @@ export default function StudentsPage() {
         onDelete={handleDeleteStudent} 
         onPay={handlePay}
         onDeleteSelected={handleDeleteSelected}
+        onStatusChange={handleStatusChange}
       />
 
        <Dialog open={isFormDialogOpen} onOpenChange={handleFormDialogClose}>
@@ -534,7 +553,7 @@ export default function StudentsPage() {
             <DialogHeader>
               <DialogTitle>Record New Payment</DialogTitle>
               <DialogDescription>Fill out the form below to record a new financial transaction.</DialogDescription>
-            </DialogHeader>
+            </Header>
             <div className="max-h-[70vh] overflow-y-auto p-1">
                 {currentTerm && selectedStudent && (
                   <PaymentForm 
@@ -556,3 +575,4 @@ export default function StudentsPage() {
     
 
     
+
