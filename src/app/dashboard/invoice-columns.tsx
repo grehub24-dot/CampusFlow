@@ -17,9 +17,10 @@ import { MoreHorizontal } from "lucide-react"
 type ColumnsProps = {
   onViewInvoice: (invoice: Invoice) => void;
   onSendReminder: (invoice: Invoice) => void;
+  onPay: (invoice: Invoice) => void;
 }
 
-export const getInvoiceColumns = ({ onViewInvoice, onSendReminder }: ColumnsProps): ColumnDef<Invoice>[] => [
+export const getInvoiceColumns = ({ onViewInvoice, onSendReminder, onPay }: ColumnsProps): ColumnDef<Invoice>[] => [
   {
     accessorKey: "studentName",
     header: "Student Name",
@@ -49,19 +50,22 @@ export const getInvoiceColumns = ({ onViewInvoice, onSendReminder }: ColumnsProp
     cell: ({ row }) => {
       const invoice = row.original;
       return (
-        <div className="text-right">
+        <div className="flex justify-end items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => onPay(invoice)}>
+                Pay
+            </Button>
             <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => onViewInvoice(invoice)}>View Invoice</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onSendReminder(invoice)}>Send Reminder</DropdownMenuItem>
-            </DropdownMenuContent>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => onViewInvoice(invoice)}>View Invoice</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onSendReminder(invoice)}>Send Reminder</DropdownMenuItem>
+                </DropdownMenuContent>
             </DropdownMenu>
         </div>
       )
@@ -69,4 +73,4 @@ export const getInvoiceColumns = ({ onViewInvoice, onSendReminder }: ColumnsProp
   },
 ];
 
-export const invoiceColumns = getInvoiceColumns({ onViewInvoice: () => {}, onSendReminder: () => {} });
+export const invoiceColumns = getInvoiceColumns({ onViewInvoice: () => {}, onSendReminder: () => {}, onPay: () => {} });

@@ -9,13 +9,14 @@ import { useToast } from '@/hooks/use-toast';
 import { sendSms } from '@/lib/frog-api';
 
 import { PageHeader } from "@/components/page-header";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Receipt, Calendar, BookOpen, Clock } from "lucide-react";
 import StatCard from '@/components/dashboard/stat-card';
 import { PendingInvoicesTable } from '../dashboard/pending-invoices-table';
 import { getInvoiceColumns } from './columns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { InvoiceDetails } from '@/components/invoice-details';
-
+import PaymentForm from '../payments/payment-form';
 
 export default function InvoicesPage() {
   const [payments, setPayments] = React.useState<Payment[]>([]);
@@ -27,6 +28,8 @@ export default function InvoicesPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null);
   const [isInvoiceSheetOpen, setIsInvoiceSheetOpen] = React.useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = React.useState(false);
+  const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
 
 
   const { toast } = useToast();
@@ -79,6 +82,25 @@ export default function InvoicesPage() {
   const handleViewInvoice = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setIsInvoiceSheetOpen(true);
+  }
+
+  const handlePay = (invoice: Invoice) => {
+    const student = students.find(s => s.id === invoice.studentId);
+    if (student) {
+        if (currentTerm) {
+            const studentForPayment = {
+                ...student,
+                isNewAdmission: student.admissionTerm === currentTerm.session && student.admissionYear === currentTerm.academicYear,
+                currentTermNumber: parseInt(currentTerm.session.split(' ')[0], 10)
+            }
+            setSelectedStudent(studentForPayment);
+        } else {
+            setSelectedStudent(student);
+        }
+        setIsPaymentDialogOpen(true);
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find student to process payment.' });
+    }
   }
 
   const handleSendReminder = async (invoice: Invoice) => {
@@ -157,7 +179,7 @@ export default function InvoicesPage() {
   }, [students, payments, feeStructures, feeItems, currentTerm]);
 
   const memoizedInvoiceColumns = React.useMemo(
-      () => getInvoiceColumns({ onViewInvoice: handleViewInvoice, onSendReminder: handleSendReminder }),
+      () => getInvoiceColumns({ onViewInvoice: handleViewInvoice, onSendReminder: handleSendReminder, onPay: handlePay }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [students] 
   );
@@ -209,6 +231,27 @@ export default function InvoicesPage() {
           {selectedInvoice && <InvoiceDetails invoice={selectedInvoice} />}
         </SheetContent>
       </Sheet>
+
+      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+            <DialogTitle>Record New Payment</DialogTitle>
+            <DialogDescription>Fill out the form below to record a new financial transaction.</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[70vh] overflow-y-auto p-1">
+                {currentTerm && selectedStudent && (
+                  <PaymentForm 
+                    students={[selectedStudent]} 
+                    feeStructures={feeStructures}
+                    payments={payments}
+                    currentTerm={currentTerm}
+                    onSuccess={() => setIsPaymentDialogOpen(false)}
+                    defaultStudentId={selectedStudent.id}
+                  />
+                )}
+            </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

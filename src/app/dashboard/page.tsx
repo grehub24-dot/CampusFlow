@@ -120,7 +120,11 @@ export default function Dashboard() {
   }
   
   const handleViewInvoice = (invoice: Invoice) => {
-    // When an invoice is clicked, open the payment form for that student
+    setSelectedInvoice(invoice);
+    setIsInvoiceSheetOpen(true);
+  }
+
+  const handlePay = (invoice: Invoice) => {
     const student = students.find(s => s.id === invoice.studentId);
     if (student) {
         if (currentTerm) {
@@ -165,7 +169,7 @@ export default function Dashboard() {
   );
 
   const memoizedInvoiceColumns = React.useMemo(
-      () => getInvoiceColumns({ onViewInvoice: handleViewInvoice, onSendReminder: handleSendReminder }),
+      () => getInvoiceColumns({ onViewInvoice: handleViewInvoice, onSendReminder: handleSendReminder, onPay: handlePay }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [students] 
   );
