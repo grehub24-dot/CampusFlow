@@ -140,7 +140,7 @@ export default function StudentsPage() {
     setStudentsToDelete(selectedStudents);
   }
 
-  const handleStatusChange = async (student: Student, status: 'Active' | 'Inactive' | 'Graduated') => {
+  const handleStatusChange = async (student: Student, status: 'Active' | 'Inactive' | 'Graduated' | 'Stopped') => {
     const studentDocRef = doc(db, "students", student.id);
     try {
         await updateDoc(studentDocRef, { status: status });
@@ -328,12 +328,31 @@ export default function StudentsPage() {
                             let padding = 4;
                             if (admissionSettingsDoc.exists()) {
                                 const settings = admissionSettingsDoc.data() as AdmissionSettings;
-                                nextNumber = settings.nextNumber || 1;
                                 prefix = settings.prefix || "ADM";
                                 padding = settings.padding || 4;
                             }
+
+                            // Query for last student with this prefix
+                            const studentsQuery = query(
+                                collection(db, "students"), 
+                                where("admissionId", ">=", prefix),
+                                where("admissionId", "<", prefix + 'z'),
+                                orderBy("admissionId", "desc"), 
+                            );
+                            const lastStudentSnapshot = await getDocs(studentsQuery);
+
+                            if (!lastStudentSnapshot.empty) {
+                                const lastStudentDoc = lastStudentSnapshot.docs[0];
+                                const lastAdmissionId = lastStudentDoc.data().admissionId as string;
+                                if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
+                                    const lastNumberMatch = lastAdmissionId.match(/\d+$/);
+                                    if (lastNumberMatch) {
+                                        nextNumber = parseInt(lastNumberMatch[0], 10) + 1;
+                                    }
+                                }
+                            }
+
                             admissionId = `${prefix}-${String(nextNumber).padStart(padding, '0')}`;
-                            transaction.set(admissionSettingsRef, { nextNumber: nextNumber + 1 }, { merge: true });
                         }
                         
                         const studentData = {

@@ -8,7 +8,7 @@ export type Student = {
   classId: string; // Ensure this is always present
   classCategory?: string; // Add category to student
   gender: 'Male' | 'Female';
-  status: 'Active' | 'Inactive' | 'Graduated';
+  status: 'Active' | 'Inactive' | 'Graduated' | 'Stopped';
   email: string;
   admissionDate: string;
   admissionTerm?: string;

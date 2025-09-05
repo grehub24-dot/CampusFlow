@@ -37,6 +37,7 @@ export function StudentDetails({ student }: StudentDetailsProps) {
       "Active": "default",
       "Inactive": "secondary",
       "Graduated": "outline",
+      "Stopped": "destructive",
     }[student.status] ?? "default" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
   
    const paymentStatusVariant = {

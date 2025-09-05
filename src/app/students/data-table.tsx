@@ -48,13 +48,14 @@ interface DataTableProps {
   onDelete: (student: Student) => void;
   onPay: (student: Student) => void;
   onDeleteSelected: (students: Student[]) => void;
-  onStatusChange: (student: Student, status: 'Active' | 'Inactive' | 'Graduated') => void;
+  onStatusChange: (student: Student, status: 'Active' | 'Inactive' | 'Graduated' | 'Stopped') => void;
 }
 
 const statusOptions = [
     { label: "Active", value: "Active" },
     { label: "Inactive", value: "Inactive" },
     { label: "Graduated", value: "Graduated" },
+    { label: "Stopped", value: "Stopped" },
 ]
 
 const paymentStatusOptions = [

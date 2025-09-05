@@ -26,7 +26,7 @@ type ColumnsProps = {
   onViewDetails: (student: Student) => void;
   onDelete: (student: Student) => void;
   onPay: (student: Student) => void;
-  onStatusChange: (student: Student, status: 'Active' | 'Inactive' | 'Graduated') => void;
+  onStatusChange: (student: Student, status: 'Active' | 'Inactive' | 'Graduated' | 'Stopped') => void;
 }
 
 const calculateAge = (dob: string) => {
@@ -144,6 +144,7 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay, onStatusCha
         "Active": "default",
         "Inactive": "secondary",
         "Graduated": "outline",
+        "Stopped": "destructive"
       }[status] ?? "default" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
 
       return <Badge variant={variant}>{status}</Badge>;
@@ -190,6 +191,7 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay, onStatusCha
                     <DropdownMenuItem onClick={() => onStatusChange(student, 'Active')} disabled={student.status === 'Active'}>Active</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onStatusChange(student, 'Inactive')} disabled={student.status === 'Inactive'}>Inactive</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onStatusChange(student, 'Graduated')} disabled={student.status === 'Graduated'}>Graduated</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onStatusChange(student, 'Stopped')} disabled={student.status === 'Stopped'}>Stopped</DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSeparator />
