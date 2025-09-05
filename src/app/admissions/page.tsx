@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, onSnapshot, query, orderBy, where, doc, runTransaction } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, where, doc, runTransaction, getDoc } from "firebase/firestore";
 
 
 import { PageHeader } from "@/components/page-header";
@@ -468,8 +468,6 @@ export default function AdmissionsPage() {
             
             // Update the next admission number in settings
             transaction.set(admissionSettingsRef, { nextNumber: nextNumber + 1 }, { merge: true });
-
-            return newStudentData;
         });
 
         toast({
@@ -479,9 +477,11 @@ export default function AdmissionsPage() {
         
         setIsAdmissionDialogOpen(false);
 
+        const newStudentSnapshot = await getDoc(newStudentDocRef);
+        const newStudent = { id: newStudentSnapshot.id, ...newStudentSnapshot.data() } as Student;
+
         const newStudentForPayment: Student = {
-            id: newStudentDocRef.id,
-            ...(await (await getDoc(newStudentDocRef)).data() as Omit<Student, 'id'>),
+            ...newStudent,
             isNewAdmission: true,
             currentTermNumber: parseInt(currentTerm.session.split(' ')[0], 10)
         }
