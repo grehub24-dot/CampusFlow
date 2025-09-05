@@ -313,6 +313,11 @@ export default function PaymentForm({
             ))}
           </SelectContent>
         </Select>
+        {selectedStudent && selectedStudent.admissionId && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Admission ID: {selectedStudent.admissionId}
+          </p>
+        )}
       </div>
 
       <div>
