@@ -5,7 +5,7 @@ import React from 'react';
 import type { Student } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Book, Calendar, Phone, Mail, Home, BadgeInfo, BookOpen, Cake, Wallet } from 'lucide-react';
+import { User, Book, Calendar, Phone, Mail, Home, BadgeInfo, BookOpen, Cake, Wallet, Hash } from 'lucide-react';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -73,6 +73,7 @@ export function StudentDetails({ student }: StudentDetailsProps) {
                     </div>
                     <CardDescription className="mt-1">
                         <span className="font-semibold">{student.class}</span>
+                        {student.admissionId && <span className="text-muted-foreground"> • ID: {student.admissionId}</span>}
                     </CardDescription>
                 </div>
             </div>
@@ -92,6 +93,7 @@ export function StudentDetails({ student }: StudentDetailsProps) {
             <div>
                 <h3 className="text-lg font-semibold mb-4 border-b pb-2">Academic Information</h3>
                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <DetailItem icon={Hash} label="Admission ID" value={student.admissionId} />
                     <DetailItem icon={BookOpen} label="Admission Term" value={`${student.admissionTerm || 'N/A'}, ${student.admissionYear || 'N/A'}`} />
                     <DetailItem icon={Calendar} label="Admission Date" value={student.admissionDate ? format(new Date(student.admissionDate), 'PPP') : 'N/A'} />
                     <DetailItem icon={Wallet} label="Payment Status">
