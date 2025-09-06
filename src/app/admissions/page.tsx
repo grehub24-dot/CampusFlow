@@ -458,11 +458,11 @@ export default function AdmissionsPage() {
                 where("admissionTerm", "==", currentTerm.session)
             );
             
-            const lastStudentSnapshot = await getDocs(termQuery);
+            const termSnapshot = await getDocs(termQuery);
 
             let maxNumber = 0;
-            if (!lastStudentSnapshot.empty) {
-                lastStudentSnapshot.docs.forEach(doc => {
+            if (!termSnapshot.empty) {
+                termSnapshot.docs.forEach(doc => {
                     const lastAdmissionId = doc.data().admissionId as string;
                     if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
                         const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
@@ -689,3 +689,4 @@ export default function AdmissionsPage() {
     
 
     
+
