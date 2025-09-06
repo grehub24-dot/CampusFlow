@@ -152,32 +152,36 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
             </section>
 
             <footer className="text-center mt-12 pt-8 border-t">
-              <div className="flex justify-center items-center">
-                <svg width="240" height="48" viewBox="0 0 240 48" xmlns="http://www.w3.org/2000/svg">
-                  <title>CompusFlow</title>
-                  <desc>Enterprise tech logo – compute + flow</desc>
-                  <g id="mark">
-                    <path d="M4 24
-                            A20 20 0 1 1 44 24
-                            A20 20 0 1 1 4 24
-                            M36 24
-                            A12 12 0 1 0 12 24" 
-                          stroke="#0033A0" strokeWidth="3" fill="none"/>
-                    <path d="M28 18 l8 6 -8 6" 
-                          stroke="#0033A0" strokeWidth="3" fill="none" 
-                          strokeLinejoin="round" strokeLinecap="round"/>
-                  </g>
-                  <g id="wordmark" fill="#1F1F1F">
-                    <text x="56" y="31" fontFamily="Helvetica Neue, Arial, sans-serif" 
-                          fontSize="26" fontWeight="600" letterSpacing="-0.5">
-                      CompusFlow
-                    </text>
-                  </g>
-                </svg>
-              </div>
-              <p className="text-xs text-muted-foreground mt-3 italic">
-                “CompusFlow – where code, connectivity & commerce flow together.”
-              </p>
+                <p className="text-xs text-muted-foreground">Powered by</p>
+                <div className="flex justify-center items-center">
+                    <svg width="240" height="48" viewBox="0 0 240 48" xmlns="http://www.w3.org/2000/svg">
+                    <title>CompusFlow</title>
+                    <desc>Enterprise tech logo – compute + flow</desc>
+                    <g id="mark">
+                        <path d="M4 24
+                                A20 20 0 1 1 44 24
+                                A20 20 0 1 1 4 24
+                                M36 24
+                                A12 12 0 1 0 12 24" 
+                            stroke="#0033A0" strokeWidth="3" fill="none"/>
+                        <path d="M28 18 l8 6 -8 6" 
+                            stroke="#0033A0" strokeWidth="3" fill="none" 
+                            strokeLinejoin="round" strokeLinecap="round"/>
+                    </g>
+                    <g id="wordmark" fill="#1F1F1F">
+                        <text x="56" y="31" fontFamily="Helvetica Neue, Arial, sans-serif" 
+                            fontSize="26" fontWeight="600" letterSpacing="-0.5">
+                        CompusFlow
+                        </text>
+                    </g>
+                    </svg>
+                </div>
+                <p className="text-xs text-muted-foreground mt-3 italic">
+                    “Where code, connectivity & commerce flow together.”
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                    - 0536282694 / 0548525388 -
+                </p>
             </footer>
         </div>
       </div>
