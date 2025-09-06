@@ -11,10 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import { PageHeader } from "@/components/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import { UserTable } from "./user-table";
 import { userColumns } from "./user-columns";
 import { AcademicSettings } from './academic-settings';
@@ -23,6 +19,7 @@ import { FeeStructureSettings } from './fee-structure-settings';
 import { IntegrationsSettings } from './integrations-settings';
 import { FeeItemsSettings } from './fee-items-settings';
 import { AdmissionSettings } from './admission-settings';
+import { SchoolInfoSettings } from './school-info-settings';
 
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
@@ -67,27 +64,7 @@ export default function SettingsPage() {
         </TabsList>
 
         <TabsContent value="school-info" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>School Information</CardTitle>
-              <CardDescription>Update your school's profile details and logo.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="school-name">School Name</Label>
-                <Input id="school-name" defaultValue="CampusFlow Academy" />
-              </div>
-              <div className="space-y-2">
-                <Label>School Logo</Label>
-                <div className="flex items-center gap-4">
-                  <Image src="https://picsum.photos/80/80" width={80} height={80} alt="School Logo" className="rounded-md" data-ai-hint="logo" />
-                  <Input id="logo-upload" type="file" className="max-w-xs" />
-                </div>
-                <p className="text-xs text-muted-foreground">Upload a JPG, PNG, or SVG. Max size 2MB.</p>
-              </div>
-              <Button>Save Changes</Button>
-            </CardContent>
-          </Card>
+          <SchoolInfoSettings />
         </TabsContent>
         
         <TabsContent value="academic-year">
