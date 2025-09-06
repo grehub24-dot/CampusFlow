@@ -47,16 +47,11 @@ export async function generateInsightfulReports(
   return generateInsightfulReportsFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateInsightfulReportsPrompt',
+const executiveBriefPrompt = ai.definePrompt({
+  name: 'executiveBriefPrompt',
   input: {schema: GenerateInsightfulReportsInputSchema},
   output: {schema: GenerateInsightfulReportsOutputSchema},
   prompt: `You are an AI assistant specialized in generating insightful reports based on provided data.
-
-You will generate a report based on the report type specified by the user, and any additional instructions provided.
-You must also determine the most suitable format for the content requested. The format should be most suitable for the content, be it text, CSV, or a chart.
-
-{{#ifCond reportType '==' 'executive brief'}}
 
 Please generate a report using the following "Executive Brief" template. Use markdown for tables.
 
@@ -101,41 +96,22 @@ School Year 2024/25 • 150 Learners • 15 Staff • 1 Bus • Creche → Prima
 
 *Prepared by: Finance & Admin Office*
 *Next Review: 30 Nov 2025*
+`,
+});
 
-{{else}}
+const generalReportPrompt = ai.definePrompt({
+  name: 'generalReportPrompt',
+  input: {schema: GenerateInsightfulReportsInputSchema},
+  output: {schema: GenerateInsightfulReportsOutputSchema},
+  prompt: `You are an AI assistant specialized in generating insightful reports based on provided data.
+
+You will generate a report based on the report type specified by the user, and any additional instructions provided.
+You must also determine the most suitable format for the content requested. The format should be most suitable for the content, be it text, CSV, or a chart.
+
 Report Type: {{{reportType}}}
 Additional Instructions: {{{additionalInstructions}}}
 Ensure the report is well-structured, easy to understand, and provides valuable insights.
-{{/ifCond}}
 `,
-  helpers: {
-    ifCond: (v1: any, operator: string, v2: any, options: any) => {
-      switch (operator) {
-        case '==':
-          return v1 == v2 ? options.fn(this) : options.inverse(this);
-        case '===':
-          return v1 === v2 ? options.fn(this) : options.inverse(this);
-        case '!=':
-          return v1 != v2 ? options.fn(this) : options.inverse(this);
-        case '!==':
-          return v1 !== v2 ? options.fn(this) : options.inverse(this);
-        case '<':
-          return v1 < v2 ? options.fn(this) : options.inverse(this);
-        case '<=':
-          return v1 <= v2 ? options.fn(this) : options.inverse(this);
-        case '>':
-          return v1 > v2 ? options.fn(this) : options.inverse(this);
-        case '>=':
-          return v1 >= v2 ? options.fn(this) : options.inverse(this);
-        case '&&':
-          return v1 && v2 ? options.fn(this) : options.inverse(this);
-        case '||':
-          return v1 || v2 ? options.fn(this) : options.inverse(this);
-        default:
-          return options.inverse(this);
-      }
-    },
-  },
 });
 
 const generateInsightfulReportsFlow = ai.defineFlow(
@@ -145,13 +121,16 @@ const generateInsightfulReportsFlow = ai.defineFlow(
     outputSchema: GenerateInsightfulReportsOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
     if (input.reportType === 'executive brief') {
+      const {output} = await executiveBriefPrompt(input);
+      // For the executive brief, we know the format is text.
       return {
         reportContent: output!.reportContent,
         reportFormat: 'text',
       };
+    } else {
+      const {output} = await generalReportPrompt(input);
+      return output!;
     }
-    return output!;
   }
 );
