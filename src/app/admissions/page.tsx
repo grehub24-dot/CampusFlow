@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, onSnapshot, query, orderBy, where, doc, runTransaction, getDoc, limit, getDocs } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, where, doc, runTransaction, getDocs, getDoc } from "firebase/firestore";
 
 
 import { PageHeader } from "@/components/page-header";
@@ -421,14 +421,14 @@ export default function AdmissionsPage() {
     }
 
     try {
-        const newStudentDocRef = doc(collection(db, "students")); // Create a new doc ref to get ID
+        const newStudentDocRef = doc(collection(db, "students")); 
 
         await runTransaction(db, async (transaction) => {
             const studentsCollectionRef = collection(db, "students");
             const admissionSettingsRef = doc(db, 'settings', 'admission');
 
             const [lastStudentSnapshot, admissionSettingsDoc] = await Promise.all([
-                getDocs(query(studentsCollectionRef, orderBy("admissionId", "desc"), limit(1))),
+                getDocs(query(studentsCollectionRef, orderBy("admissionId", "desc"))),
                 transaction.get(admissionSettingsRef)
             ]);
 
@@ -438,10 +438,10 @@ export default function AdmissionsPage() {
             
             let nextNumber = 1;
 
-            if (!lastStudentSnapshot.empty) {
-                const lastStudentDoc = lastStudentSnapshot.docs[0];
-                const lastAdmissionId = lastStudentDoc.data().admissionId as string;
-                if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
+             if (!lastStudentSnapshot.empty) {
+                const lastStudent = lastStudentSnapshot.docs.find(doc => doc.data().admissionId?.startsWith(prefix));
+                if (lastStudent) {
+                    const lastAdmissionId = lastStudent.data().admissionId as string;
                     const lastNumberMatch = lastAdmissionId.match(/\d+$/);
                     if (lastNumberMatch) {
                         nextNumber = parseInt(lastNumberMatch[0], 10) + 1;
@@ -566,12 +566,14 @@ export default function AdmissionsPage() {
             title="Total New Admissions"
             value={admittedStudents.length.toLocaleString()}
             icon={Users}
+            color="text-indigo-500"
             description="For the current term"
         />
         <StatCard 
             title="Total Payments"
             value={`GHS ${admissionStats.totalPayments.toLocaleString()}`}
             icon={Wallet}
+            color="text-green-500"
             description="Based on new admissions"
         />
         <StatCard 

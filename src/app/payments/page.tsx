@@ -72,7 +72,7 @@ export default function PaymentsPage() {
       setPayments(paymentsData);
     });
     
-    const feeStructuresQuery = collection(db, "fee-structures");
+    const feeStructuresQuery = query(collection(db, "fee-structures"));
     const unsubscribeFeeStructures = onSnapshot(feeStructuresQuery, (snapshot) => {
       const feeStructuresData: FeeStructure[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeStructure));
       setFeeStructures(feeStructuresData);
@@ -218,22 +218,26 @@ export default function PaymentsPage() {
             title="Academic Year"
             value={currentTerm?.academicYear || 'Not Set'}
             icon={Calendar}
+            color="text-blue-500"
         />
         <StatCard 
             title="Current Session"
             value={currentTerm?.session || 'Not Set'}
             icon={BookOpen}
+            color="text-green-500"
         />
         <StatCard 
             title="Total Revenue"
             value={`GHS ${totalRevenue.toLocaleString()}`}
             icon={Wallet}
+            color="text-purple-500"
             description="All-time payments received"
         />
         <StatCard 
             title="Revenue (This Term)"
             value={`GHS ${revenueThisTerm.toLocaleString()}`}
             icon={Receipt}
+            color="text-indigo-500"
             description={`For ${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}`}
         />
       </div>
@@ -243,6 +247,7 @@ export default function PaymentsPage() {
             title="Total Pending Invoices"
             value={`${pendingInvoices.length}`}
             icon={Clock}
+            color="text-orange-500"
             description={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
         />
       </div>

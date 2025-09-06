@@ -474,11 +474,13 @@ export default function StudentsPage() {
             title="Total Students"
             value={studentStats.total.toLocaleString()}
             icon={Users}
+            color="text-indigo-500"
         />
         <StatCard 
             title="New Admissions"
             value={studentStats.newAdmissions.toLocaleString()}
             icon={UserPlus}
+            color="text-green-500"
             description="This Term"
         />
         <StatCard 

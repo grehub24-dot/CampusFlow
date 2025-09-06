@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React from 'react';
@@ -200,22 +201,26 @@ export default function InvoicesPage() {
             title="Academic Year"
             value={currentTerm?.academicYear || 'Not Set'}
             icon={Calendar}
+            color="text-blue-500"
         />
         <StatCard 
             title="Current Session"
             value={currentTerm?.session || 'Not Set'}
             icon={BookOpen}
+            color="text-green-500"
         />
         <StatCard 
             title="Revenue (This Term)"
             value={`GHS ${revenueThisTerm.toLocaleString()}`}
             icon={Receipt}
+            color="text-purple-500"
             description={`For ${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}`}
         />
         <StatCard 
             title="Total Pending Invoices"
             value={`${pendingInvoices.length}`}
             icon={Clock}
+            color="text-orange-500"
             description={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
         />
       </div>
@@ -242,7 +247,7 @@ export default function InvoicesPage() {
             <div className="max-h-[70vh] overflow-y-auto p-1">
                 {currentTerm && selectedStudent && (
                   <PaymentForm 
-                    students={[selectedStudent]} 
+                    students={students} 
                     feeStructures={feeStructures}
                     payments={payments}
                     currentTerm={currentTerm}
