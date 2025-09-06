@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -210,6 +211,12 @@ function CheckoutModal({
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-4xl p-0" onInteractOutside={(e) => e.preventDefault()}>
+         <DialogHeader className="sr-only">
+          <DialogTitle>Complete Your Purchase</DialogTitle>
+          <DialogDescription>
+            Enter your payment details to buy SMS credits.
+          </DialogDescription>
+        </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-[1fr,400px]">
           {/* Left side: Form */}
           <div className="p-8">
@@ -772,3 +779,4 @@ export default function CommunicationsPage() {
     </>
   );
 }
+ 
