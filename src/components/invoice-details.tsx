@@ -48,7 +48,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                 </div>
                 <div className="text-right">
                     <h1 className="text-2xl font-bold text-gray-700">INVOICE</h1>
-                    <p className="text-gray-500 mt-1"># {invoice.admissionId}</p>
+                    <p className="text-gray-500 mt-1">{invoice.admissionId}</p>
                 </div>
             </header>
 
@@ -87,7 +87,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
 
             <section>
                  <div className="border rounded-lg overflow-hidden bg-transparent">
-                    <Table className="w-full text-left">
+                    <Table className="w-full text-left bg-transparent">
                         <TableHeader className="bg-transparent">
                             <TableRow>
                                 <TableHead className="p-3 font-semibold text-gray-500 uppercase tracking-wider">Description</TableHead>
@@ -198,3 +198,4 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
         </div>
     </div>
   );
+}
