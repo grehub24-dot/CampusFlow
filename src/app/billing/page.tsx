@@ -21,6 +21,7 @@ import type { Invoice as InvoiceType, MomoProvider, Bundle } from '@/types';
 import Image from 'next/image';
 import { doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
+import { generateOtp, verifyOtp } from '@/lib/frog-api';
 
 const communicationBundles: Bundle[] = [
     { name: 'Basic Bundle', msgCount: 175, price: 5, validity: 30 },
@@ -71,7 +72,9 @@ function CheckoutModal({
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [invoice, setInvoice] = useState<InvoiceType | null>(null);
-  const [isVerified, setIsVerified] = useState(true);
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
 
   const { toast } = useToast();
@@ -81,8 +84,10 @@ function CheckoutModal({
         handleCreateInvoice();
     } else {
         setInvoice(null);
-        setIsVerified(true);
+        setIsVerified(false);
         setShowApprovalModal(false);
+        setOtpSent(false);
+        setOtp("");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bundle, open]);
@@ -144,6 +149,40 @@ function CheckoutModal({
       onClose();
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSendOtp() {
+    setLoading(true);
+    try {
+      const res = await generateOtp(mobileNumber);
+      if (res.status === 'SUCCESS') {
+        toast({ title: "OTP Sent", description: "Check your phone for the verification code." });
+        setOtpSent(true);
+      } else {
+        throw new Error(res.message);
+      }
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Could not send OTP", description: e.message });
+    } finally {
+      setLoading(false);
+    }
+  }
+  
+  async function handleVerifyOtp() {
+    setLoading(true);
+    try {
+        const res = await verifyOtp(mobileNumber, otp);
+        if (res.status === 'SUCCESS') {
+            toast({ title: "Number verified ✅", description: "You can now proceed to payment." });
+            setIsVerified(true);
+        } else {
+            throw new Error(res.message);
+        }
+    } catch(e: any) {
+         toast({ variant: "destructive", title: "Verification Failed", description: e.message });
+    } finally {
+        setLoading(false);
     }
   }
   
@@ -213,10 +252,26 @@ function CheckoutModal({
                <div>
                   <Label>Mobile Number</Label>
                   <div className="flex gap-2">
-                    <Input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+                    <Input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} disabled={otpSent}/>
+                    {!isVerified && (
+                        <Button variant="outline" onClick={handleSendOtp} disabled={otpSent || loading}>
+                          {loading ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Verify'}
+                        </Button>
+                    )}
                   </div>
                   {isVerified && <p className="text-sm text-green-600 flex items-center gap-1 mt-1"><CheckCircle className="h-4 w-4" /> Verified</p>}
                </div>
+                {otpSent && !isVerified && (
+                    <div>
+                        <Label>OTP</Label>
+                        <div className="flex gap-2">
+                           <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Enter OTP"/>
+                           <Button onClick={handleVerifyOtp} disabled={loading}>
+                               {loading ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Confirm OTP'}
+                           </Button>
+                        </div>
+                    </div>
+                )}
                 <div>
                   <Label>Email (Optional)</Label>
                   <Input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
