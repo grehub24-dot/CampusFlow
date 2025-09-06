@@ -211,7 +211,7 @@ export default function CommunicationsPage() {
             </CardHeader>
             <CardContent>
                 <div className="text-3xl font-bold text-primary">
-                    {balance !== null ? balance.toLocaleString() : <Loader2 className="h-6 w-6 animate-spin" />}
+                    {balance !== null ? (balance / 2).toLocaleString() : <Loader2 className="h-6 w-6 animate-spin" />}
                 </div>
                 <div className="text-xs text-muted-foreground mt-2 space-y-1">
                     <div className="flex items-center gap-1">
