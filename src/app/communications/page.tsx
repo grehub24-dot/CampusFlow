@@ -430,6 +430,7 @@ export default function CommunicationsPage() {
           title: 'Messages Sent',
           description: `SMS dispatched to ${uniqueRecipients.length} recipients.`,
         });
+        await fetchBalance();
       } else {
          toast({
           title: 'Email Sent (Simulated)',

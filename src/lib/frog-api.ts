@@ -123,7 +123,11 @@ export async function getBalance() {
         }
         
         const smsBalance = data.data?.bundles?.SMS || 0;
-        return { success: true, balance: smsBalance };
+        
+        // Apply the custom business logic: divide the actual balance by 2.
+        const displayedBalance = Math.floor(smsBalance / 2);
+
+        return { success: true, balance: displayedBalance };
     } catch (error) {
         // Avoid creating a toast for a simple config error
         if ((error as Error).message !== 'Frog API Key or Username is not configured in settings.') {
