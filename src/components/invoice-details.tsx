@@ -55,7 +55,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
   
   const invoiceNumber = generateInvoiceNumber(invoice);
 
-  const paymentTerms = schoolInfo.paymentTerms?.replace('{{dueDate}}', format(new Date(invoice.dueDate || new Date()), 'dd MMM, yyyy')) || '';
+  const paymentTerms = schoolInfo.paymentTerms?.replace('{{dueDate}}', `<strong>${format(new Date(invoice.dueDate || new Date()), 'dd MMM, yyyy')}</strong>`) || '';
   const paymentMethods = schoolInfo.paymentMethods?.replace('{{invoiceNumber}}', invoiceNumber) || '';
 
   return (
@@ -159,11 +159,11 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
             <section className="grid grid-cols-2 gap-8">
                  <div>
                     <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Payment Terms</h3>
-                    <div className="text-sm text-gray-600 space-y-1 whitespace-pre-wrap">{paymentTerms}</div>
+                    <div className="text-sm text-gray-600 space-y-1 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: paymentTerms.replace(/\n/g, '<br />') }} />
                  </div>
                  <div>
                     <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Payment Methods</h3>
-                    <div className="text-sm text-gray-600 space-y-1 whitespace-pre-wrap">{paymentMethods}</div>
+                    <div className="text-sm text-gray-600 space-y-1 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: paymentMethods.replace(/\n/g, '<br />') }} />
                  </div>
             </section>
 

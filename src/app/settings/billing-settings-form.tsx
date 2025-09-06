@@ -31,17 +31,17 @@ export function BillingSettingsForm({ onSubmit, defaultValues, isSubmitting }: B
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      invoiceFooter: defaultValues?.invoiceFooter || '',
-      paymentTerms: defaultValues?.paymentTerms || '',
-      paymentMethods: defaultValues?.paymentMethods || '',
+      invoiceFooter: defaultValues?.invoiceFooter || 'Thank you for your business!',
+      paymentTerms: defaultValues?.paymentTerms || 'Payment is due by {{dueDate}}.\nLate fee of 2% per month may apply after the due date.\nPlease quote the invoice number when making payments.',
+      paymentMethods: defaultValues?.paymentMethods || 'Mobile Money\n\nDial <strong>+233 536 282 694</strong>.\nRemember to use the invoice number as reference.',
     }
   });
 
   React.useEffect(() => {
     form.reset({
-      invoiceFooter: defaultValues?.invoiceFooter || '',
-      paymentTerms: defaultValues?.paymentTerms || '',
-      paymentMethods: defaultValues?.paymentMethods || '',
+      invoiceFooter: defaultValues?.invoiceFooter || 'Thank you for your business!',
+      paymentTerms: defaultValues?.paymentTerms || 'Payment is due by {{dueDate}}.\nLate fee of 2% per month may apply after the due date.\nPlease quote the invoice number when making payments.',
+      paymentMethods: defaultValues?.paymentMethods || 'Mobile Money\n\nDial <strong>+233 536 282 694</strong>.\nRemember to use the invoice number as reference.',
     })
   }, [defaultValues, form]);
 
@@ -61,7 +61,7 @@ export function BillingSettingsForm({ onSubmit, defaultValues, isSubmitting }: B
                         <FormItem>
                         <FormLabel>Payment Terms</FormLabel>
                         <FormControl>
-                            <Textarea placeholder="e.g. Payment is due by {{dueDate}}." {...field} rows={4}/>
+                            <Textarea placeholder={'e.g. Payment is due by {{dueDate}}.'} {...field} rows={4}/>
                         </FormControl>
                         <FormDescription>This text will appear under the 'Payment Terms' section. Available placeholders: {'`{{dueDate}}`'}</FormDescription>
                         <FormMessage />
@@ -75,7 +75,7 @@ export function BillingSettingsForm({ onSubmit, defaultValues, isSubmitting }: B
                         <FormItem>
                         <FormLabel>Payment Methods</FormLabel>
                         <FormControl>
-                            <Textarea placeholder="e.g. Dial *123# and use {{invoiceNumber}} as reference." {...field} rows={4}/>
+                            <Textarea placeholder={'e.g. Dial *123# and use {{invoiceNumber}} as reference.'} {...field} rows={4}/>
                         </FormControl>
                         <FormDescription>This text will appear under the 'Payment Methods' section. Available placeholders: {'`{{invoiceNumber}}`'}</FormDescription>
                         <FormMessage />
