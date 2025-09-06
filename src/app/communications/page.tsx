@@ -298,9 +298,14 @@ export default function CommunicationsPage() {
     if (templateId) {
       if (messageType === 'sms' && smsTemplates[templateId]) {
         form.setValue('message', smsTemplates[templateId].content);
+        if (smsTemplates[templateId].name) {
+          form.setValue('subject', smsTemplates[templateId].name);
+        }
       } else if (messageType === 'email' && emailTemplates[templateId]) {
         form.setValue('message', emailTemplates[templateId].content);
-        form.setValue('subject', emailTemplates[templateId].name);
+        if (emailTemplates[templateId].name) {
+          form.setValue('subject', emailTemplates[templateId].name);
+        }
       }
     }
   }, [templateId, messageType, smsTemplates, emailTemplates, form]);
