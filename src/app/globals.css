@@ -85,6 +85,44 @@
   }
 }
 
+/* Invoice Styles */
+.invoice-container {
+    font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+    color: #333;
+    padding: 2rem;
+    position: relative;
+}
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid hsl(var(--primary));
+}
+.school-info { display: flex; align-items: center; gap: 1rem; }
+.logo { max-width: 80px; max-height: 80px; object-fit: contain; }
+.school-address { font-size: 0.8rem; }
+.invoice-title h1 { font-size: 2rem; font-weight: bold; color: hsl(var(--primary)); }
+.invoice-meta { display: flex; justify-content: space-between; margin-top: 2rem; }
+.bill-to h3, .invoice-dates h3 { font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 0.5rem; }
+.invoice-dates table { width: 100%; text-align: right; }
+.invoice-dates th { font-weight: 600; padding-right: 1rem; text-align: left; }
+.invoice-body { position: relative; margin-top: 2rem; }
+.watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.05; z-index: 0; pointer-events: none; }
+.watermark img { max-width: 300px; }
+.items-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; }
+.items-table th, .items-table td { padding: 0.75rem; border-bottom: 1px solid hsl(var(--border)); }
+.items-table th { background-color: hsl(var(--muted)); font-weight: 600; text-align: left; }
+.items-table .text-right { text-align: right; }
+.invoice-summary { display: flex; justify-content: flex-end; margin-top: 2rem; }
+.totals-table { width: 40%; }
+.totals-table th, .totals-table td { padding: 0.5rem 0; }
+.totals-table th { text-align: left; font-weight: normal; color: #555; }
+.totals-table td { text-align: right; }
+.totals-table .balance-due th, .totals-table .balance-due td { font-weight: bold; font-size: 1.25rem; color: hsl(var(--primary)); border-top: 2px solid hsl(var(--border)); padding-top: 1rem; }
+.invoice-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 3rem; padding-top: 1rem; border-top: 1px solid hsl(var(--border)); font-size: 0.8rem; }
+.payment-terms h3, .payment-methods h3 { font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.5rem; }
+
 @media print {
   @page {
     size: A5;
