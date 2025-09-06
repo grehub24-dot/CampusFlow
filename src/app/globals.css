@@ -104,9 +104,6 @@
     height: 100%;
   }
   .no-print {
-    display: none;
-  }
-  .page-break {
-    page-break-after: always;
+    display: none !important;
   }
 }
