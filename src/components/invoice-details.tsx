@@ -31,19 +31,20 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
   return (
     <div className="p-1 pt-4 printable-area font-sans bg-gray-50">
       <div className="w-[210mm] mx-auto p-8 bg-white text-gray-800 shadow-lg">
-        <header className="text-center pb-8 border-b-2 border-primary">
-            <Image src={schoolInfo.logoUrl || "https://picsum.photos/120/50"} width={80} height={80} alt="School Logo" data-ai-hint="logo" className="object-contain mx-auto mb-4" />
-            <div>
+        <header className="flex justify-between items-center pb-8 border-b-2 border-primary">
+            <div className="flex items-center gap-4">
+              <Image src={schoolInfo.logoUrl || "https://picsum.photos/120/50"} width={80} height={80} alt="School Logo" data-ai-hint="logo" className="object-contain" />
+            </div>
+            <div className="text-center">
                 <h2 className="text-2xl font-bold text-primary">{schoolInfo.schoolName}</h2>
                 <p className="text-xs text-gray-500">{schoolInfo.address}</p>
                 <p className="text-xs text-gray-500">{schoolInfo.phone}</p>
             </div>
+            <div className="text-right">
+                <h1 className="text-2xl font-bold text-gray-700">INVOICE</h1>
+                <p className="text-gray-500 mt-1"># {invoice.id}</p>
+            </div>
         </header>
-        
-        <div className="text-center my-4">
-             <h1 className="text-4xl font-bold text-gray-700">INVOICE</h1>
-             <p className="text-gray-500 mt-1">Invoice #: {invoice.id}</p>
-        </div>
 
 
         <section className="grid grid-cols-2 gap-8 my-8">
