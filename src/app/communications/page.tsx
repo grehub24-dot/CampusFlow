@@ -50,25 +50,25 @@ const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'K
 // This represents the original data for bundles available for purchase.
 const baseCommunicationBundles = [
     {
-        title: "700msg @ 20GHS for 30days",
+        msgCount: 700,
         price: 20,
         validity: 30,
         link: "https://example.com/purchase/20"
     },
     {
-        title: "1400msg @ 40GHS for 30days",
+        msgCount: 1400,
         price: 40,
         validity: 30,
         link: "https://example.com/purchase/40"
     },
     {
-        title: "2800msg @ 80GHS for 30days",
+        msgCount: 2800,
         price: 80,
         validity: 30,
         link: "https://example.com/purchase/80"
     },
     {
-        title: "7000msg @ 200GHS for 30days",
+        msgCount: 7000,
         price: 200,
         validity: 30,
         link: "https://example.com/purchase/200"
@@ -479,25 +479,29 @@ export default function CommunicationsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {baseCommunicationBundles.map((bundle, index) => (
-                <Card key={index} className="flex flex-col">
-                  <CardHeader>
-                    <CardTitle className="text-lg">{bundle.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p className="text-2xl font-bold text-primary">GHS {bundle.price * 4}</p>
-                    <p className="text-sm text-muted-foreground">Valid for {bundle.validity} day(s)</p>
-                  </CardContent>
-                  <div className="p-4 pt-0">
-                    <Button asChild className="w-full">
-                        <a href={bundle.link} target="_blank" rel="noopener noreferrer">
-                            <ShoppingCart className="mr-2 h-4 w-4" />
-                            Buy Now
-                        </a>
-                    </Button>
-                  </div>
-                </Card>
-              ))}
+              {baseCommunicationBundles.map((bundle, index) => {
+                  const multipliedPrice = bundle.price * 4;
+                  const bundleTitle = `${bundle.msgCount}msg @ ${multipliedPrice}GHS for ${bundle.validity}days`;
+                  return (
+                    <Card key={index} className="flex flex-col">
+                        <CardHeader>
+                            <CardTitle className="text-lg">{bundleTitle}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                            <p className="text-2xl font-bold text-primary">GHS {multipliedPrice}</p>
+                            <p className="text-sm text-muted-foreground">Valid for {bundle.validity} day(s)</p>
+                        </CardContent>
+                        <div className="p-4 pt-0">
+                            <Button asChild className="w-full">
+                                <a href={bundle.link} target="_blank" rel="noopener noreferrer">
+                                    <ShoppingCart className="mr-2 h-4 w-4" />
+                                    Buy Now
+                                </a>
+                            </Button>
+                        </div>
+                    </Card>
+                  )
+              })}
             </CardContent>
           </Card>
         </TabsContent>
