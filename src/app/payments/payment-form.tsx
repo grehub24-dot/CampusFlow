@@ -12,8 +12,10 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { sendSms } from '@/lib/frog-api';
 
-import type { Student, FeeStructure, AcademicTerm, PaymentFeeItem, FeeItem, Payment } from '@/types';
+
+import type { Student, FeeStructure, AcademicTerm, PaymentFeeItem, FeeItem, Payment, CommunicationTemplate } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,6 +62,7 @@ export default function PaymentForm({
   const { toast } = useToast();
   const [receiptLabel, setReceiptLabel] = useState('Receipt No.');
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+  const [smsTemplates, setSmsTemplates] = useState<Record<string, CommunicationTemplate>>({});
 
   useEffect(() => {
     switch (paymentMethod) {
@@ -83,7 +86,20 @@ export default function PaymentForm({
         const data: FeeItem[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeItem));
         setFeeItems(data);
     });
-    return () => unsubscribeFeeItems();
+    
+    const smsTemplatesRef = collection(db, "settings", "templates", "sms");
+    const unsubscribeSmsTemplates = onSnapshot(smsTemplatesRef, (snapshot) => {
+        const fetchedTemplates: Record<string, CommunicationTemplate> = {};
+        snapshot.forEach((doc) => {
+            fetchedTemplates[doc.id] = { id: doc.id, ...doc.data() } as CommunicationTemplate;
+        });
+        setSmsTemplates(fetchedTemplates);
+    });
+
+    return () => {
+      unsubscribeFeeItems();
+      unsubscribeSmsTemplates();
+    }
   }, []);
 
   const selectedStudent = useMemo(
@@ -280,6 +296,27 @@ export default function PaymentForm({
           2
         )} for ${selectedStudent.name} was successful.`,
       });
+      
+      // Send SMS notification
+      if (selectedStudent.guardianPhone) {
+        const template = smsTemplates['payment-confirmation'];
+        if (template && template.content) {
+            let message = template.content
+                .replace('{{studentName}}', selectedStudent.name)
+                .replace('{{amountPaid}}', payingAmount.toFixed(2))
+                .replace('{{newBalance}}', newBalance.toFixed(2));
+            
+            sendSms([selectedStudent.guardianPhone], message).then(result => {
+                if(result.success) {
+                    toast({ title: 'Confirmation Sent', description: 'SMS sent to guardian.' })
+                } else {
+                    toast({ variant: 'destructive', title: 'SMS Failed', description: 'Could not send confirmation SMS.' })
+                }
+            });
+        }
+      }
+
+
       onSuccess();
     } catch (error) {
       console.error('Error recording payment: ', error);
