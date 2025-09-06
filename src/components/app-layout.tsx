@@ -4,6 +4,7 @@
 import React from 'react';
 import Link from "next/link"
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import {
   Avatar,
   AvatarFallback,
@@ -38,7 +39,8 @@ import {
 
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
-import { Toaster } from './ui/toaster';
+import { useSchoolInfo } from '@/context/school-info-context';
+import { Skeleton } from './ui/skeleton';
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -109,12 +111,21 @@ function Header() {
 
 function Brand() {
     const { state } = useSidebar();
+    const { schoolInfo, loading } = useSchoolInfo();
+
+    if (loading) {
+      return (
+         <div className="flex items-center gap-2 p-2">
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className={cn("h-6 w-24", state === 'collapsed' && 'hidden')} />
+          </div>
+      )
+    }
+
     return (
          <div className="flex items-center gap-2 p-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-8 w-8 text-primary">
-                <path fill="currentColor" d="M12 3L1 9l4 2.18v6.32L1 21l11-6l11 6l-4-3.5V11.18L23 9L12 3zm0 2.31L19.53 9L12 12.69L4.47 9L12 5.31zM7 12.68v3.63l-2 1.12V13.8L7 12.68zm8 0l2 1.12v3.63l-2-1.12v-3.63z" />
-            </svg>
-            <span className={cn("text-xl font-bold", state === 'collapsed' && 'hidden')}>CampusFlow</span>
+            <Image src={schoolInfo?.logoUrl || "https://picsum.photos/40/40"} width={32} height={32} alt="School Logo" className="h-8 w-8 rounded-md" data-ai-hint="logo" />
+            <span className={cn("text-xl font-bold", state === 'collapsed' && 'hidden')}>{schoolInfo?.schoolName || 'CampusFlow'}</span>
           </div>
     )
 }

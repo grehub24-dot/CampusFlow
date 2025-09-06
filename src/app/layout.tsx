@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import AppLayout from '@/components/app-layout';
+import { SchoolInfoProvider } from '@/context/school-info-context';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,7 +21,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <AppLayout>{children}</AppLayout>
+        <SchoolInfoProvider>
+          <AppLayout>{children}</AppLayout>
+        </SchoolInfoProvider>
         <Toaster />
       </body>
     </html>

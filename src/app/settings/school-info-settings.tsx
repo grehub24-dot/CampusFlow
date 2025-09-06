@@ -6,9 +6,10 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { SchoolInformation } from '@/types';
+import { useSchoolInfo } from '@/context/school-info-context';
+
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -27,44 +28,38 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function SchoolInfoSettings() {
   const { toast } = useToast();
-  const [settings, setSettings] = React.useState<SchoolInformation | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const { schoolInfo, loading, setSchoolInfo } = useSchoolInfo();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      schoolName: "CampusFlow Academy",
+      schoolName: schoolInfo?.schoolName || "CampusFlow Academy",
     }
   });
   
   React.useEffect(() => {
-    const settingsDocRef = doc(db, "settings", "school-info");
-    const unsubscribe = onSnapshot(settingsDocRef, (doc) => {
-        if (doc.exists()) {
-            const data = doc.data() as SchoolInformation;
-            setSettings(data);
-            form.reset({ schoolName: data.schoolName });
-        } else {
-            form.reset({ schoolName: "CampusFlow Academy" });
-        }
-        setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching school info:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not load school information." });
-        setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [form, toast]);
+    if (schoolInfo) {
+      form.reset({ schoolName: schoolInfo.schoolName });
+    }
+  }, [schoolInfo, form]);
 
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setIsSubmitting(true);
     try {
         const settingsDocRef = doc(db, "settings", "school-info");
-        // For now, we only save the school name. Logo upload would require storage setup.
-        await setDoc(settingsDocRef, { schoolName: values.schoolName }, { merge: true });
+        // In a real app, you would handle file uploads to a service like Firebase Storage
+        // and get back a URL to save in Firestore. For now, we only save the name.
+        const newInfo = { 
+            schoolName: values.schoolName,
+            logoUrl: schoolInfo?.logoUrl || "https://picsum.photos/80/80", // Keep existing logo or default
+        };
+        await setDoc(settingsDocRef, newInfo, { merge: true });
+
+        // Update context immediately for a responsive UI
+        setSchoolInfo(newInfo);
+        
         toast({
             title: "Settings Saved",
             description: "Your school information has been updated.",
@@ -84,7 +79,7 @@ export function SchoolInfoSettings() {
         <CardDescription>Update your school's profile details and logo.</CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {loading ? (
              <div className="space-y-4">
                 <Skeleton className="h-8 w-1/4" />
                 <Skeleton className="h-10 w-full" />
@@ -111,7 +106,7 @@ export function SchoolInfoSettings() {
                     <div className="space-y-2">
                         <FormLabel>School Logo</FormLabel>
                         <div className="flex items-center gap-4">
-                          <Image src={settings?.logoUrl || "https://picsum.photos/80/80"} width={80} height={80} alt="School Logo" className="rounded-md" data-ai-hint="logo" />
+                          <Image src={schoolInfo?.logoUrl || "https://picsum.photos/80/80"} width={80} height={80} alt="School Logo" className="rounded-md" data-ai-hint="logo" />
                           <Input id="logo-upload" type="file" className="max-w-xs" disabled />
                         </div>
                         <p className="text-xs text-muted-foreground">Logo upload is not yet implemented.</p>
