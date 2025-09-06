@@ -1,10 +1,12 @@
 
 "use client"
 
+import * as React from "react"
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table"
 
@@ -18,29 +20,33 @@ import {
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
 }
 
-export function RecentPaymentsTable<TData, TValue>({
+export function PaymentsTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-  const router = useRouter();
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+     initialState: {
+        pagination: {
+            pageSize: 10,
+        },
+    },
   })
 
   return (
     <Card>
       <CardHeader>
-          <CardTitle>Recent Payments</CardTitle>
-          <CardDescription>A list of the most recent payments.</CardDescription>
+          <CardTitle>All Payments</CardTitle>
+          <CardDescription>A comprehensive list of all payments recorded.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="rounded-md border">
@@ -80,7 +86,7 @@ export function RecentPaymentsTable<TData, TValue>({
               ) : (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No recent payments.
+                    No payments found.
                   </TableCell>
                 </TableRow>
               )}
@@ -88,8 +94,25 @@ export function RecentPaymentsTable<TData, TValue>({
           </Table>
         </div>
         <div className="flex items-center justify-end space-x-2 py-4">
-            <Button variant="outline" size="sm" onClick={() => router.push('/payments')}>
-                View All Payments
+             <div className="flex-1 text-sm text-muted-foreground">
+                {table.getFilteredSelectedRowModel().rows.length} of{" "}
+                {table.getFilteredRowModel().rows.length} row(s) selected.
+            </div>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+            >
+                Previous
+            </Button>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+            >
+                Next
             </Button>
         </div>
       </CardContent>

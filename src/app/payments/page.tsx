@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StatCard from '@/components/dashboard/stat-card';
 import PaymentForm from './payment-form';
-import { RecentPaymentsTable } from '../dashboard/recent-payments-table';
+import { PaymentsTable } from './payments-table';
 import { PendingInvoicesTable } from '../dashboard/pending-invoices-table';
 import { paymentColumns } from '../dashboard/payment-columns';
 import { invoiceColumns } from '../dashboard/invoice-columns';
@@ -193,7 +193,7 @@ export default function PaymentsPage() {
         />
       </div>
       
-      <RecentPaymentsTable columns={memoizedPaymentColumns} data={payments} />
+      <PaymentsTable columns={memoizedPaymentColumns} data={payments} />
 
       <Sheet open={isPaymentSheetOpen} onOpenChange={setIsPaymentSheetOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
@@ -215,5 +215,3 @@ export default function PaymentsPage() {
     </>
   );
 }
-
-    
