@@ -23,13 +23,15 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment, AdmissionSettings } from '@/types';
+import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment, AdmissionSettings, FeeItem, CommunicationTemplate } from '@/types';
 import { AdmittedStudentTable } from './admitted-student-table';
 import { ToastAction } from '@/components/ui/toast';
 import { db } from '@/lib/firebase';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { StudentDetails } from '@/components/student-details';
 import PaymentForm from '../payments/payment-form';
+import { sendSms } from '@/lib/frog-api';
+import { useSchoolInfo } from '@/context/school-info-context';
 
 
 const formSchema = z.object({
@@ -311,9 +313,12 @@ export default function AdmissionsPage() {
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const [classes, setClasses] = React.useState<SchoolClass[]>([]);
   const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
+  const [feeItems, setFeeItems] = React.useState<FeeItem[]>([]);
+  const [smsTemplates, setSmsTemplates] = React.useState<Record<string, CommunicationTemplate>>({});
   const [payments, setPayments] = React.useState<Payment[]>([]);
   const { toast } = useToast();
   const router = useRouter();
+  const { schoolInfo } = useSchoolInfo();
 
   React.useEffect(() => {
     const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
@@ -355,6 +360,20 @@ export default function AdmissionsPage() {
       const feeStructuresData: FeeStructure[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeStructure));
       setFeeStructures(feeStructuresData);
     });
+
+    const feeItemsQuery = query(collection(db, "fee-items"));
+    const unsubscribeFeeItems = onSnapshot(feeItemsQuery, (snapshot) => {
+        setFeeItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeItem)));
+    });
+
+    const smsTemplatesRef = collection(db, "settings", "templates", "sms");
+    const unsubscribeSmsTemplates = onSnapshot(smsTemplatesRef, (snapshot) => {
+        const fetchedTemplates: Record<string, CommunicationTemplate> = {};
+        snapshot.forEach((doc) => {
+            fetchedTemplates[doc.id] = { id: doc.id, ...doc.data() } as CommunicationTemplate;
+        });
+        setSmsTemplates(fetchedTemplates);
+    });
     
     const paymentsQuery = collection(db, "payments");
     const unsubscribePayments = onSnapshot(paymentsQuery, (querySnapshot) => {
@@ -370,6 +389,8 @@ export default function AdmissionsPage() {
       unsubscribeClasses();
       unsubscribeFeeStructures();
       unsubscribePayments();
+      unsubscribeFeeItems();
+      unsubscribeSmsTemplates();
     }
   }, []);
 
@@ -427,7 +448,6 @@ export default function AdmissionsPage() {
         await runTransaction(db, async (transaction) => {
             const studentsCollectionRef = collection(db, "students");
             
-            // Format: YY-TT-9999
             const yearPart = currentTerm.academicYear.slice(2, 4);
             const termPart = `T${currentTerm.session.split(' ')[0]}`;
             const prefix = `${yearPart}-${termPart}-`;
@@ -435,16 +455,13 @@ export default function AdmissionsPage() {
             const termQuery = query(
                 studentsCollectionRef,
                 where("admissionYear", "==", currentTerm.academicYear),
-                where("admissionTerm", "==", currentTerm.session),
-                limit(1000) // Fetch all students for the term to sort client-side
+                where("admissionTerm", "==", currentTerm.session)
             );
             
             const lastStudentSnapshot = await getDocs(termQuery);
 
-            let nextNumber = 1;
-
+            let maxNumber = 0;
             if (!lastStudentSnapshot.empty) {
-                let maxNumber = 0;
                 lastStudentSnapshot.docs.forEach(doc => {
                     const lastAdmissionId = doc.data().admissionId as string;
                     if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
@@ -457,8 +474,8 @@ export default function AdmissionsPage() {
                         }
                     }
                 });
-                nextNumber = maxNumber + 1;
             }
+            const nextNumber = maxNumber + 1;
             
             const admissionId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
 
@@ -497,6 +514,37 @@ export default function AdmissionsPage() {
 
         const newStudentSnapshot = await getDoc(newStudentDocRef);
         const newStudent = { id: newStudentSnapshot.id, ...newStudentSnapshot.data() } as Student;
+        
+        // --- Calculate fees and send SMS ---
+        const structure = feeStructures.find(fs => fs.classId === newStudent.classId && fs.academicTermId === currentTerm.id);
+        if (structure && Array.isArray(structure.items)) {
+            const totalFeesDue = structure.items
+                .map(item => {
+                    const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
+                    if (!feeItemInfo || feeItemInfo.isOptional) return 0;
+                    return feeItemInfo.appliesTo.includes('new') ? item.amount : 0;
+                })
+                .reduce((total, amount) => total + amount, 0);
+
+            const template = smsTemplates['welcome-message'];
+            if (template && template.content && newStudent.guardianPhone) {
+                let message = template.content
+                    .replace('{{studentName}}', newStudent.name)
+                    .replace('{{schoolName}}', schoolInfo?.schoolName || 'the school')
+                    .replace('{{className}}', newStudent.class)
+                    .replace('{{feesDue}}', totalFeesDue.toFixed(2));
+                
+                sendSms([newStudent.guardianPhone], message).then(result => {
+                    if (result.success) {
+                        toast({ title: 'Welcome SMS Sent', description: 'Guardian has been notified.' });
+                    } else {
+                        toast({ variant: 'destructive', title: 'SMS Failed', description: 'Could not send welcome SMS to guardian.' });
+                    }
+                });
+            }
+        }
+        // --- End of SMS logic ---
+
 
         const newStudentForPayment: Student = {
             ...newStudent,

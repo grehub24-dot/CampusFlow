@@ -36,7 +36,9 @@ type TemplateFormValues = z.infer<typeof templateSchema>;
 const SMS_TEMPLATE_DEFINITIONS = [
     { id: 'payment-reminder', name: 'Payment Reminder', placeholders: ['{{studentName}}', '{{balance}}', '{{dueDate}}'] },
     { id: 'payment-confirmation', name: 'Payment Confirmation', placeholders: ['{{studentName}}', '{{amountPaid}}', '{{newBalance}}'] },
-    { id: 'welcome-message', name: 'Welcome Message', placeholders: ['{{studentName}}', '{{className}}', '{{schoolName}}'] },
+    { id: 'admission-confirmation-partial', name: 'Admission Confirmation (Partial Payment)', placeholders: ['{{studentName}}', '{{schoolName}}', '{{className}}', '{{amountPaid}}', '{{newBalance}}'] },
+    { id: 'admission-confirmation-full', name: 'Admission Confirmation (Full Payment)', placeholders: ['{{studentName}}', '{{schoolName}}', '{{className}}', '{{amountPaid}}'] },
+    { id: 'welcome-message', name: 'Welcome Message', placeholders: ['{{studentName}}', '{{className}}', '{{schoolName}}', '{{feesDue}}'] },
     { id: 'absentee-notice', name: 'Absentee Notice', placeholders: ['{{studentName}}', '{{date}}'] },
 ];
 
@@ -51,7 +53,9 @@ const DEFAULT_TEMPLATES: Record<'sms' | 'email', Record<string, { name: string, 
     sms: {
         'payment-reminder': { name: 'Payment Reminder', content: 'Dear Guardian, a friendly reminder that the outstanding balance for {{studentName}} is GHS {{balance}}, due on {{dueDate}}. Thank you.' },
         'payment-confirmation': { name: 'Payment Confirmation', content: 'Dear Guardian, we have received a payment of GHS {{amountPaid}} for {{studentName}}. The new balance is GHS {{newBalance}}. Thank you.' },
-        'welcome-message': { name: 'Welcome Message', content: 'Welcome to {{schoolName}}, {{studentName}}! We are excited to have you in {{className}}. We look forward to a successful academic year.' },
+        'admission-confirmation-partial': { name: 'Admission Confirmation (Partial Payment)', content: 'Dear Guardian, {{studentName}} has been admitted to {{schoolName}} {{className}}. We received GHS {{amountPaid}}, balance GHS {{newBalance}}. Thank you.' },
+        'admission-confirmation-full': { name: 'Admission Confirmation (Full Payment)', content: 'Dear Guardian, {{studentName}} is admitted to {{schoolName}} {{className}}. Full fees GHS {{amountPaid}} received – zero balance. Welcome & thank you.' },
+        'welcome-message': { name: 'Welcome Message', content: 'Dear Guardian,\nWith great joy we welcome {{studentName}} into the {{schoolName}} {{className}} family. We cherish your trust in us and will nurture your child with love and patience. Kindly pay GHS {{feesDue}} to complete enrolment.' },
         'absentee-notice': { name: 'Absentee Notice', content: 'Dear Guardian, this is to inform you that {{studentName}} was absent from school today, {{date}}. Please contact the school office if you have any concerns.' },
     },
     email: {
@@ -193,7 +197,7 @@ export function TemplatesSettings() {
             unsubscribeSms();
             unsubscribeEmail();
         };
-    }, [toast]);
+    }, []);
 
     const handleSave = async (templateId: string, type: 'sms' | 'email', values: TemplateFormValues) => {
         setIsSubmitting(prev => ({...prev, [`${type}-${templateId}`]: true}));
