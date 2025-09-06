@@ -20,6 +20,7 @@ import { IntegrationsSettings } from './integrations-settings';
 import { FeeItemsSettings } from './fee-items-settings';
 import { AdmissionSettings } from './admission-settings';
 import { SchoolInfoSettings } from './school-info-settings';
+import { TemplatesSettings } from './templates-settings';
 
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
@@ -96,15 +97,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="templates">
-          <Card>
-            <CardHeader>
-              <CardTitle>Communication Templates</CardTitle>
-              <CardDescription>Customize email and SMS templates.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Template customization is coming soon.</p>
-            </CardContent>
-          </Card>
+          <TemplatesSettings />
         </TabsContent>
         
         <TabsContent value="billing">

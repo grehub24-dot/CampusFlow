@@ -146,3 +146,10 @@ export type SchoolInformation = {
 }
 
 export type MomoProvider = "MTN" | "VOD" | "TIGO";
+
+export type CommunicationTemplate = {
+    id: string;
+    name: string;
+    content: string;
+    type: 'SMS' | 'Email';
+}
