@@ -171,8 +171,8 @@ export default function CommunicationsPage() {
       if (doc.exists()) {
         setBalance(doc.data().smsBalance || 0);
       } else {
-        // If the document doesn't exist, create it with a default balance of 50.
-        await setDoc(billingSettingsRef, { smsBalance: 50 });
+        // If the document doesn't exist, create it with a default balance of 10.
+        await setDoc(billingSettingsRef, { smsBalance: 10 });
         setBalance(50);
       }
     });

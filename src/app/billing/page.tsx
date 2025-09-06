@@ -17,7 +17,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { generateOtp, verifyOtp } from '@/lib/frog-api';
 import type { Invoice as InvoiceType, MomoProvider, Bundle } from '@/types';
 import Image from 'next/image';
 import { doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
@@ -72,8 +71,6 @@ function CheckoutModal({
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [invoice, setInvoice] = useState<InvoiceType | null>(null);
-  const [otpCode, setOtpCode] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(true);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
 
@@ -84,9 +81,7 @@ function CheckoutModal({
         handleCreateInvoice();
     } else {
         setInvoice(null);
-        setOtpSent(false);
         setIsVerified(true);
-        setOtpCode('');
         setShowApprovalModal(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -151,31 +146,7 @@ function CheckoutModal({
       setLoading(false);
     }
   }
-
-  async function handleSendOtp() {
-    setLoading(true);
-    const result = await generateOtp(mobileNumber);
-    if (result.status === 'SUCCESS') {
-      toast({ title: 'OTP Sent', description: 'Please check your phone for the verification code.' });
-      setOtpSent(true);
-    } else {
-      toast({ variant: 'destructive', title: 'Failed to Send OTP', description: result.message });
-    }
-    setLoading(false);
-  }
-
-  async function handleVerifyOtp() {
-    setLoading(true);
-    const result = await verifyOtp(mobileNumber, otpCode);
-    if (result.status === 'SUCCESS') {
-      toast({ title: 'Phone Number Verified', description: 'Your phone number has been successfully verified.' });
-      setIsVerified(true);
-    } else {
-      toast({ variant: 'destructive', title: 'OTP Verification Failed', description: result.message });
-    }
-    setLoading(false);
-  }
-
+  
   async function handlePay() {
     if (!invoice) return;
     setLoading(true);
@@ -242,26 +213,10 @@ function CheckoutModal({
                <div>
                   <Label>Mobile Number</Label>
                   <div className="flex gap-2">
-                    <Input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} disabled={otpSent} />
-                    {!isVerified && (
-                        <Button variant="outline" onClick={handleSendOtp} disabled={loading || otpSent}>
-                            {loading && otpSent === false ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Verify'}
-                        </Button>
-                    )}
+                    <Input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
                   </div>
                   {isVerified && <p className="text-sm text-green-600 flex items-center gap-1 mt-1"><CheckCircle className="h-4 w-4" /> Verified</p>}
                </div>
-               {otpSent && !isVerified && (
-                 <div>
-                    <Label>Verification Code</Label>
-                    <div className="flex gap-2">
-                        <Input value={otpCode} onChange={(e) => setOtpCode(e.target.value)} placeholder="Enter OTP"/>
-                        <Button onClick={handleVerifyOtp} disabled={loading}>
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Confirm'}
-                        </Button>
-                    </div>
-                 </div>
-               )}
                 <div>
                   <Label>Email (Optional)</Label>
                   <Input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -272,7 +227,7 @@ function CheckoutModal({
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'PAY NOW'}
             </Button>
             <div className="text-center mt-4 text-xs text-muted-foreground">
-                Powered by <span className="font-bold">redde</span> | Privacy | Terms
+                Powered by <span className="font-bold">CompusFlow</span> | Privacy | Terms
             </div>
           </div>
           
@@ -293,7 +248,7 @@ function CheckoutModal({
                      <span>Description:</span>
                      <span className="font-medium text-right flex items-center gap-1">
                         <Image src="https://picsum.photos/16/16" width={16} height={16} alt="frog icon" data-ai-hint="logo" />
-                         Frog Invoice Payment
+                         CF Invoice Payment
                      </span>
                    </div>
                    <hr/>
@@ -305,7 +260,7 @@ function CheckoutModal({
              </Card>
 
              <div className="bg-blue-900 text-white rounded-lg p-6 text-center space-y-2">
-                <p className="text-lg font-semibold">redde</p>
+                <p className="text-lg font-semibold">CompusFlow</p>
                 <p className="text-3xl font-bold tracking-wider">{mobileNumber}</p>
                 <p className="text-sm">Provider: {provider}</p>
              </div>
