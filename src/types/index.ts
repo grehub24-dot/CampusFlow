@@ -134,3 +134,8 @@ export type AdmissionSettings = {
     prefix?: string;
     padding?: number;
 }
+
+export type SchoolInformation = {
+    schoolName: string;
+    logoUrl?: string;
+}
