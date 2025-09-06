@@ -193,7 +193,7 @@ export function TemplatesSettings() {
             unsubscribeSms();
             unsubscribeEmail();
         };
-    }, [toast, smsTemplates, emailTemplates]);
+    }, [toast]);
 
     const handleSave = async (templateId: string, type: 'sms' | 'email', values: TemplateFormValues) => {
         setIsSubmitting(prev => ({...prev, [`${type}-${templateId}`]: true}));
