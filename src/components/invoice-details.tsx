@@ -100,8 +100,6 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                 <thead className="bg-primary text-white">
                     <tr>
                         <th className="p-3 font-semibold">Description</th>
-                        <th className="p-3 text-center font-semibold">Qty</th>
-                        <th className="p-3 text-right font-semibold">Unit Price (GHS)</th>
                         <th className="p-3 text-right font-semibold">Amount (GHS)</th>
                     </tr>
                 </thead>
@@ -109,8 +107,6 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                     {invoice.items?.map((item, index) => (
                          <tr key={index} className="border-b">
                             <td className="p-3">{item.name}</td>
-                            <td className="p-3 text-center">1</td>
-                            <td className="p-3 text-right">{item.amount.toFixed(2)}</td>
                             <td className="p-3 text-right">{item.amount.toFixed(2)}</td>
                         </tr>
                     ))}
