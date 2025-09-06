@@ -198,4 +198,3 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
         </div>
     </div>
   );
-}
