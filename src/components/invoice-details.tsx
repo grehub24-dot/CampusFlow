@@ -55,7 +55,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
 
             <section className="grid grid-cols-2 gap-8 my-8">
                 <div>
-                    <Card className="bg-gray-50 border-none">
+                    <Card className="bg-transparent border-none">
                         <CardHeader>
                             <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Billed To</CardTitle>
                         </CardHeader>
@@ -67,7 +67,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                     </Card>
                 </div>
                 <div className="text-right">
-                     <Card className="bg-gray-50 border-none">
+                     <Card className="bg-transparent border-none">
                         <CardHeader>
                              <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider text-left">Details</CardTitle>
                         </CardHeader>
@@ -86,9 +86,9 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
             </section>
 
             <section>
-                 <Card>
+                 <div className="border rounded-lg overflow-hidden">
                     <Table className="w-full text-left">
-                        <TableHeader className="bg-muted">
+                        <TableHeader className="bg-muted/50">
                             <TableRow>
                                 <TableHead className="p-3 font-semibold">Description</TableHead>
                                 <TableHead className="p-3 text-right font-semibold">Amount (GHS)</TableHead>
@@ -103,7 +103,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                             ))}
                         </TableBody>
                     </Table>
-                 </Card>
+                 </div>
             </section>
 
             <section className="flex justify-end mt-8">
