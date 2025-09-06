@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import type { Student, SchoolClass, Message } from '@/types';
+import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider } from '@/types';
 import { getBalance, sendSms } from '@/lib/frog-api';
 import { differenceInDays, format } from 'date-fns';
 
@@ -23,6 +23,16 @@ import { Loader2, Send, Wallet, ShoppingCart, CalendarDays, Hourglass } from 'lu
 import StatCard from '@/components/dashboard/stat-card';
 import { Input } from '@/components/ui/input';
 import { MessageHistory } from './message-history';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const messageFormSchema = z.object({
   recipientType: z.enum(['all', 'class', 'single', 'manual']),
@@ -83,11 +93,172 @@ const activeBundleFromApi = {
     expiryDate: new Date('2025-10-05'),
 };
 
+const MOMO_PROVIDERS = [
+  { code: "MTN",   name: "MTN Mobile Money",   dial: "*170#" },
+  { code: "VOD",   name: "Vodafone Cash",      dial: "*110#" },
+  { code: "TIGO",  name: "AirtelTigo Money",   dial: "*500#" },
+] as const;
+
+function BundleCard({
+  bundle,
+  setInvoice
+}: {
+  bundle: typeof baseCommunicationBundles[0];
+  setInvoice: (invoice: InvoiceType) => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const multipliedPrice = bundle.price * 4;
+  const title = `${bundle.msgCount}msg @ ${multipliedPrice}GHS for ${bundle.validity}days`;
+
+  async function createInvoice() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/create-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: multipliedPrice,
+          description: title,
+          reference: `sms-${bundle.msgCount}-${Date.now()}`, // unique
+        }),
+      });
+
+      if (!res.ok) throw new Error("Invoice creation failed");
+
+      const inv: InvoiceType = await res.json();
+      setInvoice(inv);          // opens the modal
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Card className="flex flex-col">
+      <CardHeader>
+        <CardTitle className="text-lg">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <p className="text-2xl font-bold text-primary">GHS {multipliedPrice}</p>
+        <p className="text-sm text-muted-foreground">Valid for {bundle.validity} day(s)</p>
+      </CardContent>
+      <div className="p-4 pt-0">
+        <Button className="w-full" onClick={createInvoice} disabled={loading}>
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
+          Buy Now
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function CheckoutModal({
+  open,
+  invoice,
+  onClose,
+  onSuccess,
+}: {
+  open: boolean;
+  invoice: InvoiceType | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [provider, setProvider] = useState<MomoProvider>("MTN");
+  const [submitting, setSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  /* Polling logic ----------------------------------------------------*/
+  useEffect(() => {
+    if (!invoice) return;
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/invoice-status?id=${invoice.id}`);
+        if (!res.ok) return; // Don't show an error for a failed poll, just try again
+        const json = await res.json();
+
+        if (json.status === "PAID") {
+            toast({ title: "Payment received ✅", description: "Your bundle is now active." });
+            onSuccess();
+            onClose();
+        }
+        if (json.status === "FAILED" || json.status === "EXPIRED") {
+            toast({ variant: "destructive", title: "Payment failed" });
+            onClose();
+        }
+      } catch (e) {
+        // Silently ignore polling errors
+      }
+    }, 3000);
+    return () => clearInterval(id);
+  }, [invoice, onClose, onSuccess, toast]);
+
+  async function requestPrompt() {
+    setSubmitting(true);
+    try {
+      await fetch("/api/send-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: invoice!.id, provider }),
+      });
+      toast({ title: "Prompt sent", description: "Check your phone and approve the payment." });
+    } catch {
+      toast({ variant: "destructive", title: "Could not send prompt" });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!invoice) return null;
+
+  const selectedDial = MOMO_PROVIDERS.find((p) => p.code === provider)?.dial;
+
+  return (
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Complete purchase</DialogTitle>
+          <DialogDescription>
+            {invoice.description} · <span className="font-semibold">GHS {invoice.amount}</span>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4 py-2">
+          <Label>Choose wallet</Label>
+          <RadioGroup value={provider} onValueChange={(v) => setProvider(v as MomoProvider)}>
+            {MOMO_PROVIDERS.map((p) => (
+              <div key={p.code} className="flex items-center space-x-2">
+                <RadioGroupItem value={p.code} id={p.code} />
+                <Label htmlFor={p.code}>{p.name}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+
+          <div className="rounded bg-muted p-3 text-sm">
+            Dial <span className="font-mono font-bold">{invoice.dialCode || selectedDial}</span> to receive prompt
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={requestPrompt} disabled={submitting}>
+            {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Request prompt"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
 export default function CommunicationsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [balance, setBalance] = useState<number | null>(null);
+  const [invoice, setInvoice] = useState<InvoiceType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -106,6 +277,37 @@ export default function CommunicationsPage() {
   
   const recipientType = form.watch('recipientType');
   const messageType = form.watch('messageType');
+
+  const fetchBalance = async () => {
+      try {
+        const result = await getBalance();
+        if (result.success) {
+          setBalance(result.balance);
+        } else {
+          // Don't show an error toast if the API is simply not configured.
+          if (result.error !== 'API credentials not configured.') {
+              console.error("API Error fetching balance:", result.error);
+              toast({
+                variant: 'destructive',
+                title: 'API Error',
+                description: 'Could not fetch SMS credit balance.'
+              });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch balance:", error);
+         toast({
+            variant: 'destructive',
+            title: 'API Error',
+            description: 'Could not fetch SMS credit balance.'
+          });
+      }
+    };
+    
+  const refetchBalance = async () => {
+    const r = await getBalance();
+    if (r.success) setBalance(r.balance);
+  };
 
   useEffect(() => {
     const studentsQuery = query(collection(db, "students"));
@@ -138,32 +340,6 @@ export default function CommunicationsPage() {
     const unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
         setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message)));
     });
-
-    const fetchBalance = async () => {
-      try {
-        const result = await getBalance();
-        if (result.success) {
-          setBalance(result.balance);
-        } else {
-          // Don't show an error toast if the API is simply not configured.
-          if (result.error !== 'API credentials not configured.') {
-              console.error("API Error fetching balance:", result.error);
-              toast({
-                variant: 'destructive',
-                title: 'API Error',
-                description: 'Could not fetch SMS credit balance.'
-              });
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch balance:", error);
-         toast({
-            variant: 'destructive',
-            title: 'API Error',
-            description: 'Could not fetch SMS credit balance.'
-          });
-      }
-    };
 
     fetchBalance();
 
@@ -473,39 +649,24 @@ export default function CommunicationsPage() {
         <TabsContent value="purchase">
           <Card>
             <CardHeader>
-              <CardTitle>Purchase SMS/Email Bundles</CardTitle>
-              <CardDescription>
-                Top up your credits to continue sending communications.
-              </CardDescription>
+              <CardTitle>Purchase SMS / Email Bundles</CardTitle>
+              <CardDescription>Top-up credits instantly via Mobile Money.</CardDescription>
             </CardHeader>
             <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {baseCommunicationBundles.map((bundle, index) => {
-                  const multipliedPrice = bundle.price * 4;
-                  const bundleTitle = `${bundle.msgCount}msg @ ${multipliedPrice}GHS for ${bundle.validity}days`;
-                  return (
-                    <Card key={index} className="flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="text-lg">{bundleTitle}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                            <p className="text-2xl font-bold text-primary">GHS {multipliedPrice}</p>
-                            <p className="text-sm text-muted-foreground">Valid for {bundle.validity} day(s)</p>
-                        </CardContent>
-                        <div className="p-4 pt-0">
-                            <Button asChild className="w-full">
-                                <a href={bundle.link} target="_blank" rel="noopener noreferrer">
-                                    <ShoppingCart className="mr-2 h-4 w-4" />
-                                    Buy Now
-                                </a>
-                            </Button>
-                        </div>
-                    </Card>
-                  )
-              })}
+              {baseCommunicationBundles.map((b) => (
+                <BundleCard key={b.msgCount} bundle={b} setInvoice={setInvoice} />
+              ))}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+      
+      <CheckoutModal
+        open={!!invoice}
+        invoice={invoice}
+        onClose={() => setInvoice(null)}
+        onSuccess={refetchBalance}
+      />
     </>
   );
 }
