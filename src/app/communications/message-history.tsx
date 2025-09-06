@@ -90,8 +90,13 @@ export function MessageHistory({ messages }: MessageHistoryProps) {
                                                 </Badge>
                                             </TooltipTrigger>
                                             <TooltipContent>
-                                                <p>Reason: {message.reason || 'N/A'}</p>
-                                                <p>Last Update: {message.statusDate ? format(new Date(message.statusDate), 'PP p') : 'N/A'}</p>
+                                                <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1 text-xs">
+                                                    <span className="font-semibold">Reason:</span><span>{message.reason || 'N/A'}</span>
+                                                    <span className="font-semibold">Destination:</span><span>{message.recipient}</span>
+                                                    <span className="font-semibold">Handle Charge:</span><span>{message.handleCharge ?? 'N/A'}</span>
+                                                    <span className="font-semibold">Topup Charge:</span><span>{message.topupCharge ?? 'N/A'}</span>
+                                                    <span className="font-semibold">Last Update:</span><span>{message.statusDate ? format(new Date(message.statusDate), 'PP p') : 'N/A'}</span>
+                                                </div>
                                             </TooltipContent>
                                         </Tooltip>
                                     </TableCell>
