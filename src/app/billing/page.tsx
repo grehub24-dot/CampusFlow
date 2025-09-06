@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateOtp, verifyOtp } from '@/lib/frog-api';
 import type { Invoice as InvoiceType, MomoProvider, Bundle } from '@/types';
 import Image from 'next/image';
-import { doc, setDoc, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 
 const communicationBundles: Bundle[] = [
@@ -103,7 +103,10 @@ function CheckoutModal({
             toast({ title: "Payment received ✅", description: "Your bundle is now active." });
             if (bundle?.msgCount) {
                 const billingSettingsRef = doc(db, "settings", "billing");
-                await setDoc(billingSettingsRef, { smsBalance: bundle.msgCount }, { merge: true });
+                const docSnap = await getDoc(billingSettingsRef);
+                const currentBalance = docSnap.exists() ? (docSnap.data().smsBalance || 0) : 0;
+                const newBalance = currentBalance + bundle.msgCount;
+                await setDoc(billingSettingsRef, { smsBalance: newBalance }, { merge: true });
             }
             onClose();
             clearInterval(intervalId);

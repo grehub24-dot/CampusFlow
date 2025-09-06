@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { collection, onSnapshot, query, where, orderBy, doc, setDoc } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy, doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider, CommunicationTemplate, Bundle } from '@/types';
@@ -167,11 +167,16 @@ export default function CommunicationsPage() {
     });
     
     const billingSettingsRef = doc(db, "settings", "billing");
-    const unsubscribeBilling = onSnapshot(billingSettingsRef, (doc) => {
+    const unsubscribeBilling = onSnapshot(billingSettingsRef, async (doc) => {
       if (doc.exists()) {
         setBalance(doc.data().smsBalance || 0);
+      } else {
+        // If the document doesn't exist, create it with a default balance of 50.
+        await setDoc(billingSettingsRef, { smsBalance: 50 });
+        setBalance(50);
       }
     });
+
 
     return () => {
       unsubscribeStudents();
