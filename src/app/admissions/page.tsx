@@ -425,31 +425,35 @@ export default function AdmissionsPage() {
 
         await runTransaction(db, async (transaction) => {
             const studentsCollectionRef = collection(db, "students");
-            const admissionSettingsRef = doc(db, 'settings', 'admission');
-
-            const [lastStudentSnapshot, admissionSettingsDoc] = await Promise.all([
-                getDocs(query(studentsCollectionRef, orderBy("admissionId", "desc"))),
-                transaction.get(admissionSettingsRef)
-            ]);
-
-            const settings = admissionSettingsDoc.data() as AdmissionSettings || { prefix: 'ADM', padding: 4 };
-            const prefix = settings.prefix || 'ADM';
-            const padding = settings.padding || 4;
             
+            // Format: YY-TT-9999
+            const yearPart = currentTerm.academicYear.slice(2, 4);
+            const termPart = `T${currentTerm.session.split(' ')[0]}`;
+            const prefix = `${yearPart}-${termPart}-`;
+
+            const termQuery = query(
+                studentsCollectionRef,
+                where("admissionYear", "==", currentTerm.academicYear),
+                where("admissionTerm", "==", currentTerm.session),
+                orderBy("admissionId", "desc"),
+                limit(1)
+            );
+            
+            const lastStudentSnapshot = await getDocs(termQuery);
+
             let nextNumber = 1;
 
              if (!lastStudentSnapshot.empty) {
-                const lastStudent = lastStudentSnapshot.docs.find(doc => doc.data().admissionId?.startsWith(prefix));
-                if (lastStudent) {
-                    const lastAdmissionId = lastStudent.data().admissionId as string;
-                    const lastNumberMatch = lastAdmissionId.match(/\d+$/);
+                const lastAdmissionId = lastStudentSnapshot.docs[0].data().admissionId as string;
+                if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
+                    const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
                     if (lastNumberMatch) {
                         nextNumber = parseInt(lastNumberMatch[0], 10) + 1;
                     }
                 }
             }
             
-            const admissionId = `${prefix}-${String(nextNumber).padStart(padding, '0')}`;
+            const admissionId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
 
             const newStudentData = {
                 name: `${values.firstName} ${values.lastName}`,

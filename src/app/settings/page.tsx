@@ -18,7 +18,6 @@ import { ClassSettings } from './class-settings';
 import { FeeStructureSettings } from './fee-structure-settings';
 import { IntegrationsSettings } from './integrations-settings';
 import { FeeItemsSettings } from './fee-items-settings';
-import { AdmissionSettings } from './admission-settings';
 import { SchoolInfoSettings } from './school-info-settings';
 import { TemplatesSettings } from './templates-settings';
 import { BillingSettings } from './billing-settings';
@@ -55,7 +54,6 @@ export default function SettingsPage() {
         <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="school-info">School Info</TabsTrigger>
           <TabsTrigger value="academic-year">Academic Year</TabsTrigger>
-          <TabsTrigger value="admission-ids">Admission IDs</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="fee-items">Fee Items</TabsTrigger>
           <TabsTrigger value="fee-structure">Fee Structure</TabsTrigger>
@@ -73,10 +71,6 @@ export default function SettingsPage() {
           <AcademicSettings />
         </TabsContent>
         
-        <TabsContent value="admission-ids">
-            <AdmissionSettings />
-        </TabsContent>
-
         <TabsContent value="classes">
             <ClassSettings />
         </TabsContent>

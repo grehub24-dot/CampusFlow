@@ -3,7 +3,7 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, deleteDoc, query, where, getDocs, runTransaction } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, deleteDoc, query, where, getDocs, runTransaction, limit } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment, AdmissionSettings } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -307,7 +307,6 @@ export default function StudentsPage() {
                 let importedCount = 0;
                 let failedCount = 0;
 
-                const admissionSettingsRef = doc(db, "settings", "admission");
 
                 for (const student of newStudents) {
                     const studentClass = classes.find(c => c.name.trim().toLowerCase() === student.class?.trim().toLowerCase());
@@ -322,37 +321,34 @@ export default function StudentsPage() {
                         let admissionId = student.admissionId;
 
                         if (!admissionId) {
-                            const admissionSettingsDoc = await transaction.get(admissionSettingsRef);
-                            let nextNumber = 1;
-                            let prefix = "ADM";
-                            let padding = 4;
-                            if (admissionSettingsDoc.exists()) {
-                                const settings = admissionSettingsDoc.data() as AdmissionSettings;
-                                prefix = settings.prefix || "ADM";
-                                padding = settings.padding || 4;
-                            }
+                            // Format: YY-TT-9999
+                            const yearPart = currentTerm.academicYear.slice(2, 4);
+                            const termPart = `T${currentTerm.session.split(' ')[0]}`;
+                            const prefix = `${yearPart}-${termPart}-`;
 
-                            // Query for last student with this prefix
-                            const studentsQuery = query(
-                                collection(db, "students"), 
-                                where("admissionId", ">=", prefix),
-                                where("admissionId", "<", prefix + 'z'),
-                                orderBy("admissionId", "desc"), 
+                            const termQuery = query(
+                                collection(db, "students"),
+                                where("admissionYear", "==", currentTerm.academicYear),
+                                where("admissionTerm", "==", currentTerm.session),
+                                orderBy("admissionId", "desc"),
+                                limit(1)
                             );
-                            const lastStudentSnapshot = await getDocs(studentsQuery);
+                            
+                            const lastStudentSnapshot = await getDocs(termQuery);
+
+                            let nextNumber = 1;
 
                             if (!lastStudentSnapshot.empty) {
-                                const lastStudentDoc = lastStudentSnapshot.docs[0];
-                                const lastAdmissionId = lastStudentDoc.data().admissionId as string;
+                                const lastAdmissionId = lastStudentSnapshot.docs[0].data().admissionId as string;
                                 if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
-                                    const lastNumberMatch = lastAdmissionId.match(/\d+$/);
+                                    const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
                                     if (lastNumberMatch) {
                                         nextNumber = parseInt(lastNumberMatch[0], 10) + 1;
                                     }
                                 }
                             }
-
-                            admissionId = `${prefix}-${String(nextNumber).padStart(padding, '0')}`;
+                            
+                            admissionId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
                         }
                         
                         const studentData = {
