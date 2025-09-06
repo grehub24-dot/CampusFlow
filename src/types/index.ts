@@ -149,7 +149,7 @@ export type MomoProvider = "MTN" | "VOD" | "TIGO";
 
 export type CommunicationTemplate = {
     id: string;
-    name: string;
+    name: string; // Subject for email, name for SMS
     content: string;
     type: 'SMS' | 'Email';
 }

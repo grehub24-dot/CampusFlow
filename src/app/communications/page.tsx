@@ -44,12 +44,15 @@ const messageFormSchema = z.object({
   subject: z.string().optional(), // For email
   message: z.string().min(10, 'Message must be at least 10 characters.'),
 }).refine(data => {
-    if (data.recipientType === 'manual') {
+    if (data.recipientType === 'manual' && data.messageType === 'sms') {
         return !!data.manualPhone && data.manualPhone.length > 0;
+    }
+    if (data.recipientType === 'manual' && data.messageType === 'email') {
+        return !!data.manualPhone && data.manualPhone.includes('@');
     }
     return true;
 }, {
-    message: 'Phone number is required for manual entry.',
+    message: 'A valid phone number or email is required for manual entry.',
     path: ['manualPhone'],
 }).refine(data => {
     if (data.messageType === 'email') {
@@ -266,7 +269,8 @@ export default function CommunicationsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [templates, setTemplates] = useState<Record<string, CommunicationTemplate>>({});
+  const [smsTemplates, setSmsTemplates] = useState<Record<string, CommunicationTemplate>>({});
+  const [emailTemplates, setEmailTemplates] = useState<Record<string, CommunicationTemplate>>({});
   const [balance, setBalance] = useState<number | null>(null);
   const [invoice, setInvoice] = useState<InvoiceType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -291,10 +295,15 @@ export default function CommunicationsPage() {
   const templateId = form.watch('templateId');
 
   useEffect(() => {
-    if (templateId && templates[templateId]) {
-      form.setValue('message', templates[templateId].content);
+    if (templateId) {
+        if (messageType === 'sms' && smsTemplates[templateId]) {
+            form.setValue('message', smsTemplates[templateId].content);
+        } else if (messageType === 'email' && emailTemplates[templateId]) {
+            form.setValue('message', emailTemplates[templateId].content);
+            form.setValue('subject', emailTemplates[templateId].name);
+        }
     }
-  }, [templateId, templates, form]);
+  }, [templateId, smsTemplates, emailTemplates, form, messageType]);
 
   const fetchBalance = async () => {
       try {
@@ -302,7 +311,6 @@ export default function CommunicationsPage() {
         if (result.success) {
           setBalance(result.balance);
         } else {
-          // Don't show an error toast if the API is simply not configured.
           if (result.error !== 'API credentials not configured.') {
               console.error("API Error fetching balance:", result.error);
               toast({
@@ -359,14 +367,24 @@ export default function CommunicationsPage() {
         setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message)));
     });
     
-    const templatesRef = collection(db, "settings", "templates", "sms");
-    const unsubscribeTemplates = onSnapshot(templatesRef, (snapshot) => {
+    const smsTemplatesRef = collection(db, "settings", "templates", "sms");
+    const unsubscribeSmsTemplates = onSnapshot(smsTemplatesRef, (snapshot) => {
         const fetchedTemplates: Record<string, CommunicationTemplate> = {};
         snapshot.forEach((doc) => {
             fetchedTemplates[doc.id] = { id: doc.id, ...doc.data() } as CommunicationTemplate;
         });
-        setTemplates(fetchedTemplates);
+        setSmsTemplates(fetchedTemplates);
     });
+
+    const emailTemplatesRef = collection(db, "settings", "templates", "email");
+    const unsubscribeEmailTemplates = onSnapshot(emailTemplatesRef, (snapshot) => {
+        const fetchedTemplates: Record<string, CommunicationTemplate> = {};
+        snapshot.forEach((doc) => {
+            fetchedTemplates[doc.id] = { id: doc.id, ...doc.data() } as CommunicationTemplate;
+        });
+        setEmailTemplates(fetchedTemplates);
+    });
+
 
     fetchBalance();
 
@@ -374,7 +392,8 @@ export default function CommunicationsPage() {
       unsubscribeStudents();
       unsubscribeClasses();
       unsubscribeMessages();
-      unsubscribeTemplates();
+      unsubscribeSmsTemplates();
+      unsubscribeEmailTemplates();
     };
   }, [toast]);
 
@@ -382,15 +401,28 @@ export default function CommunicationsPage() {
     setIsSubmitting(true);
     try {
       let recipients: string[] = [];
-      if (values.recipientType === 'all') {
-        recipients = students.map(s => s.guardianPhone).filter(Boolean);
-      } else if (values.recipientType === 'class' && values.classId) {
-        recipients = students.filter(s => s.classId === values.classId).map(s => s.guardianPhone).filter(Boolean);
-      } else if (values.recipientType === 'single' && values.studentId) {
-         const student = students.find(s => s.id === values.studentId);
-         if (student && student.guardianPhone) recipients.push(student.guardianPhone);
-      } else if (values.recipientType === 'manual' && values.manualPhone) {
-        recipients.push(values.manualPhone);
+      if (values.messageType === 'sms') {
+        if (values.recipientType === 'all') {
+            recipients = students.map(s => s.guardianPhone).filter(Boolean);
+        } else if (values.recipientType === 'class' && values.classId) {
+            recipients = students.filter(s => s.classId === values.classId).map(s => s.guardianPhone).filter(Boolean);
+        } else if (values.recipientType === 'single' && values.studentId) {
+            const student = students.find(s => s.id === values.studentId);
+            if (student && student.guardianPhone) recipients.push(student.guardianPhone);
+        } else if (values.recipientType === 'manual' && values.manualPhone) {
+            recipients.push(values.manualPhone);
+        }
+      } else { // Email
+         if (values.recipientType === 'all') {
+            recipients = students.map(s => s.guardianEmail).filter(email => !!email && email.includes('@'));
+        } else if (values.recipientType === 'class' && values.classId) {
+            recipients = students.filter(s => s.classId === values.classId).map(s => s.guardianEmail).filter(email => !!email && email.includes('@'));
+        } else if (values.recipientType === 'single' && values.studentId) {
+            const student = students.find(s => s.id === values.studentId);
+            if (student && student.guardianEmail && student.guardianEmail.includes('@')) recipients.push(student.guardianEmail);
+        } else if (values.recipientType === 'manual' && values.manualPhone) {
+            recipients.push(values.manualPhone);
+        }
       }
 
       const uniqueRecipients = [...new Set(recipients)];
@@ -402,8 +434,6 @@ export default function CommunicationsPage() {
       }
       
       if (values.messageType === 'sms') {
-        // In a real app, you would not send requests one by one.
-        // This is for demonstration purposes. Consider batching or a different strategy.
         const promises = uniqueRecipients.slice(0, 5).map(phone => sendSms(phone, values.message));
         await Promise.all(promises);
 
@@ -413,8 +443,8 @@ export default function CommunicationsPage() {
         });
       } else {
          toast({
-          title: 'Not Implemented',
-          description: `Email functionality is not yet connected to an API.`,
+          title: 'Email Sent (Simulated)',
+          description: `Email dispatched to ${uniqueRecipients.length} recipients. This is a simulation as the email API is not connected.`,
         });
       }
 
@@ -436,6 +466,8 @@ export default function CommunicationsPage() {
   const activeBundleDescription = `${activeBundleFromApi.msgCount}msg @ ${displayedPrice}GHS for ${activeBundleFromApi.validityDays}days`;
   const expiryDate = activeBundleFromApi.expiryDate;
   const daysLeft = differenceInDays(expiryDate, new Date());
+  
+  const currentTemplates = messageType === 'sms' ? smsTemplates : emailTemplates;
 
 
   return (
@@ -579,9 +611,9 @@ export default function CommunicationsPage() {
                           name="manualPhone"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Phone Number</FormLabel>
+                              <FormLabel>{messageType === 'sms' ? 'Phone Number' : 'Email Address'}</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter phone number" {...field} />
+                                <Input placeholder={messageType === 'sms' ? 'Enter phone number' : 'Enter email address'} {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -595,7 +627,12 @@ export default function CommunicationsPage() {
                           <FormItem>
                             <FormLabel>Message Type</FormLabel>
                             <Select
-                              onValueChange={field.onChange}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                form.setValue('templateId', '');
+                                form.setValue('message', '');
+                                form.setValue('subject', '');
+                              }}
                               defaultValue={field.value}
                             >
                               <FormControl>
@@ -606,7 +643,7 @@ export default function CommunicationsPage() {
                               <SelectContent>
                                 <SelectItem value="sms">SMS</SelectItem>
                                 <SelectItem value="email">
-                                  Email (Not implemented)
+                                  Email
                                 </SelectItem>
                               </SelectContent>
                             </Select>
@@ -616,34 +653,32 @@ export default function CommunicationsPage() {
                     </div>
 
                     <div className="space-y-4">
-                      {messageType === 'sms' && (
-                        <FormField
+                      <FormField
                           control={form.control}
                           name="templateId"
                           render={({ field }) => (
-                            <FormItem>
+                          <FormItem>
                               <FormLabel>Select Template (Optional)</FormLabel>
                               <Select
-                                onValueChange={field.onChange}
-                                value={field.value}
+                              onValueChange={field.onChange}
+                              value={field.value}
                               >
-                                <FormControl>
+                              <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Load a message from a template..." />
+                                  <SelectValue placeholder="Load a message from a template..." />
                                   </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {Object.values(templates).map((t) => (
-                                    <SelectItem key={t.id} value={t.id}>
+                              </FormControl>
+                              <SelectContent>
+                                  {Object.values(currentTemplates).map((t) => (
+                                  <SelectItem key={t.id} value={t.id}>
                                       {t.name}
-                                    </SelectItem>
+                                  </SelectItem>
                                   ))}
-                                </SelectContent>
+                              </SelectContent>
                               </Select>
-                            </FormItem>
+                          </FormItem>
                           )}
-                        />
-                      )}
+                      />
                       {messageType === "email" && (
                         <FormField
                           control={form.control}
@@ -726,5 +761,3 @@ export default function CommunicationsPage() {
     </>
   );
 }
-
-    
