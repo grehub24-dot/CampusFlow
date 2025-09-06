@@ -74,7 +74,7 @@ function CheckoutModal({
   const [invoice, setInvoice] = useState<InvoiceType | null>(null);
   const [otpCode, setOtpCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
+  const [isVerified, setIsVerified] = useState(true);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
 
   const { toast } = useToast();
@@ -85,7 +85,7 @@ function CheckoutModal({
     } else {
         setInvoice(null);
         setOtpSent(false);
-        setIsVerified(false);
+        setIsVerified(true);
         setOtpCode('');
         setShowApprovalModal(false);
     }
