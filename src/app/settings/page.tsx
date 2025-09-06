@@ -21,6 +21,7 @@ import { FeeItemsSettings } from './fee-items-settings';
 import { AdmissionSettings } from './admission-settings';
 import { SchoolInfoSettings } from './school-info-settings';
 import { TemplatesSettings } from './templates-settings';
+import { BillingSettings } from './billing-settings';
 
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
@@ -101,15 +102,7 @@ export default function SettingsPage() {
         </TabsContent>
         
         <TabsContent value="billing">
-          <Card>
-            <CardHeader>
-              <CardTitle>Billing & Invoices</CardTitle>
-              <CardDescription>Manage your subscription and invoice settings.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Invoice and receipt customization is coming soon.</p>
-            </CardContent>
-          </Card>
+          <BillingSettings />
         </TabsContent>
       </Tabs>
     </>
