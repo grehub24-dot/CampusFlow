@@ -139,13 +139,11 @@ function Brand() {
       setIsClient(true);
     }, []);
 
-    const showSkeleton = !isClient || loading;
-
-    if (showSkeleton) {
+    if (!isClient || loading) {
         return (
              <div className="flex items-center gap-2 p-2">
                 <Skeleton className="h-8 w-10 rounded-md" />
-                 {state !== 'collapsed' && <Skeleton className="h-6 w-24" />}
+                 {state !== 'collapsed' && <Skeleton className="h-6 w-24 rounded-md" />}
             </div>
         );
     }
