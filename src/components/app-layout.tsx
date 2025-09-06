@@ -118,19 +118,21 @@ function Brand() {
       setIsClient(true);
     }, []);
 
-    if (loading || !isClient) {
-        return (
-            <div className="flex items-center gap-2 p-2">
-                <Skeleton className="h-8 w-10 rounded-md" />
-                {state === 'expanded' && <Skeleton className="h-6 w-24" />}
-            </div>
-        );
-    }
-    
+    const showSkeleton = !isClient || loading;
+
     return (
          <div className="flex items-center gap-2 p-2">
-            <Image src={schoolInfo?.logoUrl || "https://picsum.photos/40/40"} width={40} height={32} alt="School Logo" className="h-8 w-10 rounded-md object-contain" data-ai-hint="logo" />
-            <span className={cn("text-xl font-bold", state === 'collapsed' && 'hidden')}>{schoolInfo?.schoolName || 'CampusFlow'}</span>
+            {showSkeleton ? (
+                <Skeleton className="h-8 w-10 rounded-md" />
+            ) : (
+                <Image src={schoolInfo?.logoUrl || "https://picsum.photos/40/40"} width={40} height={32} alt="School Logo" className="h-8 w-10 rounded-md object-contain" data-ai-hint="logo" />
+            )}
+            
+            {showSkeleton ? (
+                 <Skeleton className="h-6 w-24" />
+            ) : (
+                <span className={cn("text-xl font-bold", state === 'collapsed' && 'hidden')}>{schoolInfo?.schoolName || 'CampusFlow'}</span>
+            )}
           </div>
     )
 }
