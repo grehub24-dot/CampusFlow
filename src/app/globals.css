@@ -122,6 +122,16 @@
 .totals-table .balance-due th, .totals-table .balance-due td { font-weight: bold; font-size: 1.25rem; color: hsl(var(--primary)); border-top: 2px solid hsl(var(--border)); padding-top: 1rem; }
 .invoice-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 3rem; padding-top: 1rem; border-top: 1px solid hsl(var(--border)); font-size: 0.8rem; }
 .payment-terms h3, .payment-methods h3 { font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.5rem; }
+.invoice-final-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid hsl(var(--border));
+    font-size: 0.8rem;
+    color: #555;
+}
+.invoice-final-footer p { margin: 0.25rem 0; }
+
 
 @media print {
   @page {

@@ -125,7 +125,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
         </section>
 
         <section className="invoice-body">
-            <div className="watermark">
+            <div className="watermark" style={{ top: '55%', left: '50%', transform: 'translate(-50%, -50%)' }}>
               {schoolInfo.logoUrl && <img src={schoolInfo.logoUrl} alt="Watermark" />}
             </div>
             <table className="items-table">
@@ -166,6 +166,11 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                 <div dangerouslySetInnerHTML={{ __html: paymentMethodsHtml}} />
             </div>
         </footer>
+         <div className="invoice-final-footer">
+          <p>Powered by <strong>CompusFlow</strong></p>
+          <p>“Where code, connectivity & commerce flow together.”</p>
+          <p>- {schoolInfo.phone} -</p>
+        </div>
       </div>
 
       <div className="mt-6 flex justify-end gap-2 no-print">
