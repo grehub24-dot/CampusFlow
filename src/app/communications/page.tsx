@@ -496,7 +496,7 @@ export default function CommunicationsPage() {
   };
   
   const handlePurchaseSuccess = (bundleSize: number) => {
-    setBalance(prevBalance => prevBalance + bundleSize);
+    setBalance(bundleSize);
   }
 
   const currentTemplates = messageType === 'sms' ? smsTemplates : emailTemplates;
