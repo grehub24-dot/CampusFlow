@@ -10,7 +10,6 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider, CommunicationTemplate } from '@/types';
 import { getBalance, sendSms } from '@/lib/frog-api';
-import { differenceInDays, format } from 'date-fns';
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, Wallet, ShoppingCart, CalendarDays, Hourglass } from 'lucide-react';
+import { Loader2, Send, Wallet, ShoppingCart } from 'lucide-react';
 import StatCard from '@/components/dashboard/stat-card';
 import { Input } from '@/components/ui/input';
 import { MessageHistory } from './message-history';
@@ -96,14 +95,6 @@ const baseCommunicationBundles = [
         link: "https://example.com/purchase/50"
     }
 ];
-
-// This represents a dynamic active bundle, as if fetched from an API.
-const activeBundleFromApi = {
-    msgCount: 175,
-    price: 5, // The original price from the API
-    validityDays: 30,
-    expiryDate: new Date('2025-10-05'),
-};
 
 const MOMO_PROVIDERS = [
   { code: "MTN",   name: "MTN Mobile Money",   dial: "*170#" },
@@ -310,7 +301,7 @@ export default function CommunicationsPage() {
     }
   }, [templateId, messageType, smsTemplates, emailTemplates, form]);
 
-  const fetchBalance = async () => {
+  const fetchBalance = React.useCallback(async () => {
       try {
         const result = await getBalance();
         if (result.success) {
@@ -333,12 +324,7 @@ export default function CommunicationsPage() {
             description: 'Could not fetch SMS credit balance.'
           });
       }
-    };
-    
-  const refetchBalance = async () => {
-    const r = await getBalance();
-    if (r.success) setBalance(r.balance);
-  };
+    }, [toast]);
 
   useEffect(() => {
     const studentsQuery = query(collection(db, "students"));
@@ -400,7 +386,7 @@ export default function CommunicationsPage() {
       unsubscribeSmsTemplates();
       unsubscribeEmailTemplates();
     };
-  }, []);
+  }, [fetchBalance]);
 
   const onSubmit: SubmitHandler<MessageFormValues> = async (values) => {
     setIsSubmitting(true);
@@ -465,11 +451,6 @@ export default function CommunicationsPage() {
     }
   };
   
-  const displayedPrice = activeBundleFromApi.price * 4;
-  const activeBundleDescription = `${activeBundleFromApi.msgCount}msg @ ${displayedPrice}GHS for ${activeBundleFromApi.validityDays}days`;
-  const expiryDate = activeBundleFromApi.expiryDate;
-  const daysLeft = differenceInDays(expiryDate, new Date());
-  
   const currentTemplates = messageType === 'sms' ? smsTemplates : emailTemplates;
 
 
@@ -481,27 +462,13 @@ export default function CommunicationsPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-         <Card>
-            <CardHeader className="pb-2">
-                <CardTitle className="text-base font-medium">Your Active Bundles</CardTitle>
-                <CardDescription>{activeBundleDescription}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="text-3xl font-bold text-primary">
-                    {balance !== null ? (balance / 2).toLocaleString() : <Loader2 className="h-6 w-6 animate-spin" />}
-                </div>
-                <div className="text-xs text-muted-foreground mt-2 space-y-1">
-                    <div className="flex items-center gap-1">
-                       <CalendarDays className="h-3 w-3" />
-                       <span>Expiring On: {format(expiryDate, 'PPP')}</span>
-                    </div>
-                     <div className="flex items-center gap-1">
-                        <Hourglass className="h-3 w-3" />
-                        <span>{daysLeft} days left</span>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+         <StatCard 
+            title="SMS Credit Balance"
+            value={balance !== null ? balance.toLocaleString() : "Loading..."}
+            icon={Wallet}
+            color="text-green-500"
+            description="Remaining SMS units"
+        />
       </div>
 
       <Tabs defaultValue="send-message">
@@ -759,7 +726,7 @@ export default function CommunicationsPage() {
         open={!!invoice}
         invoice={invoice}
         onClose={() => setInvoice(null)}
-        onSuccess={refetchBalance}
+        onSuccess={fetchBalance}
       />
     </>
   );
