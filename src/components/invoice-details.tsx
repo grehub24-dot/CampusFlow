@@ -41,7 +41,14 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
     if (month > 3 && month < 8) term = 'T2';
     if (month >= 8) term = 'T3';
 
-    const sequence = invoice.id.substring(0, 4);
+    // Create a simple numeric hash from the student ID for consistency
+    let hash = 0;
+    for (let i = 0; i < invoice.id.length; i++) {
+        hash = (hash << 5) - hash + invoice.id.charCodeAt(i);
+        hash |= 0; // Convert to 32bit integer
+    }
+    const sequence = Math.abs(hash).toString().substring(0, 4).padStart(4, '0');
+
 
     return `${year}-${term}-${sequence}`;
   }
@@ -75,7 +82,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
 
             <section className="grid grid-cols-2 gap-8 my-8">
                 <div>
-                    <Card className="rounded-lg shadow-none border-0 bg-transparent p-4">
+                    <Card className="rounded-lg shadow-none border-0 bg-gray-50 p-4">
                         <CardHeader className="pb-2 px-0 pt-0">
                             <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Billed To</CardTitle>
                         </CardHeader>
@@ -87,7 +94,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                     </Card>
                 </div>
                 <div className="text-right">
-                     <Card className="rounded-lg shadow-none border-0 bg-transparent p-4">
+                     <Card className="rounded-lg shadow-none border-0 bg-blue-50 p-4">
                         <CardHeader className="pb-2 px-0 pt-0">
                              <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider text-left">Details</CardTitle>
                         </CardHeader>
