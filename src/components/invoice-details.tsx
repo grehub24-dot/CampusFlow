@@ -27,6 +27,26 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
   const handlePrint = () => {
     window.print();
   }
+  
+  const generateInvoiceNumber = (invoice: Invoice) => {
+    if (invoice.admissionId && /^\d{2}-T\d-\d{4}$/.test(invoice.admissionId)) {
+        return invoice.admissionId;
+    }
+    // Fallback for older IDs: Generate a display ID based on due date
+    const date = new Date(invoice.dueDate || new Date());
+    const year = format(date, 'yy');
+    // Simplified term logic for display purposes
+    const month = date.getMonth();
+    let term = 'T1';
+    if (month > 3 && month < 8) term = 'T2';
+    if (month >= 8) term = 'T3';
+
+    const sequence = invoice.id.substring(0, 4);
+
+    return `${year}-${term}-${sequence}`;
+  }
+  
+  const invoiceNumber = generateInvoiceNumber(invoice);
 
   return (
     <div className="p-1 pt-4 printable-area font-sans">
@@ -48,7 +68,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                 </div>
                 <div className="text-right">
                     <h1 className="text-2xl font-bold text-gray-700">INVOICE</h1>
-                    <p className="text-gray-500 mt-1">{invoice.admissionId}</p>
+                    <p className="text-gray-500 mt-1">{invoiceNumber}</p>
                 </div>
             </header>
 
