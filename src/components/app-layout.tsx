@@ -118,13 +118,15 @@ function Brand() {
       setIsClient(true);
     }, []);
 
+    const renderSkeleton = () => (
+        <div className="flex items-center gap-2 p-2">
+            <Skeleton className="h-8 w-10 rounded-md" />
+            {state === 'expanded' && <Skeleton className="h-6 w-24" />}
+        </div>
+    );
+
     if (!isClient || loading) {
-        return (
-            <div className="flex items-center gap-2 p-2">
-                <Skeleton className="h-8 w-10 rounded-md" />
-                <Skeleton className="h-6 w-24" />
-            </div>
-        );
+        return renderSkeleton();
     }
     
     return (
