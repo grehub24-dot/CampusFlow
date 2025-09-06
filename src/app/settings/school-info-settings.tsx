@@ -12,7 +12,7 @@ import { useSchoolInfo } from '@/context/school-info-context';
 
 
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
@@ -103,19 +103,21 @@ export function SchoolInfoSettings() {
                         )}
                     />
                     
-                    <div className="space-y-2">
+                    <FormItem>
                         <FormLabel>School Logo</FormLabel>
                         <div className="flex items-center gap-4">
                           <Image src={schoolInfo?.logoUrl || "https://picsum.photos/80/80"} width={80} height={80} alt="School Logo" className="rounded-md" data-ai-hint="logo" />
-                          <Input id="logo-upload" type="file" className="max-w-xs" disabled />
+                           <Button type="button" disabled>Upload New Logo</Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">Logo upload is not yet implemented.</p>
-                    </div>
+                        <FormDescription>Logo upload functionality is not yet implemented.</FormDescription>
+                    </FormItem>
                     
-                    <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Changes
-                    </Button>
+                    <div className="flex justify-end">
+                      <Button type="submit" disabled={isSubmitting}>
+                          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Save Changes
+                      </Button>
+                    </div>
                 </form>
             </Form>
         )}
