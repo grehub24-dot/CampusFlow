@@ -1,11 +1,12 @@
 
 'use server'
 
-import { doc, getDoc, addDoc, collection } from "firebase/firestore";
+import { doc, getDoc, addDoc, collection, writeBatch } from "firebase/firestore";
 import { db } from "./firebase";
 import type { IntegrationSettings } from "@/types";
+import { v4 as uuidv4 } from 'uuid';
 
-const FROG_API_BASE_URL_V1 = 'https://api.wigal.com.gh/v1';
+
 const FROG_API_BASE_URL_V3 = 'https://frogapi.wigal.com.gh/api/v3';
 
 
@@ -34,8 +35,8 @@ async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string,
 
 
 // This is a server-side function. It will not be exposed to the client.
-export async function sendSms(recipient: string, message: string) {
-  const url = `${FROG_API_BASE_URL_V1}/sms/send`;
+export async function sendSms(recipients: string[], message: string) {
+  const url = `${FROG_API_BASE_URL_V3}/sms/send`;
   
   try {
     const credentials = await getFrogCredentials();
@@ -43,6 +44,12 @@ export async function sendSms(recipient: string, message: string) {
         throw new Error("Frog API credentials are not configured.");
     }
     const { apiKey, senderId, username } = credentials;
+
+    const destinations = recipients.map(r => ({
+      destination: r,
+      msgid: `cf-${uuidv4()}`
+    }));
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -51,28 +58,32 @@ export async function sendSms(recipient: string, message: string) {
         'USERNAME': username
       },
       body: JSON.stringify({
-        to: recipient,
-        from: senderId,
-        text: message
+        senderid: senderId,
+        destinations: destinations,
+        message: message,
+        smstype: 'text'
       })
     });
 
     const data = await response.json();
-    if (!response.ok) {
+    if (!response.ok || data.status !== 'ACCEPTD') {
       console.error('Frog API Error:', data);
       throw new Error(data.message || 'Failed to send SMS');
     }
     
-    // Log the message to Firestore
-    if (data.msgid) {
-        await addDoc(collection(db, "messages"), {
-            msgid: data.msgid,
-            recipient: recipient,
+    // Log messages to Firestore in a batch
+    const batch = writeBatch(db);
+    destinations.forEach(dest => {
+        const messageRef = doc(collection(db, "messages"));
+        batch.set(messageRef, {
+            msgid: dest.msgid,
+            recipient: dest.destination,
             content: message,
-            status: "Sent",
+            status: "Sent", // API response is generic, so we assume 'Sent' initially
             sentDate: new Date().toISOString(),
         });
-    }
+    });
+    await batch.commit();
 
     return { success: true, data };
   } catch (error) {

@@ -1,5 +1,6 @@
 
 import type { Student, User, Payment, Invoice } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
 
 // Mock data is no longer needed as the application now fetches data from Firestore.
 // You can create collections in your Firestore database named 'students', 'users', 

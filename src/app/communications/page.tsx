@@ -439,12 +439,10 @@ export default function CommunicationsPage() {
       }
       
       if (values.messageType === 'sms') {
-        const promises = uniqueRecipients.slice(0, 5).map(phone => sendSms(phone, values.message));
-        await Promise.all(promises);
-
+        await sendSms(uniqueRecipients, values.message);
         toast({
           title: 'Messages Sent',
-          description: `SMS dispatched to ${uniqueRecipients.length} recipients. (Demo limited to 5 for now)`,
+          description: `SMS dispatched to ${uniqueRecipients.length} recipients.`,
         });
       } else {
          toast({
