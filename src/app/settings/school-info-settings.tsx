@@ -13,7 +13,7 @@ import { useSchoolInfo } from '@/context/school-info-context';
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { Loader2 } from 'lucide-react';
@@ -30,6 +30,7 @@ export function SchoolInfoSettings() {
   const { toast } = useToast();
   const { schoolInfo, loading, setSchoolInfo } = useSchoolInfo();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -41,19 +42,30 @@ export function SchoolInfoSettings() {
   React.useEffect(() => {
     if (schoolInfo) {
       form.reset({ schoolName: schoolInfo.schoolName });
+      setLogoPreview(schoolInfo.logoUrl || null);
     }
   }, [schoolInfo, form]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
 
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setIsSubmitting(true);
     try {
         const settingsDocRef = doc(db, "settings", "school-info");
-        // In a real app, you would handle file uploads to a service like Firebase Storage
-        // and get back a URL to save in Firestore. For now, we only save the name.
+        
         const newInfo = { 
             schoolName: values.schoolName,
-            logoUrl: schoolInfo?.logoUrl || "https://picsum.photos/80/80", // Keep existing logo or default
+            logoUrl: logoPreview || schoolInfo?.logoUrl || "https://picsum.photos/80/80",
         };
         await setDoc(settingsDocRef, newInfo, { merge: true });
 
@@ -106,10 +118,19 @@ export function SchoolInfoSettings() {
                     <FormItem>
                         <FormLabel>School Logo</FormLabel>
                         <div className="flex items-center gap-4">
-                          <Image src={schoolInfo?.logoUrl || "https://picsum.photos/80/80"} width={80} height={80} alt="School Logo" className="rounded-md" data-ai-hint="logo" />
-                           <Button type="button" disabled>Upload New Logo</Button>
+                            <Image 
+                                src={logoPreview || "https://picsum.photos/80/80"} 
+                                width={80} 
+                                height={80} 
+                                alt="School Logo" 
+                                className="rounded-md" 
+                                data-ai-hint="logo" 
+                            />
+                           <FormControl>
+                                <Input type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={handleFileChange} className="max-w-xs" />
+                           </FormControl>
                         </div>
-                        <FormDescription>Logo upload functionality is not yet implemented.</FormDescription>
+                        <FormDescription>Upload a JPG, PNG, or SVG. Max size 2MB.</FormDescription>
                     </FormItem>
                     
                     <div className="flex justify-end">
