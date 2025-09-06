@@ -55,7 +55,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
 
             <section className="grid grid-cols-2 gap-8 my-8">
                 <div>
-                    <Card className="rounded-lg bg-transparent shadow-none border-0">
+                    <Card className="rounded-lg shadow-none border-0 bg-gray-50 p-4">
                         <CardHeader className="pb-2 px-0">
                             <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Billed To</CardTitle>
                         </CardHeader>
@@ -67,7 +67,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                     </Card>
                 </div>
                 <div className="text-right">
-                     <Card className="rounded-lg bg-transparent shadow-none border-0">
+                     <Card className="rounded-lg shadow-none border-0 bg-blue-50 p-4">
                         <CardHeader className="pb-2 px-0">
                              <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider text-left">Details</CardTitle>
                         </CardHeader>
