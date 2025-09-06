@@ -156,8 +156,13 @@ function Header() {
 function Brand() {
     const { state } = useSidebar();
     const { schoolInfo, loading } = useSchoolInfo();
+    const [isClient, setIsClient] = React.useState(false);
+
+    React.useEffect(() => {
+        setIsClient(true);
+    }, []);
     
-    if (loading) {
+    if (!isClient || loading) {
         return (
              <div className="flex items-center gap-2 p-2">
                 <Skeleton className="h-16 w-16 rounded-md" />
