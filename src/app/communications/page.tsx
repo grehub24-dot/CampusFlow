@@ -47,6 +47,33 @@ type MessageFormValues = z.infer<typeof messageFormSchema>;
 const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
 const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'Kindergarten 2'];
 
+const communicationBundles = [
+    {
+        title: "175msg @ 5GHS for 30days",
+        price: 5,
+        validity: 30,
+        link: "https://example.com/purchase/5"
+    },
+    {
+        title: "350msg @ 10GHS for 30days",
+        price: 10,
+        validity: 30,
+        link: "https://example.com/purchase/10"
+    },
+    {
+        title: "700msg @ 20GHS for 30days",
+        price: 20,
+        validity: 30,
+        link: "https://example.com/purchase/20"
+    },
+    {
+        title: "1750msg @ 50GHS for 30days",
+        price: 50,
+        validity: 30,
+        link: "https://example.com/purchase/50"
+    }
+]
+
 export default function CommunicationsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
@@ -440,20 +467,26 @@ export default function CommunicationsPage() {
                 Top up your credits to continue sending communications.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 text-center">
-              <p className="text-muted-foreground">
-                To purchase more credits, please visit the provider's portal.
-              </p>
-              <Button asChild>
-                <a
-                  href="https://frogdocs.wigal.com.gh"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  Go to Purchase Portal
-                </a>
-              </Button>
+            <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {communicationBundles.map((bundle, index) => (
+                <Card key={index} className="flex flex-col">
+                  <CardHeader>
+                    <CardTitle className="text-lg">{bundle.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p className="text-2xl font-bold text-primary">GHS {bundle.price}</p>
+                    <p className="text-sm text-muted-foreground">Valid for {bundle.validity} day(s)</p>
+                  </CardContent>
+                  <div className="p-4 pt-0">
+                    <Button asChild className="w-full">
+                        <a href={bundle.link} target="_blank" rel="noopener noreferrer">
+                            <ShoppingCart className="mr-2 h-4 w-4" />
+                            Buy Now
+                        </a>
+                    </Button>
+                  </div>
+                </Card>
+              ))}
             </CardContent>
           </Card>
         </TabsContent>
