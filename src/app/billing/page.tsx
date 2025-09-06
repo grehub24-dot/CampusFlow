@@ -75,6 +75,7 @@ function CheckoutModal({
   const [otpCode, setOtpCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
 
   const { toast } = useToast();
   
@@ -86,6 +87,7 @@ function CheckoutModal({
         setOtpSent(false);
         setIsVerified(false);
         setOtpCode('');
+        setShowApprovalModal(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bundle, open]);
@@ -184,6 +186,7 @@ function CheckoutModal({
         body: JSON.stringify({ id: invoice.id, provider }),
       });
       toast({ title: "Prompt sent", description: "Check your phone and approve the payment." });
+      setShowApprovalModal(true);
     } catch {
        toast({ variant: "destructive", title: "Could not send prompt" });
     } finally {
@@ -312,6 +315,29 @@ function CheckoutModal({
              </div>
           </div>
         </div>
+        
+        <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="text-center">Approve Payment...</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col items-center justify-center text-center space-y-4 py-8">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+                    <p className="font-semibold text-lg">Dial {invoice?.dialCode} to receive payment prompt</p>
+                    <p className="text-sm text-muted-foreground">
+                        Have you made payment? If yes, click on the button below to confirm payment
+                    </p>
+                    <Button 
+                        size="lg" 
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        onClick={() => setShowApprovalModal(false)}
+                    >
+                        Click to confirm payment
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+
       </DialogContent>
     </Dialog>
   );
