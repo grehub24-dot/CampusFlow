@@ -56,10 +56,10 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
             <section className="grid grid-cols-2 gap-8 my-8">
                 <div>
                     <Card className="rounded-lg shadow-none border-0 bg-gray-50 p-4">
-                        <CardHeader className="pb-2 px-0">
+                        <CardHeader className="pb-2 px-0 pt-0">
                             <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Billed To</CardTitle>
                         </CardHeader>
-                        <CardContent className="px-0">
+                        <CardContent className="px-0 pb-0">
                             <p className="font-bold text-lg text-gray-800">{invoice.studentName}</p>
                             <p className="text-gray-600">{invoice.studentClass}</p>
                             <p className="text-gray-600">Guardian: {invoice.amountPaid}</p>
@@ -68,10 +68,10 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                 </div>
                 <div className="text-right">
                      <Card className="rounded-lg shadow-none border-0 bg-blue-50 p-4">
-                        <CardHeader className="pb-2 px-0">
+                        <CardHeader className="pb-2 px-0 pt-0">
                              <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider text-left">Details</CardTitle>
                         </CardHeader>
-                        <CardContent className="text-left space-y-1 px-0">
+                        <CardContent className="text-left space-y-1 px-0 pb-0">
                             <div className="grid grid-cols-2">
                                 <span className="font-semibold text-gray-600">Date of Issue:</span>
                                 <span className="text-right text-gray-800">{format(new Date(), 'dd MMM, yyyy')}</span>
@@ -87,11 +87,11 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
 
             <section>
                  <div className="border rounded-lg overflow-hidden">
-                    <Table className="w-full text-left bg-white">
-                        <TableHeader className="bg-muted/50">
+                    <Table className="w-full text-left">
+                        <TableHeader>
                             <TableRow>
-                                <TableHead className="p-3 font-semibold">Description</TableHead>
-                                <TableHead className="p-3 text-right font-semibold">Amount (GHS)</TableHead>
+                                <TableHead className="p-3 font-semibold text-gray-500 uppercase tracking-wider">Description</TableHead>
+                                <TableHead className="p-3 text-right font-semibold text-gray-500 uppercase tracking-wider">Amount (GHS)</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
