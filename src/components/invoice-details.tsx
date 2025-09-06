@@ -154,7 +154,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
             <footer className="text-center mt-12 pt-8 border-t">
                 <p className="text-xs text-muted-foreground">Powered by</p>
                 <div className="flex justify-center items-center">
-                    <svg width="240" height="48" viewBox="0 0 240 48" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="180" height="36" viewBox="0 0 240 48" xmlns="http://www.w3.org/2000/svg">
                     <title>CompusFlow</title>
                     <desc>Enterprise tech logo – compute + flow</desc>
                     <g id="mark">
@@ -170,7 +170,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                     </g>
                     <g id="wordmark" fill="#1F1F1F">
                         <text x="56" y="31" fontFamily="Helvetica Neue, Arial, sans-serif" 
-                            fontSize="26" fontWeight="600" letterSpacing="-0.5">
+                            fontSize="20" fontWeight="600" letterSpacing="-0.5">
                         CompusFlow
                         </text>
                     </g>
