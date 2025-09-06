@@ -114,7 +114,7 @@ export default function InvoicesPage() {
     const message = `Dear Guardian, this is a friendly reminder that there is an outstanding balance of GHS ${invoice.amount.toFixed(2)} for ${student.name}. Please make a payment at your earliest convenience. Thank you.`;
 
     toast({ title: 'Sending Reminder...', description: `Sending SMS to ${student.guardianPhone}` });
-    const result = await sendSms(student.guardianPhone, message);
+    const result = await sendSms([student.guardianPhone], message);
 
     if (result.success) {
         toast({ title: 'Reminder Sent', description: `SMS reminder sent successfully to ${student.name}'s guardian.` });
