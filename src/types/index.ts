@@ -168,3 +168,8 @@ export type Bundle = {
     price: number;
     validity: number;
 }
+
+export type OtpResponse = {
+  status: "SUCCESS" | "ERROR" | "FAILED";
+  message: string;
+}

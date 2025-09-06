@@ -10,7 +10,7 @@ import { collection, onSnapshot, query, where, orderBy } from "firebase/firestor
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider, CommunicationTemplate, Bundle } from '@/types';
-import { sendSms } from '@/lib/frog-api';
+import { sendSms, generateOtp, verifyOtp } from '@/lib/frog-api';
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, Wallet, ShoppingCart, ArrowLeft, Smartphone, CreditCard } from 'lucide-react';
+import { Loader2, Send, Wallet, ShoppingCart, ArrowLeft, Smartphone, CreditCard, CheckCircle } from 'lucide-react';
 import StatCard from '@/components/dashboard/stat-card';
 import { Input } from '@/components/ui/input';
 import { MessageHistory } from './message-history';
@@ -121,6 +121,9 @@ function CheckoutModal({
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [invoice, setInvoice] = useState<InvoiceType | null>(null);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
 
   const { toast } = useToast();
   
@@ -129,6 +132,9 @@ function CheckoutModal({
         handleCreateInvoice();
     } else {
         setInvoice(null);
+        setOtpSent(false);
+        setIsVerified(false);
+        setOtpCode('');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bundle, open]);
@@ -187,6 +193,30 @@ function CheckoutModal({
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSendOtp() {
+    setLoading(true);
+    const result = await generateOtp(mobileNumber);
+    if (result.status === 'SUCCESS') {
+      toast({ title: 'OTP Sent', description: 'Please check your phone for the verification code.' });
+      setOtpSent(true);
+    } else {
+      toast({ variant: 'destructive', title: 'Failed to Send OTP', description: result.message });
+    }
+    setLoading(false);
+  }
+
+  async function handleVerifyOtp() {
+    setLoading(true);
+    const result = await verifyOtp(mobileNumber, otpCode);
+    if (result.status === 'SUCCESS') {
+      toast({ title: 'Phone Number Verified', description: 'Your phone number has been successfully verified.' });
+      setIsVerified(true);
+    } else {
+      toast({ variant: 'destructive', title: 'OTP Verification Failed', description: result.message });
+    }
+    setLoading(false);
   }
 
   async function handlePay() {
@@ -253,15 +283,34 @@ function CheckoutModal({
                </div>
                <div>
                   <Label>Mobile Number</Label>
-                  <Input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+                  <div className="flex gap-2">
+                    <Input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} disabled={otpSent} />
+                    {!isVerified && (
+                        <Button variant="outline" onClick={handleSendOtp} disabled={loading || otpSent}>
+                            {loading && otpSent === false ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Verify'}
+                        </Button>
+                    )}
+                  </div>
+                  {isVerified && <p className="text-sm text-green-600 flex items-center gap-1 mt-1"><CheckCircle className="h-4 w-4" /> Verified</p>}
                </div>
+               {otpSent && !isVerified && (
+                 <div>
+                    <Label>Verification Code</Label>
+                    <div className="flex gap-2">
+                        <Input value={otpCode} onChange={(e) => setOtpCode(e.target.value)} placeholder="Enter OTP"/>
+                        <Button onClick={handleVerifyOtp} disabled={loading}>
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Confirm'}
+                        </Button>
+                    </div>
+                 </div>
+               )}
                 <div>
                   <Label>Email (Optional)</Label>
                   <Input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
                </div>
             </div>
             
-            <Button className="w-full mt-8 bg-red-600 hover:bg-red-700 text-white" size="lg" onClick={handlePay} disabled={loading}>
+            <Button className="w-full mt-8 bg-red-600 hover:bg-red-700 text-white" size="lg" onClick={handlePay} disabled={loading || !isVerified}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'PAY NOW'}
             </Button>
             <div className="text-center mt-4 text-xs text-muted-foreground">
