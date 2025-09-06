@@ -34,6 +34,8 @@ export const SchoolInfoProvider: React.FC<{ children: React.ReactNode }> = ({
           setSchoolInfo({
             schoolName: 'CampusFlow',
             logoUrl: 'https://picsum.photos/40/40',
+            address: 'P.O. Box 123, Accra, Ghana',
+            phone: '+233 12 345 6789'
           });
         }
         setLoading(false);

@@ -4,27 +4,21 @@
 import React from 'react';
 import type { Invoice } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { User, Calendar, Hash, Banknote, Tag, Landmark, Phone, Printer, Download } from 'lucide-react';
+import { Printer, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
-
-const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined | null }) => (
-    <div className="flex items-start gap-3">
-        <Icon className="h-5 w-5 text-muted-foreground mt-1" />
-        <div>
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <p className="font-medium">{value || 'N/A'}</p>
-        </div>
-    </div>
-);
+import { useSchoolInfo } from '@/context/school-info-context';
+import Image from 'next/image';
 
 interface InvoiceDetailsProps {
     invoice: Invoice;
 }
 
 export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
-  if (!invoice) {
+  const { schoolInfo } = useSchoolInfo();
+
+  if (!invoice || !schoolInfo) {
     return <div>Loading...</div>;
   }
 
@@ -32,87 +26,131 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
     window.print();
   }
 
+  // A simple (and limited) function to convert number to words for the invoice.
+  const numberToWords = (num: number) => {
+    const a = ['','one ','two ','three ','four ', 'five ','six ','seven ','eight ','nine ','ten ','eleven ','twelve ','thirteen ','fourteen ','fifteen ','sixteen ','seventeen ','eighteen ','nineteen '];
+    const b = ['', '', 'twenty','thirty','forty','fifty', 'sixty','seventy','eighty','ninety'];
+    
+    const [integerPart, decimalPart] = num.toFixed(2).split('.').map(Number);
+
+    let words = '';
+
+    const toWords = (n: number) => {
+        if (n < 20) {
+            return a[n];
+        }
+        let digit = n % 10;
+        return b[Math.floor(n/10)] + a[digit];
+    }
+    
+    if (integerPart === 0) {
+        words = 'zero';
+    } else {
+       if (integerPart >= 1000) {
+           words += toWords(Math.floor(integerPart / 1000)) + 'thousand ';
+       }
+       if (integerPart % 1000 >= 100) {
+           words += toWords(Math.floor((integerPart % 1000) / 100)) + 'hundred ';
+       }
+       if (integerPart % 100 > 0) {
+           words += toWords(integerPart % 100);
+       }
+    }
+    
+    words = words.trim() + ' Ghana cedis';
+
+    if (decimalPart > 0) {
+        words += ' and ' + toWords(decimalPart) + 'pesewas';
+    }
+
+    return words.charAt(0).toUpperCase() + words.slice(1) + '.';
+  };
+
   return (
-    <div className="p-1 pt-4 printable-area">
-      <Card className="shadow-none border-0">
-        <CardHeader>
-            <div className="flex justify-between items-start">
-                <div>
-                    <CardTitle className="text-2xl">Invoice</CardTitle>
-                    <CardDescription>
-                        Bill for {invoice.studentName} ({invoice.studentClass})
-                    </CardDescription>
-                </div>
-                 <div className="text-right">
-                    <p className="text-lg font-semibold text-destructive">GHS {invoice.amount.toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">Amount Due</p>
-                 </div>
-            </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-            <Separator />
-            <div className="grid md:grid-cols-2 gap-6">
-                <DetailItem icon={User} label="Student Name" value={invoice.studentName} />
-                <DetailItem icon={Hash} label="Admission ID" value={invoice.admissionId} />
-                <DetailItem icon={Calendar} label="Due Date" value={format(new Date(invoice.dueDate), 'PPP')} />
-            </div>
-            
-            <div>
-                <h3 className="text-lg font-semibold mb-2">Invoice Items</h3>
-                <div className="rounded-md border">
-                     <table className="w-full text-sm">
-                        <thead className="bg-muted">
-                            <tr className="border-b">
-                                <th className="p-2 text-left font-medium">Item</th>
-                                <th className="p-2 text-right font-medium">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {invoice.items?.map((item, index) => (
-                                <tr key={index} className="border-b last:border-b-0">
-                                    <td className="p-2">{item.name}</td>
-                                    <td className="p-2 text-right">GHS {item.amount.toFixed(2)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                     </table>
-                </div>
-            </div>
+    <div className="p-1 pt-4 printable-area font-sans">
+      <div className="w-[210mm] mx-auto p-6 bg-white text-black">
+        <header className="text-center mb-6">
+            <h1 className="text-2xl font-bold">{schoolInfo.schoolName}</h1>
+            <p className="text-sm">{schoolInfo.address}</p>
+            <p className="text-sm">{schoolInfo.phone}</p>
+        </header>
 
-            <Separator />
-            
-            <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <p className="text-muted-foreground">Total Bill</p>
-                    <p className="font-medium">GHS {invoice.totalAmount.toFixed(2)}</p>
+        <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold underline">SCHOOL FEES PAYMENT CHIT</h2>
+            <p className="text-xs">(Student Copy – Keep for your records)</p>
+        </div>
+
+        <div className="flex justify-between text-sm mb-4">
+            <span><strong>Invoice #:</strong> {invoice.id}</span>
+            <span><strong>Date:</strong> {format(new Date(), 'dd MMM yyyy')}</span>
+        </div>
+
+        <div className="border-t border-b border-gray-300 py-2 text-sm mb-4">
+            <p><strong>Student:</strong> {invoice.studentName} &emsp; <strong>Class:</strong> {invoice.studentClass}</p>
+            <p><strong>Guardian:</strong> {invoice.amountPaid} &emsp; </p>
+        </div>
+
+        <table className="w-full text-sm mb-4">
+            <thead className="border-b-2 border-black">
+                <tr>
+                    <th className="p-1 text-left font-bold">Description</th>
+                    <th className="p-1 text-center font-bold">Qty</th>
+                    <th className="p-1 text-right font-bold">Unit (GHS)</th>
+                    <th className="p-1 text-right font-bold">Amount (GHS)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {invoice.items?.map((item, index) => (
+                     <tr key={index}>
+                        <td className="p-1">{item.name}</td>
+                        <td className="p-1 text-center">1</td>
+                        <td className="p-1 text-right">{item.amount.toFixed(2)}</td>
+                        <td className="p-1 text-right">{item.amount.toFixed(2)}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+        
+        <div className="flex justify-end mb-4 text-sm">
+            <div className="w-64">
+                <div className="flex justify-between">
+                    <span>Sub-total</span>
+                    <span>{invoice.totalAmount?.toFixed(2)}</span>
                 </div>
-                 <div className="flex justify-between items-center">
-                    <p className="text-muted-foreground">Amount Paid</p>
-                    <p className="font-medium text-primary">GHS {invoice.amountPaid.toFixed(2)}</p>
-                </div>
-                 <div className="flex justify-between items-center font-bold text-lg">
-                    <p>Balance Due</p>
-                    <p className="text-destructive">GHS {invoice.amount.toFixed(2)}</p>
+                 <div className="flex justify-between font-bold border-t border-b-2 border-black my-1 py-1">
+                    <span>TOTAL DUE</span>
+                    <span>{invoice.amount.toFixed(2)}</span>
                 </div>
             </div>
+        </div>
 
-            <Separator />
+        <div className="text-xs font-semibold mb-6">
+            <p>Amount in words: {numberToWords(invoice.amount)}</p>
+        </div>
 
-             <div>
-                <h3 className="text-lg font-semibold mb-4">Mode of Payment</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-3">
-                        <Landmark className="h-5 w-5 text-muted-foreground" />
-                        <span>Please contact the school office for payment details.</span>
-                    </div>
-                     <div className="flex items-center gap-3">
-                        <Phone className="h-5 w-5 text-muted-foreground" />
-                        <span>+233 12 345 6789</span>
-                    </div>
-                </div>
-            </div>
-        </CardContent>
-         <CardFooter className="justify-end gap-2 no-print">
+        <div className="text-xs border-t pt-4">
+            <h4 className="font-bold mb-1">Payment Terms:</h4>
+            <ul className="list-disc list-inside mb-4">
+                <li>Payable on or before {format(new Date(invoice.dueDate || new Date()), 'dd MMM yyyy')}.</li>
+                <li>Late fee of 2% per month applies after due date.</li>
+            </ul>
+             <h4 className="font-bold mb-1">Pay via Mobile Money (no charges):</h4>
+             <ul className="list-disc list-inside">
+                <li>Dial *800*0*6491# on any network</li>
+                <li>Enter amount: {invoice.amount.toFixed(2)}</li>
+                <li>Enter reference: {invoice.id}</li>
+                <li>Approve prompt on your phone</li>
+                <li>Cash / Cheque also accepted at the bursary.</li>
+             </ul>
+        </div>
+        
+        <footer className="text-center mt-6 text-xs">
+            <p>Powered by Redde • www.redde.com.gh</p>
+            <p className="font-bold">Thank you for choosing {schoolInfo.schoolName}!</p>
+        </footer>
+      </div>
+
+       <div className="mt-6 flex justify-end gap-2 no-print">
             <Button variant="outline" onClick={handlePrint}>
                 <Printer className="mr-2 h-4 w-4" />
                 Print
@@ -121,8 +159,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                 <Download className="mr-2 h-4 w-4" />
                 Export as PDF
             </Button>
-        </CardFooter>
-      </Card>
+        </div>
     </div>
   );
 }

@@ -60,13 +60,13 @@ export type Invoice = {
   amount: number; // outstanding balance
   dueDate?: string;
   items?: { name: string, amount: number }[];
-  totalAmount?: number; // total bill for the term
-  amountPaid?: number; // total paid so far for the term
+  totalAmount: number; // total bill for the term
+  amountPaid: number; // total paid so far for the term
   // For MoMo checkout
-  payToken: string;      // Redde payToken / Hubtel token, etc.
-  description: string;
+  payToken?: string;      // Redde payToken / Hubtel token, etc.
+  description?: string;
   dialCode?: string;     // e.g. *800*0*6491#
-  expiresAt: string;     // ISO date
+  expiresAt?: string;     // ISO date
 };
 
 export type User = {
@@ -143,6 +143,8 @@ export type AdmissionSettings = {
 export type SchoolInformation = {
     schoolName: string;
     logoUrl?: string;
+    address?: string;
+    phone?: string;
 }
 
 export type MomoProvider = "MTN" | "VOD" | "TIGO";

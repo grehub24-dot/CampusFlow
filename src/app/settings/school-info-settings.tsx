@@ -18,10 +18,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Image from "next/image";
 import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 
 const formSchema = z.object({
   schoolName: z.string().min(1, 'School name is required.'),
   logo: z.any().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -36,12 +39,18 @@ export function SchoolInfoSettings() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       schoolName: schoolInfo?.schoolName || "CampusFlow Academy",
+      address: schoolInfo?.address || "",
+      phone: schoolInfo?.phone || "",
     }
   });
   
   React.useEffect(() => {
     if (schoolInfo) {
-      form.reset({ schoolName: schoolInfo.schoolName });
+      form.reset({ 
+          schoolName: schoolInfo.schoolName,
+          address: schoolInfo.address,
+          phone: schoolInfo.phone,
+      });
       setLogoPreview(schoolInfo.logoUrl || null);
     }
   }, [schoolInfo, form]);
@@ -66,6 +75,8 @@ export function SchoolInfoSettings() {
         const newInfo = { 
             schoolName: values.schoolName,
             logoUrl: logoPreview || schoolInfo?.logoUrl || "https://picsum.photos/80/80",
+            address: values.address,
+            phone: values.phone,
         };
         await setDoc(settingsDocRef, newInfo, { merge: true });
 
@@ -109,6 +120,34 @@ export function SchoolInfoSettings() {
                             <FormLabel>School Name</FormLabel>
                             <FormControl>
                                 <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Address</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="P.O. Box 123, City, Country" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                     <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                                <Input placeholder="+233 12 345 6789" {...field} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
