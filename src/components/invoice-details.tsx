@@ -29,7 +29,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
   }
 
   return (
-    <div className="p-1 pt-4 printable-area font-sans bg-gray-50">
+    <div className="p-1 pt-4 printable-area font-sans">
       <div className="relative w-[210mm] mx-auto p-8 bg-white text-gray-800 shadow-lg overflow-hidden">
         
         <div className="absolute inset-0 flex items-center justify-center z-0 opacity-5 pointer-events-none">
@@ -55,11 +55,11 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
 
             <section className="grid grid-cols-2 gap-8 my-8">
                 <div>
-                    <Card className="bg-gray-100 border-gray-200 rounded-lg">
-                        <CardHeader className="pb-2">
+                    <Card className="rounded-lg bg-transparent shadow-none border-0">
+                        <CardHeader className="pb-2 px-0">
                             <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Billed To</CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="px-0">
                             <p className="font-bold text-lg text-gray-800">{invoice.studentName}</p>
                             <p className="text-gray-600">{invoice.studentClass}</p>
                             <p className="text-gray-600">Guardian: {invoice.amountPaid}</p>
@@ -67,11 +67,11 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                     </Card>
                 </div>
                 <div className="text-right">
-                     <Card className="bg-blue-50 border-blue-200 rounded-lg">
-                        <CardHeader className="pb-2">
+                     <Card className="rounded-lg bg-transparent shadow-none border-0">
+                        <CardHeader className="pb-2 px-0">
                              <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider text-left">Details</CardTitle>
                         </CardHeader>
-                        <CardContent className="text-left space-y-1">
+                        <CardContent className="text-left space-y-1 px-0">
                             <div className="grid grid-cols-2">
                                 <span className="font-semibold text-gray-600">Date of Issue:</span>
                                 <span className="text-right text-gray-800">{format(new Date(), 'dd MMM, yyyy')}</span>
