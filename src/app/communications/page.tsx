@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider } from '@/types';
+import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider, CommunicationTemplate } from '@/types';
 import { getBalance, sendSms } from '@/lib/frog-api';
 import { differenceInDays, format } from 'date-fns';
 
@@ -40,6 +40,7 @@ const messageFormSchema = z.object({
   studentId: z.string().optional(),
   manualPhone: z.string().optional(),
   messageType: z.enum(['sms', 'email']),
+  templateId: z.string().optional(),
   subject: z.string().optional(), // For email
   message: z.string().min(10, 'Message must be at least 10 characters.'),
 }).refine(data => {
@@ -257,6 +258,7 @@ export default function CommunicationsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [templates, setTemplates] = useState<Record<string, CommunicationTemplate>>({});
   const [balance, setBalance] = useState<number | null>(null);
   const [invoice, setInvoice] = useState<InvoiceType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -271,12 +273,20 @@ export default function CommunicationsPage() {
       classId: '',
       studentId: '',
       manualPhone: '',
+      templateId: '',
       subject: '',
     },
   });
   
   const recipientType = form.watch('recipientType');
   const messageType = form.watch('messageType');
+  const templateId = form.watch('templateId');
+
+  useEffect(() => {
+    if (templateId && templates[templateId]) {
+      form.setValue('message', templates[templateId].content);
+    }
+  }, [templateId, templates, form]);
 
   const fetchBalance = async () => {
       try {
@@ -340,6 +350,15 @@ export default function CommunicationsPage() {
     const unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
         setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message)));
     });
+    
+    const templatesRef = collection(db, "settings", "templates", "sms");
+    const unsubscribeTemplates = onSnapshot(templatesRef, (snapshot) => {
+        const fetchedTemplates: Record<string, CommunicationTemplate> = {};
+        snapshot.forEach((doc) => {
+            fetchedTemplates[doc.id] = { id: doc.id, ...doc.data() } as CommunicationTemplate;
+        });
+        setTemplates(fetchedTemplates);
+    });
 
     fetchBalance();
 
@@ -347,6 +366,7 @@ export default function CommunicationsPage() {
       unsubscribeStudents();
       unsubscribeClasses();
       unsubscribeMessages();
+      unsubscribeTemplates();
     };
   }, [toast]);
 
@@ -464,7 +484,7 @@ export default function CommunicationsPage() {
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      <FormField
+                       <FormField
                         control={form.control}
                         name="recipientType"
                         render={({ field }) => (
@@ -476,7 +496,7 @@ export default function CommunicationsPage() {
                             >
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue />
+                                  <SelectValue placeholder="Select a recipient group..." />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -560,7 +580,7 @@ export default function CommunicationsPage() {
                           )}
                         />
                       )}
-                      <FormField
+                       <FormField
                         control={form.control}
                         name="messageType"
                         render={({ field }) => (
@@ -577,7 +597,7 @@ export default function CommunicationsPage() {
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="sms">SMS</SelectItem>
-                                <SelectItem value="email">
+                                <SelectItem value="email" disabled>
                                   Email (Not implemented)
                                 </SelectItem>
                               </SelectContent>
@@ -588,6 +608,34 @@ export default function CommunicationsPage() {
                     </div>
 
                     <div className="space-y-4">
+                      {messageType === 'sms' && (
+                        <FormField
+                          control={form.control}
+                          name="templateId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Select Template (Optional)</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Load a message from a template..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {Object.values(templates).map((t) => (
+                                    <SelectItem key={t.id} value={t.id}>
+                                      {t.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )}
+                        />
+                      )}
                       {messageType === "email" && (
                         <FormField
                           control={form.control}
