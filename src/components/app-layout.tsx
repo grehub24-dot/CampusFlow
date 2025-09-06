@@ -116,7 +116,7 @@ function Brand() {
     if (loading) {
       return (
          <div className="flex items-center gap-2 p-2">
-            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-8 w-10" />
             <Skeleton className={cn("h-6 w-24", state === 'collapsed' && 'hidden')} />
           </div>
       )
@@ -124,7 +124,7 @@ function Brand() {
 
     return (
          <div className="flex items-center gap-2 p-2">
-            <Image src={schoolInfo?.logoUrl || "https://picsum.photos/40/40"} width={32} height={32} alt="School Logo" className="h-8 w-8 rounded-md" data-ai-hint="logo" />
+            <Image src={schoolInfo?.logoUrl || "https://picsum.photos/40/40"} width={40} height={32} alt="School Logo" className="h-8 w-10 rounded-md object-contain" data-ai-hint="logo" />
             <span className={cn("text-xl font-bold", state === 'collapsed' && 'hidden')}>{schoolInfo?.schoolName || 'CampusFlow'}</span>
           </div>
     )
