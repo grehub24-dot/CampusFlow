@@ -69,7 +69,6 @@ function CheckoutModal({
 }) {
   const [provider, setProvider] = useState<MomoProvider['code']>("MTN");
   const [mobileNumber, setMobileNumber] = useState('0536282694');
-  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [invoice, setInvoice] = useState<InvoiceType | null>(null);
   const [otp, setOtp] = useState("");
@@ -272,10 +271,6 @@ function CheckoutModal({
                         </div>
                     </div>
                 )}
-                <div>
-                  <Label>Email (Optional)</Label>
-                  <Input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
-               </div>
             </div>
             
             <Button className="w-full mt-8 bg-red-600 hover:bg-red-700 text-white" size="lg" onClick={handlePay} disabled={loading || !isVerified}>
