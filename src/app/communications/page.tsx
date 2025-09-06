@@ -47,7 +47,8 @@ type MessageFormValues = z.infer<typeof messageFormSchema>;
 const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
 const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'Kindergarten 2'];
 
-const communicationBundles = [
+// This represents the original data for bundles available for purchase.
+const baseCommunicationBundles = [
     {
         title: "700msg @ 20GHS for 30days",
         price: 20,
@@ -72,7 +73,15 @@ const communicationBundles = [
         validity: 30,
         link: "https://example.com/purchase/200"
     }
-]
+];
+
+// This represents a dynamic active bundle, as if fetched from an API.
+const activeBundleFromApi = {
+    msgCount: 175,
+    price: 5, // The original price from the API
+    validityDays: 30,
+    expiryDate: new Date('2025-10-05'),
+};
 
 export default function CommunicationsPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -219,7 +228,9 @@ export default function CommunicationsPage() {
     }
   };
   
-  const expiryDate = new Date('2025-10-05');
+  const displayedPrice = activeBundleFromApi.price * 4;
+  const activeBundleDescription = `${activeBundleFromApi.msgCount}msg @ ${displayedPrice}GHS for ${activeBundleFromApi.validityDays}days`;
+  const expiryDate = activeBundleFromApi.expiryDate;
   const daysLeft = differenceInDays(expiryDate, new Date());
 
 
@@ -234,7 +245,7 @@ export default function CommunicationsPage() {
          <Card>
             <CardHeader className="pb-2">
                 <CardTitle className="text-base font-medium">Your Active Bundles</CardTitle>
-                <CardDescription>175msg @ 20GHS for 30days</CardDescription>
+                <CardDescription>{activeBundleDescription}</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="text-3xl font-bold text-primary">
@@ -468,13 +479,13 @@ export default function CommunicationsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {communicationBundles.map((bundle, index) => (
+              {baseCommunicationBundles.map((bundle, index) => (
                 <Card key={index} className="flex flex-col">
                   <CardHeader>
                     <CardTitle className="text-lg">{bundle.title}</CardTitle>
                   </CardHeader>
                   <CardContent className="flex-grow">
-                    <p className="text-2xl font-bold text-primary">GHS {bundle.price}</p>
+                    <p className="text-2xl font-bold text-primary">GHS {bundle.price * 4}</p>
                     <p className="text-sm text-muted-foreground">Valid for {bundle.validity} day(s)</p>
                   </CardContent>
                   <div className="p-4 pt-0">
@@ -494,3 +505,5 @@ export default function CommunicationsPage() {
     </>
   );
 }
+
+    
