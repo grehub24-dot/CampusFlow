@@ -10,6 +10,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Student, SchoolClass, Message } from '@/types';
 import { getBalance, sendSms } from '@/lib/frog-api';
+import { differenceInDays, format } from 'date-fns';
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, Wallet, ShoppingCart } from 'lucide-react';
+import { Loader2, Send, Wallet, ShoppingCart, CalendarDays, Hourglass } from 'lucide-react';
 import StatCard from '@/components/dashboard/stat-card';
 import { Input } from '@/components/ui/input';
 import { MessageHistory } from './message-history';
@@ -190,6 +191,10 @@ export default function CommunicationsPage() {
       setIsSubmitting(false);
     }
   };
+  
+  const expiryDate = new Date('2025-10-05');
+  const daysLeft = differenceInDays(expiryDate, new Date());
+
 
   return (
     <>
@@ -199,18 +204,27 @@ export default function CommunicationsPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <StatCard
-          title="SMS Credit Balance"
-          value={
-            balance !== null ? (
-              balance.toLocaleString()
-            ) : (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            )
-          }
-          icon={Wallet}
-          description="Your current SMS bundle"
-        />
+         <Card>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium">Your Active Bundles</CardTitle>
+                <CardDescription>175msg @ 5GHS for 30days</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="text-3xl font-bold text-primary">
+                    {balance !== null ? balance.toLocaleString() : <Loader2 className="h-6 w-6 animate-spin" />}
+                </div>
+                <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                    <div className="flex items-center gap-1">
+                       <CalendarDays className="h-3 w-3" />
+                       <span>Expiring On: {format(expiryDate, 'PPP')}</span>
+                    </div>
+                     <div className="flex items-center gap-1">
+                        <Hourglass className="h-3 w-3" />
+                        <span>{daysLeft} days left</span>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="send-message">
