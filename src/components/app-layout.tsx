@@ -161,11 +161,11 @@ function Brand() {
     React.useEffect(() => {
         setIsClient(true);
     }, []);
-    
+
     if (!isClient || loading) {
         return (
              <div className="flex items-center gap-2 p-2">
-                <Skeleton className="h-16 w-16 rounded-md" />
+                <Skeleton className="h-12 w-12 rounded-md" />
                  {state !== 'collapsed' && <Skeleton className="h-6 w-24 rounded-md" />}
             </div>
         );
@@ -173,7 +173,7 @@ function Brand() {
     
     return (
          <div className="flex items-center gap-3 p-2">
-            <Image src={schoolInfo?.logoUrl || "https://picsum.photos/80/80"} width={80} height={80} alt="School Logo" className="h-16 w-16 rounded-md object-contain" data-ai-hint="logo" />
+            <Image src={schoolInfo?.logoUrl || "https://picsum.photos/80/80"} width={48} height={48} alt="School Logo" className="h-12 w-12 rounded-md object-contain" data-ai-hint="logo" />
             
             {state !== 'collapsed' && (
                 <span className="text-xl font-bold">{schoolInfo?.schoolName || 'CampusFlow'}</span>
