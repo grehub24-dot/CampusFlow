@@ -35,6 +35,9 @@ import {
   Bell,
   MessageSquare,
   Receipt,
+  FileText,
+  Briefcase,
+  DollarSign
 } from "lucide-react"
 
 import { Button } from './ui/button';
@@ -48,11 +51,17 @@ const navItems = [
   { href: "/students", icon: Users, label: "Students" },
   { href: "/payments", icon: CreditCard, label: "Payments" },
   { href: "/invoices", icon: Receipt, label: "Invoices" },
-  { href: "/fees", icon: Receipt, label: "Fees" },
+  { href: "/fees", icon: FileText, label: "Fees" },
   { href: "/reports", icon: BarChart3, label: "Reports" },
   { href: "/communications", icon: MessageSquare, label: "Communications" },
-  { href: "/settings", icon: Settings, label: "Settings" },
 ];
+
+const secondaryNavItems = [
+  { href: "/payroll", icon: Briefcase, label: "Payroll" },
+  { href: "/income-expense", icon: DollarSign, label: "Income & Expense" },
+  { href: "/billing", icon: CreditCard, label: "Billing" },
+  { href: "/settings", icon: Settings, label: "Settings" },
+]
 
 
 function MainNav() {
@@ -61,6 +70,20 @@ function MainNav() {
   return (
     <SidebarMenu>
       {navItems.map((item) => (
+        <SidebarMenuItem key={item.href}>
+          <Link href={item.href} passHref>
+            <SidebarMenuButton
+              isActive={pathname.startsWith(item.href)}
+              tooltip={item.label}
+            >
+              <item.icon />
+              <span>{item.label}</span>
+            </SidebarMenuButton>
+          </Link>
+        </SidebarMenuItem>
+      ))}
+       <SidebarSeparator className="my-2" />
+       {secondaryNavItems.map((item) => (
         <SidebarMenuItem key={item.href}>
           <Link href={item.href} passHref>
             <SidebarMenuButton
@@ -142,15 +165,15 @@ function Brand() {
     if (!isClient || loading) {
         return (
              <div className="flex items-center gap-2 p-2">
-                <Skeleton className="h-8 w-10 rounded-md" />
+                <Skeleton className="h-12 w-12 rounded-md" />
                  {state !== 'collapsed' && <Skeleton className="h-6 w-24 rounded-md" />}
             </div>
         );
     }
     
     return (
-         <div className="flex items-center gap-2 p-2">
-            <Image src={schoolInfo?.logoUrl || "https://picsum.photos/40/40"} width={40} height={32} alt="School Logo" className="h-8 w-10 rounded-md object-contain" data-ai-hint="logo" />
+         <div className="flex items-center gap-3 p-2">
+            <Image src={schoolInfo?.logoUrl || "https://picsum.photos/80/80"} width={48} height={48} alt="School Logo" className="h-12 w-12 rounded-md object-contain" data-ai-hint="logo" />
             
             {state !== 'collapsed' && (
                 <span className="text-xl font-bold">{schoolInfo?.schoolName || 'CampusFlow'}</span>
