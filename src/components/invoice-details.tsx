@@ -56,11 +56,12 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
   const invoiceNumber = generateInvoiceNumber(invoice);
 
   const paymentTerms = schoolInfo.paymentTerms?.replace('{{dueDate}}', `<strong>${format(new Date(invoice.dueDate || new Date()), 'dd MMM, yyyy')}</strong>`) || '';
-  const paymentMethods = schoolInfo.paymentMethods?.replace('{{invoiceNumber}}', invoiceNumber) || '';
+  const paymentMethods = schoolInfo.paymentMethods?.replace('{{invoiceNumber}}', `<strong>${invoiceNumber}</strong>`) || '';
+
 
   return (
-    <div className="p-1 pt-4 printable-area font-sans">
-      <div className="relative w-[210mm] mx-auto p-8 bg-white text-gray-800 shadow-lg overflow-hidden">
+    <div className="p-1 pt-4">
+       <div className="printable-area w-full mx-auto p-4 bg-white text-gray-800">
         
         <div className="absolute inset-0 flex items-center justify-center z-0 opacity-5 pointer-events-none">
           <Image src={schoolInfo.logoUrl || "https://picsum.photos/400/400"} width={400} height={400} alt="School Logo Watermark" className="object-contain" />
@@ -153,6 +154,8 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                     </div>
                 </div>
             </section>
+
+            <div className="page-break" />
             
             <Separator className="my-8" />
             
