@@ -5,7 +5,6 @@ import React from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { IntegrationSettings } from '@/types';
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -16,6 +15,8 @@ import { Textarea } from '@/components/ui/textarea';
 
 const formSchema = z.object({
   invoiceFooter: z.string().optional(),
+  paymentTerms: z.string().optional(),
+  paymentMethods: z.string().optional(),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -31,12 +32,16 @@ export function BillingSettingsForm({ onSubmit, defaultValues, isSubmitting }: B
     resolver: zodResolver(formSchema),
     defaultValues: {
       invoiceFooter: defaultValues?.invoiceFooter || '',
+      paymentTerms: defaultValues?.paymentTerms || '',
+      paymentMethods: defaultValues?.paymentMethods || '',
     }
   });
 
   React.useEffect(() => {
     form.reset({
       invoiceFooter: defaultValues?.invoiceFooter || '',
+      paymentTerms: defaultValues?.paymentTerms || '',
+      paymentMethods: defaultValues?.paymentMethods || '',
     })
   }, [defaultValues, form]);
 
@@ -49,6 +54,34 @@ export function BillingSettingsForm({ onSubmit, defaultValues, isSubmitting }: B
                 <CardTitle>Invoice & Receipt Customization</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+                <FormField
+                    control={form.control}
+                    name="paymentTerms"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Payment Terms</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="e.g. Payment is due by {{dueDate}}." {...field} rows={4}/>
+                        </FormControl>
+                        <FormDescription>This text will appear under the 'Payment Terms' section. Available placeholders: `{{dueDate}}`</FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="paymentMethods"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Payment Methods</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="e.g. Dial *123# and use {{invoiceNumber}} as reference." {...field} rows={4}/>
+                        </FormControl>
+                        <FormDescription>This text will appear under the 'Payment Methods' section. Available placeholders: `{{invoiceNumber}}`</FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField
                     control={form.control}
                     name="invoiceFooter"
@@ -76,3 +109,4 @@ export function BillingSettingsForm({ onSubmit, defaultValues, isSubmitting }: B
     </Form>
   )
 }
+

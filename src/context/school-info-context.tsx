@@ -23,30 +23,42 @@ export const SchoolInfoProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const settingsDocRef = doc(db, 'settings', 'school-info');
-    const unsubscribe = onSnapshot(
-      settingsDocRef,
+    const schoolInfoDocRef = doc(db, 'settings', 'school-info');
+    const billingDocRef = doc(db, 'settings', 'billing');
+
+    const unsubscribeSchoolInfo = onSnapshot(
+      schoolInfoDocRef,
       (doc) => {
-        if (doc.exists()) {
-          setSchoolInfo(doc.data() as SchoolInformation);
-        } else {
-          // Set default information if none exists
-          setSchoolInfo({
-            schoolName: 'CampusFlow',
-            logoUrl: 'https://picsum.photos/40/40',
-            address: 'P.O. Box 123, Accra, Ghana',
-            phone: '+233 12 345 6789'
-          });
-        }
-        setLoading(false);
+        const schoolData = doc.data() as SchoolInformation;
+        setSchoolInfo((prev) => ({ ...(prev || {}), ...schoolData } as SchoolInformation));
       },
       (error) => {
         console.error('Error fetching school info:', error);
-        setLoading(false);
       }
     );
+    
+    const unsubscribeBilling = onSnapshot(
+      billingDocRef,
+      (doc) => {
+        const billingData = doc.data() as SchoolInformation;
+         setSchoolInfo((prev) => ({ ...(prev || {}), ...billingData } as SchoolInformation));
+      },
+      (error) => {
+        console.error('Error fetching billing info:', error);
+      }
+    )
 
-    return () => unsubscribe();
+    // Initial load check
+    Promise.all([
+      new Promise(res => onSnapshot(schoolInfoDocRef, res)),
+      new Promise(res => onSnapshot(billingDocRef, res))
+    ]).finally(() => setLoading(false));
+
+
+    return () => {
+        unsubscribeSchoolInfo();
+        unsubscribeBilling();
+    };
   }, []);
 
   const handleSetSchoolInfo = (info: SchoolInformation) => {

@@ -145,6 +145,9 @@ export type SchoolInformation = {
     logoUrl?: string;
     address?: string;
     phone?: string;
+    invoiceFooter?: string;
+    paymentTerms?: string;
+    paymentMethods?: string;
 }
 
 export type MomoProvider = "MTN" | "VOD" | "TIGO";

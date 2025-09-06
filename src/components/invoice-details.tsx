@@ -55,6 +55,9 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
   
   const invoiceNumber = generateInvoiceNumber(invoice);
 
+  const paymentTerms = schoolInfo.paymentTerms?.replace('{{dueDate}}', format(new Date(invoice.dueDate || new Date()), 'dd MMM, yyyy')) || '';
+  const paymentMethods = schoolInfo.paymentMethods?.replace('{{invoiceNumber}}', invoiceNumber) || '';
+
   return (
     <div className="p-1 pt-4 printable-area font-sans">
       <div className="relative w-[210mm] mx-auto p-8 bg-white text-gray-800 shadow-lg overflow-hidden">
@@ -156,25 +159,11 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
             <section className="grid grid-cols-2 gap-8">
                  <div>
                     <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Payment Terms</h3>
-                    <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                        <li>Payment is due by {format(new Date(invoice.dueDate || new Date()), 'dd MMM, yyyy')}.</li>
-                        <li>Late fee of 2% per month may apply after the due date.</li>
-                        <li>Please quote the invoice number when making payments.</li>
-                    </ul>
+                    <div className="text-sm text-gray-600 space-y-1 whitespace-pre-wrap">{paymentTerms}</div>
                  </div>
                  <div>
                     <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Payment Methods</h3>
-                    <Card className="bg-blue-50 border-blue-200">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                               <Banknote className="h-8 w-8 text-primary" />
-                                <div>
-                                    <p className="font-bold text-primary">Mobile Money</p>
-                                    <p className="text-sm text-gray-600">Dial <span className="font-mono font-semibold">*800*0*6491#</span> and use <span className="font-mono font-semibold">{invoice.admissionId}</span> as reference.</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <div className="text-sm text-gray-600 space-y-1 whitespace-pre-wrap">{paymentMethods}</div>
                  </div>
             </section>
 
