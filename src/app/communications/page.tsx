@@ -49,28 +49,28 @@ const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'K
 
 const communicationBundles = [
     {
-        title: "175msg @ 5GHS for 30days",
-        price: 5,
-        validity: 30,
-        link: "https://example.com/purchase/5"
-    },
-    {
-        title: "350msg @ 10GHS for 30days",
-        price: 10,
-        validity: 30,
-        link: "https://example.com/purchase/10"
-    },
-    {
         title: "700msg @ 20GHS for 30days",
         price: 20,
         validity: 30,
         link: "https://example.com/purchase/20"
     },
     {
-        title: "1750msg @ 50GHS for 30days",
-        price: 50,
+        title: "1400msg @ 40GHS for 30days",
+        price: 40,
         validity: 30,
-        link: "https://example.com/purchase/50"
+        link: "https://example.com/purchase/40"
+    },
+    {
+        title: "2800msg @ 80GHS for 30days",
+        price: 80,
+        validity: 30,
+        link: "https://example.com/purchase/80"
+    },
+    {
+        title: "7000msg @ 200GHS for 30days",
+        price: 200,
+        validity: 30,
+        link: "https://example.com/purchase/200"
     }
 ]
 
@@ -234,7 +234,7 @@ export default function CommunicationsPage() {
          <Card>
             <CardHeader className="pb-2">
                 <CardTitle className="text-base font-medium">Your Active Bundles</CardTitle>
-                <CardDescription>175msg @ 5GHS for 30days</CardDescription>
+                <CardDescription>175msg @ 20GHS for 30days</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="text-3xl font-bold text-primary">
