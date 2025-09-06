@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { collection, onSnapshot, query, where, orderBy, doc, setDoc, getDoc } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy, doc, setDoc, getDoc, writeBatch } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider, CommunicationTemplate, Bundle } from '@/types';
@@ -247,9 +247,23 @@ export default function CommunicationsPage() {
           description: `SMS dispatched to ${uniqueRecipients.length} recipients.`,
         });
       } else {
-         toast({
-          title: 'Email Sent (Simulated)',
-          description: `Email dispatched to ${uniqueRecipients.length} recipients. This is a simulation as the email API is not connected.`,
+        // Email logic using Firebase Extensions
+        const batch = writeBatch(db);
+        uniqueRecipients.forEach(email => {
+            const mailRef = doc(collection(db, "mail"));
+            batch.set(mailRef, {
+                to: [email],
+                message: {
+                    subject: values.subject,
+                    html: values.message.replace(/\n/g, '<br>'), // Basic conversion of newlines to <br> for HTML email
+                },
+            });
+        });
+        await batch.commit();
+
+        toast({
+          title: 'Emails Queued',
+          description: `Emails for ${uniqueRecipients.length} recipients have been queued for sending.`,
         });
       }
 
@@ -533,3 +547,4 @@ export default function CommunicationsPage() {
   );
 }
  
+    
