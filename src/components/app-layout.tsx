@@ -112,11 +112,17 @@ function Header() {
 function Brand() {
     const { state } = useSidebar();
     const { schoolInfo, loading } = useSchoolInfo();
+    const [isClient, setIsClient] = React.useState(false);
 
-    if (loading) {
+    React.useEffect(() => {
+      setIsClient(true);
+    }, []);
+
+
+    if (loading || !isClient) {
       return (
          <div className="flex items-center gap-2 p-2">
-            <Skeleton className="h-8 w-10" />
+            <Skeleton className="h-8 w-10 rounded-md" />
             <Skeleton className={cn("h-6 w-24", state === 'collapsed' && 'hidden')} />
           </div>
       )
