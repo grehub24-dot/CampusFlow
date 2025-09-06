@@ -10,6 +10,8 @@ import { Separator } from './ui/separator';
 import { Button } from './ui/button';
 import { useSchoolInfo } from '@/context/school-info-context';
 import Image from 'next/image';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+
 
 interface InvoiceDetailsProps {
     invoice: Invoice;
