@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Student, SchoolClass, Message } from '@/types';
@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send, Wallet, ShoppingCart } from 'lucide-react';
 import StatCard from '@/components/dashboard/stat-card';
 import { Input } from '@/components/ui/input';
+import { MessageHistory } from './message-history';
 
 const messageFormSchema = z.object({
   recipientType: z.enum(['all', 'class', 'single', 'manual']),
@@ -48,6 +49,7 @@ const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'K
 export default function CommunicationsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [balance, setBalance] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -95,6 +97,11 @@ export default function CommunicationsPage() {
       setClasses(sortedData);
     });
 
+    const messagesQuery = query(collection(db, 'messages'), orderBy('sentDate', 'desc'));
+    const unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
+        setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message)));
+    });
+
     const fetchBalance = async () => {
       try {
         const result = await getBalance();
@@ -126,6 +133,7 @@ export default function CommunicationsPage() {
     return () => {
       unsubscribeStudents();
       unsubscribeClasses();
+      unsubscribeMessages();
     };
   }, [toast]);
 
@@ -208,8 +216,8 @@ export default function CommunicationsPage() {
       <Tabs defaultValue="send-message">
         <TabsList>
           <TabsTrigger value="send-message">Send Message</TabsTrigger>
-          <TabsTrigger value="purchase">Purchase Bundles</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="purchase">Purchase Bundles</TabsTrigger>
         </TabsList>
 
         <TabsContent value="send-message" className="space-y-4">
@@ -406,6 +414,10 @@ export default function CommunicationsPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="history">
+          <MessageHistory messages={messages} />
+        </TabsContent>
+
         <TabsContent value="purchase">
           <Card>
             <CardHeader>
@@ -428,22 +440,6 @@ export default function CommunicationsPage() {
                   Go to Purchase Portal
                 </a>
               </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="history">
-          <Card>
-            <CardHeader>
-              <CardTitle>Message History</CardTitle>
-              <CardDescription>
-                A log of all communications sent from the system.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center text-muted-foreground py-12">
-                Message history tracking is not yet implemented.
-              </p>
             </CardContent>
           </Card>
         </TabsContent>

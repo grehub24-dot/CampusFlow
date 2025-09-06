@@ -1,7 +1,7 @@
 
 'use server'
 
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, addDoc, collection } from "firebase/firestore";
 import { db } from "./firebase";
 import type { IntegrationSettings } from "@/types";
 
@@ -61,6 +61,17 @@ export async function sendSms(recipient: string, message: string) {
     if (!response.ok) {
       console.error('Frog API Error:', data);
       throw new Error(data.message || 'Failed to send SMS');
+    }
+    
+    // Log the message to Firestore
+    if (data.msgid) {
+        await addDoc(collection(db, "messages"), {
+            msgid: data.msgid,
+            recipient: recipient,
+            content: message,
+            status: "Sent",
+            sentDate: new Date().toISOString(),
+        });
     }
 
     return { success: true, data };

@@ -113,11 +113,15 @@ export type FeeStructure = {
 
 export type Message = {
     id: string;
+    msgid?: string;
     recipient: string;
-    type: 'SMS' | 'Email';
     content: string;
-    status: 'Sent' | 'Failed' | 'Pending';
-    date: string;
+    status: string;
+    statusDate?: string;
+    reason?: string;
+    sentDate: string;
+    handleCharge?: number;
+    topupCharge?: number;
 };
 
 export type IntegrationSettings = {
