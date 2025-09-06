@@ -50,28 +50,28 @@ const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'K
 // This represents the original data for bundles available for purchase.
 const baseCommunicationBundles = [
     {
+        msgCount: 175,
+        price: 5,
+        validity: 30,
+        link: "https://example.com/purchase/5"
+    },
+    {
+        msgCount: 350,
+        price: 10,
+        validity: 30,
+        link: "https://example.com/purchase/10"
+    },
+    {
         msgCount: 700,
         price: 20,
         validity: 30,
         link: "https://example.com/purchase/20"
     },
     {
-        msgCount: 1400,
-        price: 40,
+        msgCount: 1750,
+        price: 50,
         validity: 30,
-        link: "https://example.com/purchase/40"
-    },
-    {
-        msgCount: 2800,
-        price: 80,
-        validity: 30,
-        link: "https://example.com/purchase/80"
-    },
-    {
-        msgCount: 7000,
-        price: 200,
-        validity: 30,
-        link: "https://example.com/purchase/200"
+        link: "https://example.com/purchase/50"
     }
 ];
 
