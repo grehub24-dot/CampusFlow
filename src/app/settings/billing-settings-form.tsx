@@ -63,7 +63,7 @@ export function BillingSettingsForm({ onSubmit, defaultValues, isSubmitting }: B
                         <FormControl>
                             <Textarea placeholder="e.g. Payment is due by {{dueDate}}." {...field} rows={4}/>
                         </FormControl>
-                        <FormDescription>This text will appear under the 'Payment Terms' section. Available placeholders: `{{dueDate}}`</FormDescription>
+                        <FormDescription>This text will appear under the 'Payment Terms' section. Available placeholders: {'`{{dueDate}}`'}</FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -77,7 +77,7 @@ export function BillingSettingsForm({ onSubmit, defaultValues, isSubmitting }: B
                         <FormControl>
                             <Textarea placeholder="e.g. Dial *123# and use {{invoiceNumber}} as reference." {...field} rows={4}/>
                         </FormControl>
-                        <FormDescription>This text will appear under the 'Payment Methods' section. Available placeholders: `{{invoiceNumber}}`</FormDescription>
+                        <FormDescription>This text will appear under the 'Payment Methods' section. Available placeholders: {'`{{invoiceNumber}}`'}</FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -109,4 +109,3 @@ export function BillingSettingsForm({ onSubmit, defaultValues, isSubmitting }: B
     </Form>
   )
 }
-
