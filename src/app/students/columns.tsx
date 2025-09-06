@@ -177,12 +177,6 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay, onStatusCha
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(student.id)}
-                >
-                Copy student ID
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onViewDetails(student)}>View details</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onEdit(student)}>Edit student</DropdownMenuItem>
                  <DropdownMenuSub>
