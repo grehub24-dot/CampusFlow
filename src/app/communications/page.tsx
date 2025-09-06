@@ -296,14 +296,14 @@ export default function CommunicationsPage() {
 
   useEffect(() => {
     if (templateId) {
-        if (messageType === 'sms' && smsTemplates[templateId]) {
-            form.setValue('message', smsTemplates[templateId].content);
-        } else if (messageType === 'email' && emailTemplates[templateId]) {
-            form.setValue('message', emailTemplates[templateId].content);
-            form.setValue('subject', emailTemplates[templateId].name);
-        }
+      if (messageType === 'sms' && smsTemplates[templateId]) {
+        form.setValue('message', smsTemplates[templateId].content);
+      } else if (messageType === 'email' && emailTemplates[templateId]) {
+        form.setValue('message', emailTemplates[templateId].content);
+        form.setValue('subject', emailTemplates[templateId].name);
+      }
     }
-  }, [templateId, smsTemplates, emailTemplates, form, messageType]);
+  }, [templateId, messageType, smsTemplates, emailTemplates, form]);
 
   const fetchBalance = async () => {
       try {
@@ -395,7 +395,7 @@ export default function CommunicationsPage() {
       unsubscribeSmsTemplates();
       unsubscribeEmailTemplates();
     };
-  }, [toast]);
+  }, []);
 
   const onSubmit: SubmitHandler<MessageFormValues> = async (values) => {
     setIsSubmitting(true);
