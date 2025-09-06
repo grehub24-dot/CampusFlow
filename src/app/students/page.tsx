@@ -269,7 +269,7 @@ export default function StudentsPage() {
     const csv = Papa.unparse(students.map(s => ({
         ...s,
     })));
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-t8;' });
     const link = document.createElement("a");
     if (link.download !== undefined) {
         const url = URL.createObjectURL(blob);
@@ -330,8 +330,7 @@ export default function StudentsPage() {
                                 collection(db, "students"),
                                 where("admissionYear", "==", currentTerm.academicYear),
                                 where("admissionTerm", "==", currentTerm.session),
-                                orderBy("admissionId", "desc"),
-                                limit(1)
+                                limit(1000)
                             );
                             
                             const lastStudentSnapshot = await getDocs(termQuery);
@@ -339,13 +338,20 @@ export default function StudentsPage() {
                             let nextNumber = 1;
 
                             if (!lastStudentSnapshot.empty) {
-                                const lastAdmissionId = lastStudentSnapshot.docs[0].data().admissionId as string;
-                                if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
-                                    const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
-                                    if (lastNumberMatch) {
-                                        nextNumber = parseInt(lastNumberMatch[0], 10) + 1;
+                                let maxNumber = 0;
+                                lastStudentSnapshot.docs.forEach(doc => {
+                                    const lastAdmissionId = doc.data().admissionId as string;
+                                    if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
+                                        const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
+                                        if (lastNumberMatch) {
+                                            const currentNum = parseInt(lastNumberMatch[0], 10);
+                                            if (currentNum > maxNumber) {
+                                                maxNumber = currentNum;
+                                            }
+                                        }
                                     }
-                                }
+                                });
+                                nextNumber = maxNumber + 1;
                             }
                             
                             admissionId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
@@ -588,3 +594,6 @@ export default function StudentsPage() {
     </>
   );
 }
+
+
+    

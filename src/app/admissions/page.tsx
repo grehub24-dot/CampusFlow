@@ -436,22 +436,28 @@ export default function AdmissionsPage() {
                 studentsCollectionRef,
                 where("admissionYear", "==", currentTerm.academicYear),
                 where("admissionTerm", "==", currentTerm.session),
-                orderBy("admissionId", "desc"),
-                limit(1)
+                limit(1000) // Fetch all students for the term to sort client-side
             );
             
             const lastStudentSnapshot = await getDocs(termQuery);
 
             let nextNumber = 1;
 
-             if (!lastStudentSnapshot.empty) {
-                const lastAdmissionId = lastStudentSnapshot.docs[0].data().admissionId as string;
-                if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
-                    const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
-                    if (lastNumberMatch) {
-                        nextNumber = parseInt(lastNumberMatch[0], 10) + 1;
+            if (!lastStudentSnapshot.empty) {
+                let maxNumber = 0;
+                lastStudentSnapshot.docs.forEach(doc => {
+                    const lastAdmissionId = doc.data().admissionId as string;
+                    if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
+                        const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
+                        if (lastNumberMatch) {
+                            const currentNum = parseInt(lastNumberMatch[0], 10);
+                            if (currentNum > maxNumber) {
+                                maxNumber = currentNum;
+                            }
+                        }
                     }
-                }
+                });
+                nextNumber = maxNumber + 1;
             }
             
             const admissionId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
@@ -631,5 +637,7 @@ export default function AdmissionsPage() {
     </>
   );
 }
+
+    
 
     
