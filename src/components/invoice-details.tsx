@@ -55,19 +55,19 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
 
             <section className="grid grid-cols-2 gap-8 my-8">
                 <div>
-                    <Card className="rounded-lg shadow-none border-0 bg-gray-50 p-4">
+                    <Card className="rounded-lg shadow-none border-0 bg-transparent p-4">
                         <CardHeader className="pb-2 px-0 pt-0">
                             <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Billed To</CardTitle>
                         </CardHeader>
                         <CardContent className="px-0 pb-0">
                             <p className="font-bold text-lg text-gray-800">{invoice.studentName}</p>
                             <p className="text-gray-600">{invoice.studentClass}</p>
-                            <p className="text-gray-600">Guardian: {invoice.amountPaid}</p>
+                            {invoice.admissionId && <p className="text-sm text-gray-500">ID: {invoice.admissionId}</p>}
                         </CardContent>
                     </Card>
                 </div>
                 <div className="text-right">
-                     <Card className="rounded-lg shadow-none border-0 bg-blue-50 p-4">
+                     <Card className="rounded-lg shadow-none border-0 bg-transparent p-4">
                         <CardHeader className="pb-2 px-0 pt-0">
                              <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider text-left">Details</CardTitle>
                         </CardHeader>
@@ -86,9 +86,9 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
             </section>
 
             <section>
-                 <div className="border rounded-lg overflow-hidden">
+                 <div className="border rounded-lg overflow-hidden bg-transparent">
                     <Table className="w-full text-left">
-                        <TableHeader>
+                        <TableHeader className="bg-transparent">
                             <TableRow>
                                 <TableHead className="p-3 font-semibold text-gray-500 uppercase tracking-wider">Description</TableHead>
                                 <TableHead className="p-3 text-right font-semibold text-gray-500 uppercase tracking-wider">Amount (GHS)</TableHead>
