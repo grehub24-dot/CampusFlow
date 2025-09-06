@@ -150,11 +150,21 @@ export type SchoolInformation = {
     paymentMethods?: string;
 }
 
-export type MomoProvider = "MTN" | "VOD" | "TIGO";
+export type MomoProvider = {
+    code: "MTN" | "VOD" | "TIGO";
+    name: string;
+}
 
 export type CommunicationTemplate = {
     id: string;
     name: string; // Subject for email, name for SMS
     content: string;
     type: 'SMS' | 'Email';
+}
+
+export type Bundle = {
+    name: string;
+    msgCount: number;
+    price: number;
+    validity: number;
 }

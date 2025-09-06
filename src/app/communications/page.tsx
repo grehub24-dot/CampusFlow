@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider, CommunicationTemplate } from '@/types';
+import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider, CommunicationTemplate, Bundle } from '@/types';
 import { sendSms } from '@/lib/frog-api';
 
 import { PageHeader } from "@/components/page-header";
@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, Wallet, ShoppingCart } from 'lucide-react';
+import { Loader2, Send, Wallet, ShoppingCart, ArrowLeft, Smartphone, CreditCard } from 'lucide-react';
 import StatCard from '@/components/dashboard/stat-card';
 import { Input } from '@/components/ui/input';
 import { MessageHistory } from './message-history';
@@ -30,9 +30,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { ToastAction } from '@/components/ui/toast';
+import Image from 'next/image';
 
 const messageFormSchema = z.object({
   recipientType: z.enum(['all', 'class', 'single', 'manual']),
@@ -69,90 +69,35 @@ type MessageFormValues = z.infer<typeof messageFormSchema>;
 const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
 const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'Kindergarten 2'];
 
-// This represents the original data for bundles available for purchase.
-const baseCommunicationBundles = [
-    {
-        msgCount: 175,
-        price: 5,
-        validity: 30,
-        link: "https://example.com/purchase/5"
-    },
-    {
-        msgCount: 350,
-        price: 10,
-        validity: 30,
-        link: "https://example.com/purchase/10"
-    },
-    {
-        msgCount: 700,
-        price: 20,
-        validity: 30,
-        link: "https://example.com/purchase/20"
-    },
-    {
-        msgCount: 1750,
-        price: 50,
-        validity: 30,
-        link: "https://example.com/purchase/50"
-    }
+const communicationBundles: Bundle[] = [
+    { name: 'Basic Bundle', msgCount: 175, price: 5, validity: 30 },
+    { name: 'Standard Bundle', msgCount: 350, price: 10, validity: 30 },
+    { name: 'Pro Bundle', msgCount: 700, price: 20, validity: 30 },
+    { name: 'Business Bundle', msgCount: 1750, price: 50, validity: 30 },
 ];
 
 const MOMO_PROVIDERS = [
-  { code: "MTN",   name: "MTN Mobile Money",   dial: "*170#" },
-  { code: "VOD",   name: "Vodafone Cash",      dial: "*110#" },
-  { code: "TIGO",  name: "AirtelTigo Money",   dial: "*500#" },
+  { code: "MTN",   name: "MTN Mobile Money" },
+  { code: "VOD",   name: "Vodafone Cash" },
+  { code: "TIGO",  name: "AirtelTigo Money" },
 ] as const;
 
-function BundleCard({
-  bundle,
-  setInvoice
-}: {
-  bundle: typeof baseCommunicationBundles[0];
-  setInvoice: (invoice: InvoiceType & { msgCount: number }) => void;
-}) {
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
 
-  const multipliedPrice = bundle.price * 4;
-  const title = `${bundle.msgCount}msg @ ${multipliedPrice}GHS for ${bundle.validity}days`;
-
-  async function createInvoice() {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/create-invoice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: multipliedPrice,
-          description: title,
-          reference: `sms-${bundle.msgCount}-${Date.now()}`, // unique
-        }),
-      });
-
-      if (!res.ok) throw new Error("Invoice creation failed");
-
-      const inv: InvoiceType = await res.json();
-      setInvoice({ ...inv, msgCount: bundle.msgCount }); // Pass msgCount along
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Error", description: e.message });
-    } finally {
-      setLoading(false);
-    }
-  }
-
+function PurchaseCard({ bundle, onPurchase }: { bundle: Bundle; onPurchase: (bundle: Bundle) => void; }) {
   return (
     <Card className="flex flex-col">
       <CardHeader>
-        <CardTitle className="text-lg">{title}</CardTitle>
+        <CardTitle className="text-xl">{bundle.name}</CardTitle>
+        <CardDescription>{bundle.msgCount} SMS credits</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-2xl font-bold text-primary">GHS {multipliedPrice}</p>
-        <p className="text-sm text-muted-foreground">Valid for {bundle.validity} day(s)</p>
+        <p className="text-3xl font-bold text-primary">GHS {bundle.price}</p>
+        <p className="text-sm text-muted-foreground">Valid for {bundle.validity} days</p>
       </CardContent>
       <div className="p-4 pt-0">
-        <Button className="w-full" onClick={createInvoice} disabled={loading}>
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
-          Buy Now
+        <Button className="w-full" onClick={() => onPurchase(bundle)}>
+          <ShoppingCart className="mr-2 h-4 w-4" />
+          Buy Credit
         </Button>
       </div>
     </Card>
@@ -161,22 +106,36 @@ function BundleCard({
 
 function CheckoutModal({
   open,
-  invoice,
+  bundle,
   onClose,
   onSuccess,
 }: {
   open: boolean;
-  invoice: (InvoiceType & { msgCount?: number }) | null;
+  bundle: Bundle | null;
   onClose: () => void;
   onSuccess: (bundleSize: number) => void;
 }) {
-  const [provider, setProvider] = useState<MomoProvider>("MTN");
-  const [submitting, setSubmitting] = useState(false);
+  const [provider, setProvider] = useState<MomoProvider['code']>("MTN");
+  const [mobileNumber, setMobileNumber] = useState('0536282694');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [invoice, setInvoice] = useState<InvoiceType | null>(null);
+
   const { toast } = useToast();
+  
+  useEffect(() => {
+    if (bundle && open) {
+        handleCreateInvoice();
+    } else {
+        setInvoice(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bundle, open]);
 
   useEffect(() => {
-    if (!invoice) return;
-    const id = setInterval(async () => {
+    if (!invoice || !open) return;
+
+    const intervalId = setInterval(async () => {
       try {
         const res = await fetch(`/api/invoice-status?id=${invoice.id}`);
         if (!res.ok) return;
@@ -184,74 +143,164 @@ function CheckoutModal({
 
         if (json.status === "PAID") {
             toast({ title: "Payment received ✅", description: "Your bundle is now active." });
-            if (invoice.msgCount) {
-              onSuccess(invoice.msgCount);
+            if (bundle?.msgCount) {
+              onSuccess(bundle.msgCount);
             }
             onClose();
+            clearInterval(intervalId);
         }
         if (json.status === "FAILED" || json.status === "EXPIRED") {
             toast({ variant: "destructive", title: "Payment failed" });
             onClose();
+            clearInterval(intervalId);
         }
       } catch (e) {
         // Silently ignore polling errors
       }
     }, 3000);
-    return () => clearInterval(id);
-  }, [invoice, onClose, onSuccess, toast]);
+    return () => clearInterval(intervalId);
+  }, [invoice, open, bundle, onSuccess, onClose, toast]);
 
-  async function requestPrompt() {
-    setSubmitting(true);
+
+  async function handleCreateInvoice() {
+    if (!bundle) return;
+    setLoading(true);
     try {
-      await fetch("/api/send-prompt", {
+      const res = await fetch("/api/create-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: invoice!.id, provider }),
+        body: JSON.stringify({
+          amount: bundle.price,
+          description: `${bundle.name} (${bundle.msgCount} SMS)`,
+          reference: `sms-${bundle.msgCount}-${Date.now()}`,
+        }),
       });
-      toast({ title: "Prompt sent", description: "Check your phone and approve the payment." });
-    } catch {
-      toast({ variant: "destructive", title: "Could not send prompt" });
+
+      if (!res.ok) throw new Error("Invoice creation failed");
+      const inv: InvoiceType = await res.json();
+      setInvoice(inv);
+
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message });
+      onClose();
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   }
 
-  if (!invoice) return null;
+  async function handlePay() {
+    if (!invoice) return;
+    setLoading(true);
+    try {
+       await fetch("/api/send-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: invoice.id, provider }),
+      });
+      toast({ title: "Prompt sent", description: "Check your phone and approve the payment." });
+    } catch {
+       toast({ variant: "destructive", title: "Could not send prompt" });
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const selectedDial = MOMO_PROVIDERS.find((p) => p.code === provider)?.dial;
+  if (!bundle) return null;
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Complete purchase</DialogTitle>
-          <DialogDescription>
-            {invoice.description} · <span className="font-semibold">GHS {invoice.amount}</span>
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="grid gap-4 py-2">
-          <Label>Choose wallet</Label>
-          <RadioGroup value={provider} onValueChange={(v) => setProvider(v as MomoProvider)}>
-            {MOMO_PROVIDERS.map((p) => (
-              <div key={p.code} className="flex items-center space-x-2">
-                <RadioGroupItem value={p.code} id={p.code} />
-                <Label htmlFor={p.code}>{p.name}</Label>
+      <DialogContent className="max-w-4xl p-0" onInteractOutside={(e) => e.preventDefault()}>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr,400px]">
+          {/* Left side: Form */}
+          <div className="p-8">
+            <button onClick={onClose} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold">Pay With:</h3>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <Button variant="outline" className="border-primary text-primary border-2">
+                  <Smartphone className="mr-2" /> Mobile Money
+                </Button>
+                <Button variant="outline" disabled>
+                  <CreditCard className="mr-2" /> Credit Card(3DS)
+                </Button>
               </div>
-            ))}
-          </RadioGroup>
+              <p className="text-xs text-muted-foreground mt-2">Make Invoice payment Via MTN MoMo, Vodafone Cash or Airtel/Tigo Money</p>
+            </div>
+            
+            <div className="mt-6 space-y-4">
+               <div>
+                  <Label>Provider</Label>
+                  <Select value={provider} onValueChange={(v) => setProvider(v as MomoProvider['code'])}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOMO_PROVIDERS.map((p) => (
+                        <SelectItem key={p.code} value={p.code}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+               </div>
+               <div>
+                  <Label>Mobile Number</Label>
+                  <Input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+               </div>
+                <div>
+                  <Label>Email (Optional)</Label>
+                  <Input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
+               </div>
+            </div>
+            
+            <Button className="w-full mt-8 bg-red-600 hover:bg-red-700 text-white" size="lg" onClick={handlePay} disabled={loading}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'PAY NOW'}
+            </Button>
+            <div className="text-center mt-4 text-xs text-muted-foreground">
+                Powered by <span className="font-bold">redde</span> | Privacy | Terms
+            </div>
+          </div>
+          
+          {/* Right side: Invoice Details */}
+          <div className="bg-[#EBF3FF] p-8 space-y-6">
+             <Image src="https://picsum.photos/100/40" width={100} height={40} alt="Frog Logo" data-ai-hint="logo" />
+            
+             <Card>
+                <CardHeader>
+                  <CardTitle>Invoice Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm">
+                   <div className="flex justify-between">
+                     <span>Amount:</span>
+                     <span className="font-medium">GHS {bundle.price}</span>
+                   </div>
+                   <div className="flex justify-between">
+                     <span>Description:</span>
+                     <span className="font-medium text-right flex items-center gap-1">
+                        <Image src="https://picsum.photos/16/16" width={16} height={16} alt="frog icon" data-ai-hint="logo" />
+                         Frog Invoice Payment
+                     </span>
+                   </div>
+                   <hr/>
+                   <div className="flex justify-between font-bold text-base">
+                     <span>Total:</span>
+                     <span>GHS {bundle.price}</span>
+                   </div>
+                </CardContent>
+             </Card>
 
-          <div className="rounded bg-muted p-3 text-sm">
-            Dial <span className="font-mono font-bold">{invoice.dialCode || selectedDial}</span> to receive prompt
+             <div className="bg-blue-900 text-white rounded-lg p-6 text-center space-y-2">
+                <p className="text-lg font-semibold">redde</p>
+                <p className="text-3xl font-bold tracking-wider">{mobileNumber}</p>
+                <p className="text-sm">Provider: {provider}</p>
+             </div>
+             
+             <div className="flex justify-center">
+                <Image src="https://picsum.photos/80/30" width={80} height={30} alt="PCI DSS" data-ai-hint="logo" />
+             </div>
           </div>
         </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={requestPrompt} disabled={submitting}>
-            {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Request prompt"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -265,9 +314,10 @@ export default function CommunicationsPage() {
   const [smsTemplates, setSmsTemplates] = useState<Record<string, CommunicationTemplate>>({});
   const [emailTemplates, setEmailTemplates] = useState<Record<string, CommunicationTemplate>>({});
   const [balance, setBalance] = useState<number>(50); // Start with a base of 50
-  const [invoice, setInvoice] = useState<(InvoiceType & { msgCount: number }) | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState('send-message');
+  const [selectedBundle, setSelectedBundle] = useState<Bundle | null>(null);
+
   const { toast } = useToast();
 
   const form = useForm<MessageFormValues>({
@@ -404,7 +454,7 @@ export default function CommunicationsPage() {
             toast({
               variant: 'destructive',
               title: 'Insufficient Credit',
-              description: `You need ${uniqueRecipients.length} credits but only have ${balance}.`,
+              description: `You need ${uniqueRecipients.length} credits but only have ${balance}. You are out of credit.`,
               action: <ToastAction altText="Buy Credit" onClick={() => setActiveTab('purchase')}>Buy Credit</ToastAction>,
             });
             setIsSubmitting(false);
@@ -705,8 +755,8 @@ export default function CommunicationsPage() {
               <CardDescription>Top-up credits instantly via Mobile Money.</CardDescription>
             </CardHeader>
             <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {baseCommunicationBundles.map((b) => (
-                <BundleCard key={b.msgCount} bundle={b} setInvoice={setInvoice} />
+              {communicationBundles.map((b) => (
+                <PurchaseCard key={b.name} bundle={b} onPurchase={setSelectedBundle} />
               ))}
             </CardContent>
           </Card>
@@ -714,9 +764,9 @@ export default function CommunicationsPage() {
       </Tabs>
       
       <CheckoutModal
-        open={!!invoice}
-        invoice={invoice}
-        onClose={() => setInvoice(null)}
+        open={!!selectedBundle}
+        bundle={selectedBundle}
+        onClose={() => setSelectedBundle(null)}
         onSuccess={handlePurchaseSuccess}
       />
     </>

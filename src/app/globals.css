@@ -108,7 +108,7 @@
 .invoice-dates table { width: 100%; text-align: right; }
 .invoice-dates th { font-weight: 600; padding-right: 1rem; text-align: left; }
 .invoice-body { position: relative; margin-top: 2rem; }
-.watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.05; z-index: 0; pointer-events: none; }
+.watermark { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); opacity: 0.05; z-index: 0; pointer-events: none; }
 .watermark img { max-width: 300px; }
 .items-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; }
 .items-table th, .items-table td { padding: 0.75rem; border-bottom: 1px solid hsl(var(--border)); }
