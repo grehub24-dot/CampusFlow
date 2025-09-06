@@ -76,7 +76,7 @@ export function MessageHistory({ messages }: MessageHistoryProps) {
                             {messages.map(message => (
                                 <TableRow key={message.id}>
                                     <TableCell className="text-muted-foreground text-xs">
-                                        {format(new Date(message.sentDate), 'PPP p')}
+                                        {message.sentDate ? format(new Date(message.sentDate), 'PPP p') : 'N/A'}
                                     </TableCell>
                                     <TableCell>{message.recipient}</TableCell>
                                     <TableCell>
