@@ -78,16 +78,37 @@ function MainNav() {
 }
 
 function UserProfile() {
+    const { state } = useSidebar();
+    const [isClient, setIsClient] = React.useState(false);
+
+    React.useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    if (!isClient) {
+        return (
+            <div className="flex w-full items-center gap-2 overflow-hidden p-2">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="flex flex-col gap-1">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-32" />
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="flex w-full items-center gap-2 overflow-hidden p-2">
             <Avatar>
                 <AvatarImage src="https://picsum.photos/id/237/40/40" alt="Admin" data-ai-hint="person" />
                 <AvatarFallback>AD</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate">
-                <span className="text-sm font-semibold text-sidebar-foreground">Admin User</span>
-                <span className="text-xs text-sidebar-foreground/70">admin@campusflow.com</span>
-            </div>
+            {state !== 'collapsed' && (
+                <div className="flex flex-col truncate">
+                    <span className="text-sm font-semibold text-sidebar-foreground">Admin User</span>
+                    <span className="text-xs text-sidebar-foreground/70">admin@campusflow.com</span>
+                </div>
+            )}
         </div>
     )
 }
@@ -120,18 +141,21 @@ function Brand() {
 
     const showSkeleton = !isClient || loading;
 
+    if (showSkeleton) {
+        return (
+             <div className="flex items-center gap-2 p-2">
+                <Skeleton className="h-8 w-10 rounded-md" />
+                 {state !== 'collapsed' && <Skeleton className="h-6 w-24" />}
+            </div>
+        );
+    }
+    
     return (
          <div className="flex items-center gap-2 p-2">
-            {showSkeleton ? (
-                <Skeleton className="h-8 w-10 rounded-md" />
-            ) : (
-                <Image src={schoolInfo?.logoUrl || "https://picsum.photos/40/40"} width={40} height={32} alt="School Logo" className="h-8 w-10 rounded-md object-contain" data-ai-hint="logo" />
-            )}
+            <Image src={schoolInfo?.logoUrl || "https://picsum.photos/40/40"} width={40} height={32} alt="School Logo" className="h-8 w-10 rounded-md object-contain" data-ai-hint="logo" />
             
-            {showSkeleton ? (
-                 <Skeleton className="h-6 w-24" />
-            ) : (
-                <span className={cn("text-xl font-bold", state === 'collapsed' && 'hidden')}>{schoolInfo?.schoolName || 'CampusFlow'}</span>
+            {state !== 'collapsed' && (
+                <span className="text-xl font-bold">{schoolInfo?.schoolName || 'CampusFlow'}</span>
             )}
           </div>
     )
