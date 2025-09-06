@@ -156,13 +156,8 @@ function Header() {
 function Brand() {
     const { state } = useSidebar();
     const { schoolInfo, loading } = useSchoolInfo();
-    const [isClient, setIsClient] = React.useState(false);
-
-    React.useEffect(() => {
-      setIsClient(true);
-    }, []);
-
-    if (!isClient || loading) {
+    
+    if (loading) {
         return (
              <div className="flex items-center gap-2 p-2">
                 <Skeleton className="h-16 w-16 rounded-md" />
@@ -173,7 +168,7 @@ function Brand() {
     
     return (
          <div className="flex items-center gap-3 p-2">
-            <Image src={schoolInfo?.logoUrl || "https://picsum.photos/80/80"} width={64} height={64} alt="School Logo" className="h-16 w-16 rounded-md object-contain" data-ai-hint="logo" />
+            <Image src={schoolInfo?.logoUrl || "https://picsum.photos/80/80"} width={80} height={80} alt="School Logo" className="h-16 w-16 rounded-md object-contain" data-ai-hint="logo" />
             
             {state !== 'collapsed' && (
                 <span className="text-xl font-bold">{schoolInfo?.schoolName || 'CampusFlow'}</span>
