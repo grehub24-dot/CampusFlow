@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/page-header";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Receipt, Calendar, BookOpen, Clock } from "lucide-react";
 import StatCard from '@/components/dashboard/stat-card';
-import { PendingInvoicesTable } from '../dashboard/pending-invoices-table';
+import { InvoicesTable } from './invoices-table';
 import { getInvoiceColumns } from './columns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { InvoiceDetails } from '@/components/invoice-details';
@@ -226,7 +226,7 @@ export default function InvoicesPage() {
       </div>
 
       <div>
-        <PendingInvoicesTable columns={memoizedInvoiceColumns} data={pendingInvoices} />
+        <InvoicesTable columns={memoizedInvoiceColumns} data={pendingInvoices} />
       </div>
       
        <Sheet open={isInvoiceSheetOpen} onOpenChange={setIsInvoiceSheetOpen}>
