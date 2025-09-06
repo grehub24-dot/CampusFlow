@@ -61,7 +61,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
 
   return (
     <div className="p-1 pt-4">
-       <div className="printable-area w-full mx-auto p-4 bg-white text-gray-800">
+       <div className="printable-area relative w-full mx-auto p-4 bg-white text-gray-800">
         
         <div className="absolute inset-0 flex items-center justify-center z-0 opacity-5 pointer-events-none">
           <Image src={schoolInfo.logoUrl || "https://picsum.photos/400/400"} width={400} height={400} alt="School Logo Watermark" className="object-contain" />
