@@ -9,7 +9,7 @@ import { collection, onSnapshot, query, where, orderBy } from "firebase/firestor
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider, CommunicationTemplate } from '@/types';
-import { getBalance, sendSms } from '@/lib/frog-api';
+import { sendSms } from '@/lib/frog-api';
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { ToastAction } from '@/components/ui/toast';
 
 const messageFormSchema = z.object({
   recipientType: z.enum(['all', 'class', 'single', 'manual']),
@@ -107,7 +108,7 @@ function BundleCard({
   setInvoice
 }: {
   bundle: typeof baseCommunicationBundles[0];
-  setInvoice: (invoice: InvoiceType) => void;
+  setInvoice: (invoice: InvoiceType & { msgCount: number }) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -131,7 +132,7 @@ function BundleCard({
       if (!res.ok) throw new Error("Invoice creation failed");
 
       const inv: InvoiceType = await res.json();
-      setInvoice(inv);          // opens the modal
+      setInvoice({ ...inv, msgCount: bundle.msgCount }); // Pass msgCount along
     } catch (e: any) {
       toast({ variant: "destructive", title: "Error", description: e.message });
     } finally {
@@ -165,26 +166,27 @@ function CheckoutModal({
   onSuccess,
 }: {
   open: boolean;
-  invoice: InvoiceType | null;
+  invoice: (InvoiceType & { msgCount?: number }) | null;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (bundleSize: number) => void;
 }) {
   const [provider, setProvider] = useState<MomoProvider>("MTN");
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
-  /* Polling logic ----------------------------------------------------*/
   useEffect(() => {
     if (!invoice) return;
     const id = setInterval(async () => {
       try {
         const res = await fetch(`/api/invoice-status?id=${invoice.id}`);
-        if (!res.ok) return; // Don't show an error for a failed poll, just try again
+        if (!res.ok) return;
         const json = await res.json();
 
         if (json.status === "PAID") {
             toast({ title: "Payment received ✅", description: "Your bundle is now active." });
-            onSuccess();
+            if (invoice.msgCount) {
+              onSuccess(invoice.msgCount);
+            }
             onClose();
         }
         if (json.status === "FAILED" || json.status === "EXPIRED") {
@@ -262,9 +264,10 @@ export default function CommunicationsPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [smsTemplates, setSmsTemplates] = useState<Record<string, CommunicationTemplate>>({});
   const [emailTemplates, setEmailTemplates] = useState<Record<string, CommunicationTemplate>>({});
-  const [balance, setBalance] = useState<number | null>(null);
-  const [invoice, setInvoice] = useState<InvoiceType | null>(null);
+  const [balance, setBalance] = useState<number>(50); // Start with a base of 50
+  const [invoice, setInvoice] = useState<(InvoiceType & { msgCount: number }) | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('send-message');
   const { toast } = useToast();
 
   const form = useForm<MessageFormValues>({
@@ -300,31 +303,6 @@ export default function CommunicationsPage() {
       }
     }
   }, [templateId, messageType, smsTemplates, emailTemplates, form]);
-
-  const fetchBalance = React.useCallback(async () => {
-      try {
-        const result = await getBalance();
-        if (result.success) {
-          setBalance(result.balance);
-        } else {
-          if (result.error !== 'API credentials not configured.') {
-              console.error("API Error fetching balance:", result.error);
-              toast({
-                variant: 'destructive',
-                title: 'API Error',
-                description: 'Could not fetch SMS credit balance.'
-              });
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch balance:", error);
-         toast({
-            variant: 'destructive',
-            title: 'API Error',
-            description: 'Could not fetch SMS credit balance.'
-          });
-      }
-    }, [toast]);
 
   useEffect(() => {
     const studentsQuery = query(collection(db, "students"));
@@ -376,9 +354,6 @@ export default function CommunicationsPage() {
         setEmailTemplates(fetchedTemplates);
     });
 
-
-    fetchBalance();
-
     return () => {
       unsubscribeStudents();
       unsubscribeClasses();
@@ -386,7 +361,7 @@ export default function CommunicationsPage() {
       unsubscribeSmsTemplates();
       unsubscribeEmailTemplates();
     };
-  }, [fetchBalance]);
+  }, []);
 
   const onSubmit: SubmitHandler<MessageFormValues> = async (values) => {
     setIsSubmitting(true);
@@ -425,12 +400,23 @@ export default function CommunicationsPage() {
       }
       
       if (values.messageType === 'sms') {
+        if (balance < uniqueRecipients.length) {
+            toast({
+              variant: 'destructive',
+              title: 'Insufficient Credit',
+              description: `You need ${uniqueRecipients.length} credits but only have ${balance}.`,
+              action: <ToastAction altText="Buy Credit" onClick={() => setActiveTab('purchase')}>Buy Credit</ToastAction>,
+            });
+            setIsSubmitting(false);
+            return;
+        }
+
         await sendSms(uniqueRecipients, values.message);
+        setBalance(prevBalance => prevBalance - uniqueRecipients.length);
         toast({
           title: 'Messages Sent',
           description: `SMS dispatched to ${uniqueRecipients.length} recipients.`,
         });
-        await fetchBalance();
       } else {
          toast({
           title: 'Email Sent (Simulated)',
@@ -452,6 +438,10 @@ export default function CommunicationsPage() {
     }
   };
   
+  const handlePurchaseSuccess = (bundleSize: number) => {
+    setBalance(prevBalance => prevBalance + bundleSize);
+  }
+
   const currentTemplates = messageType === 'sms' ? smsTemplates : emailTemplates;
 
 
@@ -465,14 +455,14 @@ export default function CommunicationsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
          <StatCard 
             title="SMS Credit Balance"
-            value={balance !== null ? balance.toLocaleString() : "Loading..."}
+            value={balance.toLocaleString()}
             icon={Wallet}
             color="text-green-500"
             description="Remaining SMS units"
         />
       </div>
 
-      <Tabs defaultValue="send-message">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="send-message">Send Message</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
@@ -727,7 +717,7 @@ export default function CommunicationsPage() {
         open={!!invoice}
         invoice={invoice}
         onClose={() => setInvoice(null)}
-        onSuccess={fetchBalance}
+        onSuccess={handlePurchaseSuccess}
       />
     </>
   );
