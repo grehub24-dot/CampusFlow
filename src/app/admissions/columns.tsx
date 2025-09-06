@@ -108,7 +108,6 @@ export const getColumns = ({ onViewApplication, onPay }: ColumnsProps): ColumnDe
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onViewApplication(student)}>View Application</DropdownMenuItem>
-                <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive">Reject Application</DropdownMenuItem>
             </DropdownMenuContent>
