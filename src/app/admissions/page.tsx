@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import React from 'react';
@@ -8,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, onSnapshot, query, orderBy, where, doc, runTransaction, getDocs, getDoc } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, where, doc, runTransaction, getDocs, getDoc, limit } from "firebase/firestore";
 
 
 import { PageHeader } from "@/components/page-header";
@@ -392,6 +391,8 @@ export default function AdmissionsPage() {
       querySnapshot.forEach((doc) => {
         students.push({ id: doc.id, ...doc.data() } as Student);
       });
+      // Sort client-side
+      students.sort((a, b) => (b.admissionId || "").localeCompare(a.admissionId || ""));
       setAdmittedStudents(students);
       setIsTableLoading(false);
     }, (error) => {
@@ -630,3 +631,5 @@ export default function AdmissionsPage() {
     </>
   );
 }
+
+    
