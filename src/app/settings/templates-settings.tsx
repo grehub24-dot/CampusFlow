@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const templateSchema = z.object({
   content: z.string().min(10, "Template content is too short."),
@@ -176,33 +177,43 @@ export function TemplatesSettings() {
       <CardHeader>
         <CardTitle>Communication Templates</CardTitle>
         <CardDescription>
-          Customize the content for automated SMS messages sent from the system.
+          Customize the content for automated messages sent from the system.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-             <div className="space-y-4">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-            </div>
-        ) : (
-             <Accordion type="single" collapsible className="w-full">
-                {Object.values(templates).map(template => (
-                    <AccordionItem value={template.id} key={template.id}>
-                        <AccordionTrigger>{template.name}</AccordionTrigger>
-                        <AccordionContent>
-                           <TemplateForm 
-                            template={template} 
-                            onSave={(data) => handleSave(template.id, data)}
-                            isSubmitting={isSubmitting[template.id] || false}
-                           />
-                        </AccordionContent>
-                    </AccordionItem>
-                ))}
-            </Accordion>
-        )}
+        <Tabs defaultValue="sms">
+            <TabsList>
+                <TabsTrigger value="sms">SMS Templates</TabsTrigger>
+                <TabsTrigger value="email" disabled>Email Templates (Coming Soon)</TabsTrigger>
+            </TabsList>
+            <TabsContent value="sms" className="pt-4">
+                 {isLoading ? (
+                    <div className="space-y-4">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                ) : (
+                    <Accordion type="single" collapsible className="w-full">
+                        {Object.values(templates).map(template => (
+                            <AccordionItem value={template.id} key={template.id}>
+                                <AccordionTrigger>{template.name}</AccordionTrigger>
+                                <AccordionContent>
+                                <TemplateForm 
+                                    template={template} 
+                                    onSave={(data) => handleSave(template.id, data)}
+                                    isSubmitting={isSubmitting[template.id] || false}
+                                />
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                )}
+            </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
 }
+
+    

@@ -51,6 +51,14 @@ const messageFormSchema = z.object({
 }, {
     message: 'Phone number is required for manual entry.',
     path: ['manualPhone'],
+}).refine(data => {
+    if (data.messageType === 'email') {
+        return !!data.subject && data.subject.length > 0;
+    }
+    return true;
+}, {
+    message: 'Subject is required for email messages.',
+    path: ['subject'],
 });
 
 type MessageFormValues = z.infer<typeof messageFormSchema>;
@@ -597,7 +605,7 @@ export default function CommunicationsPage() {
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="sms">SMS</SelectItem>
-                                <SelectItem value="email" disabled>
+                                <SelectItem value="email">
                                   Email (Not implemented)
                                 </SelectItem>
                               </SelectContent>
@@ -718,3 +726,5 @@ export default function CommunicationsPage() {
     </>
   );
 }
+
+    
