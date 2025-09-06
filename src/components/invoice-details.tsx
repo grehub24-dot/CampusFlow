@@ -48,37 +48,37 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                 </div>
                 <div className="text-right">
                     <h1 className="text-2xl font-bold text-gray-700">INVOICE</h1>
-                    <p className="text-gray-500 mt-1"># {invoice.id}</p>
+                    <p className="text-gray-500 mt-1"># {invoice.admissionId}</p>
                 </div>
             </header>
 
 
             <section className="grid grid-cols-2 gap-8 my-8">
                 <div>
-                    <Card className="bg-transparent border-none">
-                        <CardHeader>
+                    <Card className="bg-gray-100 border-gray-200 rounded-lg">
+                        <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Billed To</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="font-bold text-lg">{invoice.studentName}</p>
-                            <p className="text-muted-foreground">{invoice.studentClass}</p>
-                            <p className="text-muted-foreground">Guardian: {invoice.amountPaid}</p>
+                            <p className="font-bold text-lg text-gray-800">{invoice.studentName}</p>
+                            <p className="text-gray-600">{invoice.studentClass}</p>
+                            <p className="text-gray-600">Guardian: {invoice.amountPaid}</p>
                         </CardContent>
                     </Card>
                 </div>
                 <div className="text-right">
-                     <Card className="bg-transparent border-none">
-                        <CardHeader>
+                     <Card className="bg-blue-50 border-blue-200 rounded-lg">
+                        <CardHeader className="pb-2">
                              <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider text-left">Details</CardTitle>
                         </CardHeader>
-                        <CardContent className="text-left">
+                        <CardContent className="text-left space-y-1">
                             <div className="grid grid-cols-2">
-                                <span className="font-semibold text-muted-foreground">Date of Issue:</span>
-                                <span className="text-right">{format(new Date(), 'dd MMM, yyyy')}</span>
+                                <span className="font-semibold text-gray-600">Date of Issue:</span>
+                                <span className="text-right text-gray-800">{format(new Date(), 'dd MMM, yyyy')}</span>
                             </div>
                              <div className="grid grid-cols-2">
-                                <span className="font-semibold text-muted-foreground">Due Date:</span>
-                                 <span className="text-right">{format(new Date(invoice.dueDate || new Date()), 'dd MMM, yyyy')}</span>
+                                <span className="font-semibold text-gray-600">Due Date:</span>
+                                 <span className="text-right text-gray-800">{format(new Date(invoice.dueDate || new Date()), 'dd MMM, yyyy')}</span>
                             </div>
                         </CardContent>
                      </Card>
@@ -87,7 +87,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
 
             <section>
                  <div className="border rounded-lg overflow-hidden">
-                    <Table className="w-full text-left">
+                    <Table className="w-full text-left bg-white">
                         <TableHeader className="bg-muted/50">
                             <TableRow>
                                 <TableHead className="p-3 font-semibold">Description</TableHead>
@@ -143,7 +143,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                                <Banknote className="h-8 w-8 text-primary" />
                                 <div>
                                     <p className="font-bold text-primary">Mobile Money</p>
-                                    <p className="text-sm text-gray-600">Dial <span className="font-mono font-semibold">*800*0*6491#</span> and use <span className="font-mono font-semibold">{invoice.id}</span> as reference.</p>
+                                    <p className="text-sm text-gray-600">Dial <span className="font-mono font-semibold">*800*0*6491#</span> and use <span className="font-mono font-semibold">{invoice.admissionId}</span> as reference.</p>
                                 </div>
                             </div>
                         </CardContent>
