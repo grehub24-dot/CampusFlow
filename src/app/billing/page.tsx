@@ -122,7 +122,7 @@ function CheckoutModal({
     }
   }
   
-  async function handlePay() {
+  async function handleCreateInvoice() {
     if (!bundle) return;
     setLoading(true);
     
@@ -145,7 +145,6 @@ function CheckoutModal({
       
       // Redirect to the await-payment page
       router.push(`/billing/await-payment?phone=${mobileNumber}&amount=${bundle.price}&ref=${createdInvoice.id}`);
-
 
     } catch (e: any) {
        toast({ variant: "destructive", title: "Payment Error", description: e.message });
@@ -222,8 +221,8 @@ function CheckoutModal({
                   </div>
               )}
             </div>
-            <Button className="w-full mt-8" size="lg" onClick={handlePay} disabled={loading || !isVerified}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'PAY NOW'}
+            <Button className="w-full mt-8" size="lg" onClick={handleCreateInvoice} disabled={loading || !isVerified}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'PROCEED'}
             </Button>
 
             <div className="text-center mt-4 text-xs text-muted-foreground">

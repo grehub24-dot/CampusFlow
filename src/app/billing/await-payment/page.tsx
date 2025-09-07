@@ -1,14 +1,13 @@
 
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { sendSms } from '@/lib/frog-api';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
-import type { Bundle } from '@/types';
+import { Loader2, Send } from 'lucide-react';
 
 function AwaitPaymentComponent() {
   const router = useRouter();
@@ -19,18 +18,15 @@ function AwaitPaymentComponent() {
   const amount = search.get('amount');
   const refId = search.get('ref');
 
-  const [smsSent, setSmsSent] = useState(false);
-  const [isSending, setIsSending] = useState(true);
+  const [isSending, setIsSending] = useState(false);
 
-  /* 1.  SEND SMS ONCE WHEN PAGE LOADS --------------------------- */
-  useEffect(() => {
+  const handleSendInstructions = async () => {
     if (!phone || !refId || !amount) {
-        // Don't toast here, it can be annoying on initial render
+        toast({ variant: 'destructive', title: 'Error', description: 'Missing required information to send SMS.'});
         return;
     };
     
-    // Prevent re-sending if already sent
-    if (smsSent) return;
+    setIsSending(true);
     
     const msg = `CampusFlow payment instructions
 Reference : ${refId}
@@ -43,66 +39,50 @@ Dial *170# on your phone.
 - Enter PIN to confirm
 After SMS confirmation return to the portal and click “I have completed the payment”.`;
 
-    sendSms([phone], msg)
-      .then(res => {
+    try {
+        const res = await sendSms([phone], msg);
         if (res.success) { 
             toast({ title: 'Instructions Sent', description: 'Check your SMS for payment details.' }); 
-            setSmsSent(true); 
-        }
-        else {
+            router.push(`/billing/confirm-payment?ref=${refId}`);
+        } else {
             throw new Error(res.error || "Unknown error");
         }
-      })
-      .catch(err => {
+    } catch (err: any) {
         console.error("SMS Failed:", err);
         toast({ variant: 'destructive', title: 'SMS Failed', description: err.message })
-      })
-      .finally(() => setIsSending(false));
-  // This is the critical fix: the effect must depend on the values it uses.
-  }, [phone, refId, amount, smsSent, toast, router]);
-
-
-  /* 2.  WAIT FOR USER TO CLICK “I have completed the payment” -- */
-  const handleCompleted = () => {
-    toast({ title: "Confirmation Received", description: "We are now verifying your payment. Your balance will update shortly."});
-    // Redirect the user. The backend will handle the payment confirmation.
-    router.push('/billing');
+    } finally {
+        setIsSending(false);
+    }
   };
+
 
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
-        <Card className="max-w-xl mx-auto p-4">
+        <Card className="max-w-xl mx-auto p-4 text-center">
         <CardHeader>
-            <CardTitle className="text-2xl font-bold">Awaiting Payment</CardTitle>
+            <CardTitle className="text-2xl font-bold">Complete Your Payment</CardTitle>
             <CardDescription>
-                {isSending 
-                    ? "Sending payment instructions to your phone..." 
-                    : "Please check your SMS for instructions to complete the payment."
-                }
+                Click the button below to receive payment instructions via SMS.
             </CardDescription>
         </CardHeader>
-        <CardContent>
-            {isSending && !smsSent ? (
-                <div className="flex justify-center items-center h-24">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-            ) : (
-                <>
-                    <div className="mb-4 p-4 bg-muted rounded-md text-center">
-                        <p className="text-sm text-muted-foreground">Transaction Reference</p>
-                        <p className="font-mono font-bold text-lg">{refId}</p>
-                    </div>
-
-                    <Button
-                        onClick={handleCompleted}
-                        disabled={!smsSent}
-                        className="w-full"
-                        size="lg"
-                    >
-                        I have completed the payment
-                    </Button>
-                </>
-            )}
+        <CardContent className="space-y-4">
+            <div>
+                <p className="text-sm text-muted-foreground">Your Transaction Reference</p>
+                <p className="font-mono font-bold text-lg p-2 bg-muted rounded-md inline-block">{refId}</p>
+            </div>
+            <Button
+                onClick={handleSendInstructions}
+                disabled={isSending}
+                className="w-full"
+                size="lg"
+            >
+                {isSending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                     <Send className="mr-2 h-4 w-4" />
+                )}
+               Send Payment Instructions
+            </Button>
         </CardContent>
         </Card>
     </div>
