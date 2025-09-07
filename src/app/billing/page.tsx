@@ -182,10 +182,14 @@ function CheckoutModal({
       const referenceId = createdInvoice.id;
       const instructions = `Transaction Reference ID: ${referenceId}\n\n-Dial *170# on your phone.\n-Select Option 1 to Transfer Money.\n-Select Option 1 for Mobile Money User.\n-Enter 0536282694 and confirm.\n-Enter the amount GHS ${bundle.price} and use reference: ${referenceId}\n-Enter your Mobile Money PIN to confirm the transaction.\n-You will receive an SMS notification confirming the transfer.`;
       
-      await sendSms([mobileNumber], instructions);
+      const smsResult = await sendSms([mobileNumber], instructions);
       
-      toast({ title: "Instructions sent", description: "Check your SMS for payment details and reference ID." });
-      setCheckoutStep('await-approval');
+      if (smsResult.success) {
+        toast({ title: "Instructions sent", description: "Check your SMS for payment details and reference ID." });
+        setCheckoutStep('await-approval');
+      } else {
+        throw new Error(smsResult.error || "Failed to send payment instructions via SMS.");
+      }
 
     } catch (e: any) {
        toast({ variant: "destructive", title: "Payment Error", description: e.message });
@@ -382,5 +386,3 @@ export default function BillingPage() {
         </>
     )
 }
-
-    
