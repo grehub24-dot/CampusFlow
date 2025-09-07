@@ -180,7 +180,7 @@ function CheckoutModal({
 
       // 2. Send SMS with instructions
       const referenceId = createdInvoice.id;
-      const instructions = `Your transaction reference is: ${referenceId}\n\nTo pay:\n1. Dial *170#\n2. Select 1 (Transfer)\n3. Select 1 (MM User)\n4. Enter 0536282694\n5. Enter Amount: GHS ${bundle.price}\n6. Enter Reference: ${referenceId}\n7. Enter PIN to confirm.`;
+      const instructions = `Transaction Reference ID: ${referenceId}\n\n-Dial *170# on your phone.\n-Select Option 1 to Transfer Money.\n-Select Option 1 for Mobile Money User.\n-Enter 0536282694 and confirm.\n-Enter the amount GHS ${bundle.price} and use reference: ${referenceId}\n-Enter your Mobile Money PIN to confirm the transaction.\n-You will receive an SMS notification confirming the transfer.`;
       
       await sendSms([mobileNumber], instructions);
       
@@ -232,7 +232,7 @@ function CheckoutModal({
                   </div>
               )}
             </div>
-            <Button className="w-full mt-8 bg-red-600 hover:bg-red-700 text-white" size="lg" onClick={handleVerifyOtp} disabled={loading || !otpSent || otp.length < 4}>
+            <Button className="w-full mt-8" size="lg" onClick={handleVerifyOtp} disabled={loading || !otpSent || otp.length < 4}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirm OTP & Continue'}
             </Button>
           </>
@@ -259,10 +259,10 @@ function CheckoutModal({
             </p>
             <Button 
                 size="lg" 
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-green-600 hover:bg-green-700 text-white"
                 onClick={onClose}
             >
-                I have paid
+                I have completed the payment
             </Button>
           </div>
         );
