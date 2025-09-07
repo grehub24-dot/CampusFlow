@@ -148,7 +148,8 @@ function CheckoutModal({
             toast({ title: "Number verified ✅", description: "Proceeding to payment..." });
             setIsVerified(true);
             setCheckoutStep('process-payment');
-            await handlePay(); // Automatically proceed to payment
+            // Wait a moment for the state to update before calling handlePay
+            setTimeout(() => handlePay(), 100); 
         } else {
             throw new Error(res.message);
         }
@@ -162,6 +163,8 @@ function CheckoutModal({
   async function handlePay() {
     if (!bundle) return;
     setLoading(true);
+    setCheckoutStep('process-payment'); // Explicitly set to processing step
+    
     try {
       // 1. Create Invoice
       const invRes = await fetch("/api/create-invoice", {
@@ -256,7 +259,9 @@ function CheckoutModal({
       case 'await-approval':
         return (
           <div className="flex flex-col items-center justify-center text-center space-y-4 py-8 h-[250px]">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+            <div className="animate-pulse rounded-full h-16 w-16 border-b-2 border-primary flex items-center justify-center">
+                <CheckCircle className="h-10 w-10 text-primary" />
+            </div>
             <p className="font-semibold text-lg">Awaiting Payment...</p>
             <p className="text-sm text-muted-foreground">
                 Check your SMS for instructions and complete the payment on your phone using the provided reference ID.
