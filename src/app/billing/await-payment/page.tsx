@@ -55,56 +55,12 @@ After SMS confirmation return to the portal and click “I have completed the pa
       .finally(() => setIsSending(false));
   }, [phone, refId, amount, toast, router]);
 
-  /* 2. LISTEN FOR PAYMENT CONFIRMATION */
-   useEffect(() => {
-    if (!refId) return;
 
-    // This is a mock API route. In a real app, this would poll your payment provider.
-    const intervalId = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/invoice-status?id=${refId}`);
-        if (!res.ok) return;
-        const json = await res.json();
-
-        if (json.status === "PAID") {
-            toast({ title: "Payment received ✅", description: "Your bundle has been credited." });
-
-            const billingSettingsRef = doc(db, "settings", "billing");
-            const communicationBundles: Bundle[] = [
-                { name: 'Basic Bundle', msgCount: 175, price: 5, validity: 30 },
-                { name: 'Standard Bundle', msgCount: 350, price: 10, validity: 30 },
-                { name: 'Pro Bundle', msgCount: 700, price: 20, validity: 30 },
-                { name: 'Business Bundle', msgCount: 1750, price: 50, validity: 30 },
-            ];
-            const purchasedBundle = communicationBundles.find(b => b.price === parseFloat(amount || "0"));
-
-            if (purchasedBundle) {
-                const docSnap = await getDoc(billingSettingsRef);
-                const currentBalance = docSnap.exists() ? (docSnap.data().smsBalance || 0) : 0;
-                const newBalance = currentBalance + purchasedBundle.msgCount;
-                await setDoc(billingSettingsRef, { smsBalance: newBalance }, { merge: true });
-            }
-            
-            clearInterval(intervalId);
-            router.push('/billing'); // Redirect back to billing page
-        }
-        if (json.status === "FAILED" || json.status === "EXPIRED") {
-            toast({ variant: "destructive", title: "Payment failed" });
-            clearInterval(intervalId);
-            router.push('/billing');
-        }
-      } catch (e) {
-        // Silently ignore polling errors
-      }
-    }, 5000); // Poll every 5 seconds
-    
-    return () => clearInterval(intervalId);
-  }, [refId, amount, toast, router]);
-
-  /* 3.  WAIT FOR USER TO CLICK “I have completed the payment” -- */
+  /* 2.  WAIT FOR USER TO CLICK “I have completed the payment” -- */
   const handleCompleted = () => {
-    toast({ title: "Confirmation Received", description: "We are now verifying your payment. This may take a moment."});
-    // The useEffect poller above will handle the redirect.
+    toast({ title: "Confirmation Received", description: "We are now verifying your payment. Your balance will update shortly."});
+    // Redirect the user. The backend will handle the payment confirmation.
+    router.push('/billing');
   };
 
   return (
