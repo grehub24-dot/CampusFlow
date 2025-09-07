@@ -9,11 +9,12 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Smartphone, CreditCard, ShoppingCart } from 'lucide-react';
+import { Loader2, ArrowLeft, Smartphone, CreditCard, ShoppingCart, CheckCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -74,6 +75,8 @@ function CheckoutModal({
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState<'details' | 'qr-payment'>('details');
+  const [invoice, setInvoice] = useState<InvoiceType | null>(null);
   const router = useRouter();
 
   const { toast } = useToast();
@@ -81,10 +84,12 @@ function CheckoutModal({
   useEffect(() => {
     if (open) {
         // Reset state when modal opens
+        setCheckoutStep('details');
         setIsVerified(false);
         setOtpSent(false);
         setOtp("");
         setLoading(false);
+        setInvoice(null);
     }
   }, [bundle, open]);
 
@@ -122,7 +127,7 @@ function CheckoutModal({
     }
   }
   
-  async function handleCreateInvoice() {
+  async function handleProceedToPayment() {
     if (!bundle) return;
     setLoading(true);
     
@@ -140,11 +145,8 @@ function CheckoutModal({
 
       if (!invRes.ok) throw new Error("Invoice creation failed");
       const createdInvoice: InvoiceType = await invRes.json();
-      
-      onClose(); // Close the modal
-      
-      // Redirect to the await-payment page
-      router.push(`/billing/await-payment?phone=${mobileNumber}&amount=${bundle.price}&ref=${createdInvoice.id}`);
+      setInvoice(createdInvoice);
+      setCheckoutStep('qr-payment');
 
     } catch (e: any) {
        toast({ variant: "destructive", title: "Payment Error", description: e.message });
@@ -166,69 +168,90 @@ function CheckoutModal({
         </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-[1fr,400px]">
           {/* Left side: Form */}
-          <div className="p-8">
-            <button onClick={onClose} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </button>
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold">Pay With:</h3>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                <Button variant="outline" className="border-primary text-primary border-2">
-                  <Smartphone className="mr-2" /> Mobile Money
-                </Button>
-                <Button variant="outline" disabled>
-                  <CreditCard className="mr-2" /> Credit Card(3DS)
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">Make Invoice payment Via MTN MoMo, Vodafone Cash or Airtel/Tigo Money</p>
-            </div>
-            
-            <div className="mt-6 space-y-4">
-              <div>
-                  <Label>Provider</Label>
-                  <Select value={provider} onValueChange={(v) => setProvider(v as MomoProvider['code'])}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MOMO_PROVIDERS.map((p) => (
-                        <SelectItem key={p.code} value={p.code}>{p.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-              </div>
-              <div>
-                  <Label>Mobile Number</Label>
-                  <div className="flex gap-2">
-                    <Input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} disabled={otpSent}/>
-                    {!isVerified && (
-                       <Button variant="outline" onClick={handleSendOtp} disabled={otpSent || loading}>
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Verify'}
-                      </Button>
-                    )}
+           {checkoutStep === 'details' ? (
+              <div className="p-8">
+                <button onClick={onClose} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold">Pay With:</h3>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <Button variant="outline" className="border-primary text-primary border-2">
+                      <Smartphone className="mr-2" /> Mobile Money
+                    </Button>
+                    <Button variant="outline" disabled>
+                      <CreditCard className="mr-2" /> Credit Card(3DS)
+                    </Button>
                   </div>
-              </div>
-              {otpSent && !isVerified && (
+                  <p className="text-xs text-muted-foreground mt-2">Make Invoice payment Via MTN MoMo, Vodafone Cash or Airtel/Tigo Money</p>
+                </div>
+                
+                <div className="mt-6 space-y-4">
                   <div>
-                      <Label>OTP</Label>
+                      <Label>Provider</Label>
+                      <Select value={provider} onValueChange={(v) => setProvider(v as MomoProvider['code'])}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MOMO_PROVIDERS.map((p) => (
+                            <SelectItem key={p.code} value={p.code}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                  </div>
+                  <div>
+                      <Label>Mobile Number</Label>
                       <div className="flex gap-2">
-                          <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Enter OTP"/>
-                           <Button variant="outline" onClick={handleVerifyOtp} disabled={loading}>
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Confirm'}
+                        <Input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} disabled={otpSent}/>
+                        {!isVerified && (
+                          <Button variant="outline" onClick={handleSendOtp} disabled={otpSent || loading}>
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Verify'}
                           </Button>
+                        )}
                       </div>
                   </div>
-              )}
-            </div>
-            <Button className="w-full mt-8" size="lg" onClick={handleCreateInvoice} disabled={loading || !isVerified}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'PROCEED'}
-            </Button>
+                  {otpSent && !isVerified && (
+                      <div>
+                          <Label>OTP</Label>
+                          <div className="flex gap-2">
+                              <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Enter OTP"/>
+                              <Button variant="outline" onClick={handleVerifyOtp} disabled={loading}>
+                                {loading ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Confirm'}
+                              </Button>
+                          </div>
+                      </div>
+                  )}
+                </div>
+                <Button className="w-full mt-8" size="lg" onClick={handleProceedToPayment} disabled={loading || !isVerified}>
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'PROCEED'}
+                </Button>
 
-            <div className="text-center mt-4 text-xs text-muted-foreground">
-                Powered by <span className="font-bold">CompusFlow</span> | Privacy | Terms
-            </div>
-          </div>
+                <div className="text-center mt-4 text-xs text-muted-foreground">
+                    Powered by <span className="font-bold">CompusFlow</span> | Privacy | Terms
+                </div>
+              </div>
+           ) : (
+             <div className="p-8 flex flex-col items-center justify-center text-center">
+                 <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+                 <h2 className="text-2xl font-bold mb-2">Scan to Pay</h2>
+                 <p className="text-muted-foreground mb-4">Use your payment app or mobile money service to scan the QR code and complete your purchase.</p>
+                 
+                 <div className="p-4 bg-muted rounded-lg">
+                    <Image src="https://placehold.co/250x250/png?text=QR+CODE" width={250} height={250} alt="QR Code" data-ai-hint="qr code" />
+                 </div>
+                 
+                 <div className="mt-4 text-sm">
+                    <p>Amount: <span className="font-bold">GHS {bundle.price}</span></p>
+                    <p>Reference: <span className="font-bold font-mono">{invoice?.id}</span></p>
+                 </div>
+
+                 <Button className="w-full mt-6" onClick={onClose}>
+                    Close
+                 </Button>
+             </div>
+           )}
           
           {/* Right side: Invoice Details */}
           <div className="bg-[#EBF3FF] p-8 space-y-6">
