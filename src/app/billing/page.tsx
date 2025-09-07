@@ -239,7 +239,13 @@ function CheckoutModal({
                  <p className="text-muted-foreground mb-4">Use your payment app or mobile money service to scan the QR code and complete your purchase.</p>
                  
                  <div className="p-4 bg-muted rounded-lg">
-                    <Image src="https://placehold.co/250x250/png?text=QR+CODE" width={250} height={250} alt="QR Code" data-ai-hint="qr code" />
+                    <Image 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`Amount: ${bundle.price}, Reference: ${invoice?.id}`)}`}
+                      width={250} 
+                      height={250} 
+                      alt="QR Code for Payment"
+                      data-ai-hint="qr code"
+                    />
                  </div>
                  
                  <div className="mt-4 text-sm">
