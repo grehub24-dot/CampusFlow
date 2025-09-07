@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -12,16 +13,16 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Smartphone, CreditCard, CheckCircle, ShoppingCart } from 'lucide-react';
+import { Loader2, ArrowLeft, Smartphone, CreditCard, ShoppingCart } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice as InvoiceType, MomoProvider, Bundle } from '@/types';
 import Image from 'next/image';
-import { doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
+import { doc, onSnapshot, getDoc, setDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { generateOtp, verifyOtp, sendSms } from '@/lib/frog-api';
+import { generateOtp, verifyOtp } from '@/lib/frog-api';
 
 const communicationBundles: Bundle[] = [
     { name: 'Basic Bundle', msgCount: 175, price: 5, validity: 30 },
@@ -70,58 +71,22 @@ function CheckoutModal({
   const [provider, setProvider] = useState<MomoProvider['code']>("MTN");
   const [mobileNumber, setMobileNumber] = useState('0536282694');
   const [loading, setLoading] = useState(false);
-  const [invoice, setInvoice] = useState<InvoiceType | null>(null);
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState<'verify-number' | 'process-payment' | 'await-approval'>('verify-number');
+  const router = useRouter();
 
   const { toast } = useToast();
   
   useEffect(() => {
     if (open) {
         // Reset state when modal opens
-        setCheckoutStep('verify-number');
-        setInvoice(null);
         setIsVerified(false);
         setOtpSent(false);
         setOtp("");
+        setLoading(false);
     }
   }, [bundle, open]);
-
-  useEffect(() => {
-    if (!invoice || !open) return;
-
-    const intervalId = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/invoice-status?id=${invoice.id}`);
-        if (!res.ok) return;
-        const json = await res.json();
-
-        if (json.status === "PAID") {
-            toast({ title: "Payment received ✅", description: "Your bundle is now active." });
-            if (bundle?.msgCount) {
-                const billingSettingsRef = doc(db, "settings", "billing");
-                const docSnap = await getDoc(billingSettingsRef);
-                const currentBalance = docSnap.exists() ? (docSnap.data().smsBalance || 0) : 0;
-                const newBalance = currentBalance + bundle.msgCount;
-                await setDoc(billingSettingsRef, { smsBalance: newBalance }, { merge: true });
-            }
-            onClose();
-            clearInterval(intervalId);
-        }
-        if (json.status === "FAILED" || json.status === "EXPIRED") {
-            toast({ variant: "destructive", title: "Payment failed" });
-            onClose();
-            clearInterval(intervalId);
-        }
-      } catch (e) {
-        // Silently ignore polling errors
-      }
-    }, 3000);
-    return () => clearInterval(intervalId);
-  }, [invoice, open, bundle, onClose, toast]);
-
 
   async function handleSendOtp() {
     setLoading(true);
@@ -145,11 +110,8 @@ function CheckoutModal({
     try {
         const res = await verifyOtp(mobileNumber, otp);
         if (res.status === 'SUCCESS') {
-            toast({ title: "Number verified ✅", description: "Proceeding to payment..." });
+            toast({ title: "Number verified ✅" });
             setIsVerified(true);
-            setCheckoutStep('process-payment');
-            // Wait a moment for the state to update before calling handlePay
-            setTimeout(() => handlePay(), 100); 
         } else {
             throw new Error(res.message);
         }
@@ -163,7 +125,6 @@ function CheckoutModal({
   async function handlePay() {
     if (!bundle) return;
     setLoading(true);
-    setCheckoutStep('process-payment'); // Explicitly set to processing step
     
     try {
       // 1. Create Invoice
@@ -179,106 +140,20 @@ function CheckoutModal({
 
       if (!invRes.ok) throw new Error("Invoice creation failed");
       const createdInvoice: InvoiceType = await invRes.json();
-      setInvoice(createdInvoice);
+      
+      onClose(); // Close the modal
+      
+      // Redirect to the await-payment page
+      router.push(`/billing/await-payment?phone=${mobileNumber}&amount=${bundle.price}&ref=${createdInvoice.id}`);
 
-      // 2. Send SMS with instructions
-      const referenceId = createdInvoice.id;
-      const instructions = `Transaction Reference ID: ${referenceId}\n\n-Dial *170# on your phone.\n-Select Option 1 to Transfer Money.\n-Select Option 1 for Mobile Money User.\n-Enter 0536282694 and confirm.\n-Enter the amount GHS ${bundle.price} and use reference: ${referenceId}\n-Enter your Mobile Money PIN to confirm the transaction.\n-You will receive an SMS notification confirming the transfer.`;
-      
-      const smsResult = await sendSms([mobileNumber], instructions);
-      
-      if (smsResult.success) {
-        toast({ title: "Instructions sent", description: "Check your SMS for payment details and reference ID." });
-        setCheckoutStep('await-approval');
-      } else {
-        throw new Error(smsResult.error || "Failed to send payment instructions via SMS.");
-      }
 
     } catch (e: any) {
        toast({ variant: "destructive", title: "Payment Error", description: e.message });
-       setCheckoutStep('verify-number'); // Go back to first step on error
     } finally {
       setLoading(false);
     }
   }
   
-  const renderContent = () => {
-    switch (checkoutStep) {
-      case 'verify-number':
-        return (
-          <>
-            <div className="mt-6 space-y-4">
-              <div>
-                  <Label>Provider</Label>
-                  <Select value={provider} onValueChange={(v) => setProvider(v as MomoProvider['code'])}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MOMO_PROVIDERS.map((p) => (
-                        <SelectItem key={p.code} value={p.code}>{p.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-              </div>
-              <div>
-                  <Label>Mobile Number</Label>
-                  <div className="flex gap-2">
-                    <Input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} disabled={otpSent}/>
-                    <Button variant="outline" onClick={handleSendOtp} disabled={otpSent || loading}>
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Verify'}
-                    </Button>
-                  </div>
-              </div>
-              {otpSent && (
-                  <div>
-                      <Label>OTP</Label>
-                      <div className="flex gap-2">
-                          <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Enter OTP"/>
-                      </div>
-                  </div>
-              )}
-            </div>
-            <Button className="w-full mt-8" size="lg" onClick={handleVerifyOtp} disabled={loading || !otpSent || otp.length < 4}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirm OTP & Continue'}
-            </Button>
-          </>
-        );
-
-      case 'process-payment':
-        return (
-          <div className="flex flex-col items-center justify-center text-center space-y-4 py-8 h-[250px]">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <p className="font-semibold text-lg">Generating Invoice...</p>
-            <p className="text-sm text-muted-foreground">
-                Please wait while we create your transaction reference and send instructions.
-            </p>
-          </div>
-        );
-
-      case 'await-approval':
-        return (
-          <div className="flex flex-col items-center justify-center text-center space-y-4 py-8 h-[250px]">
-            <div className="animate-pulse rounded-full h-16 w-16 border-b-2 border-primary flex items-center justify-center">
-                <CheckCircle className="h-10 w-10 text-primary" />
-            </div>
-            <p className="font-semibold text-lg">Awaiting Payment...</p>
-            <p className="text-sm text-muted-foreground">
-                Check your SMS for instructions and complete the payment on your phone using the provided reference ID.
-            </p>
-            <Button 
-                size="lg" 
-                className="bg-green-600 hover:bg-green-700 text-white"
-                onClick={onClose}
-            >
-                I have completed the payment
-            </Button>
-          </div>
-        );
-    }
-  }
-
-
   if (!bundle) return null;
 
   return (
@@ -310,7 +185,46 @@ function CheckoutModal({
               <p className="text-xs text-muted-foreground mt-2">Make Invoice payment Via MTN MoMo, Vodafone Cash or Airtel/Tigo Money</p>
             </div>
             
-            {renderContent()}
+            <div className="mt-6 space-y-4">
+              <div>
+                  <Label>Provider</Label>
+                  <Select value={provider} onValueChange={(v) => setProvider(v as MomoProvider['code'])}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOMO_PROVIDERS.map((p) => (
+                        <SelectItem key={p.code} value={p.code}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+              </div>
+              <div>
+                  <Label>Mobile Number</Label>
+                  <div className="flex gap-2">
+                    <Input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} disabled={otpSent}/>
+                    {!isVerified && (
+                       <Button variant="outline" onClick={handleSendOtp} disabled={otpSent || loading}>
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Verify'}
+                      </Button>
+                    )}
+                  </div>
+              </div>
+              {otpSent && !isVerified && (
+                  <div>
+                      <Label>OTP</Label>
+                      <div className="flex gap-2">
+                          <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Enter OTP"/>
+                           <Button variant="outline" onClick={handleVerifyOtp} disabled={loading}>
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Confirm'}
+                          </Button>
+                      </div>
+                  </div>
+              )}
+            </div>
+            <Button className="w-full mt-8" size="lg" onClick={handlePay} disabled={loading || !isVerified}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'PAY NOW'}
+            </Button>
 
             <div className="text-center mt-4 text-xs text-muted-foreground">
                 Powered by <span className="font-bold">CompusFlow</span> | Privacy | Terms
