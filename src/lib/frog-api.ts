@@ -7,7 +7,7 @@ import type { IntegrationSettings, OtpResponse } from "@/types";
 import { v4 as uuidv4 } from 'uuid';
 
 
-const FROG_API_BASE_URL_V3 = 'https://frogapi.wigal.com.gh/api/v3';
+const FROG_API_BASE_URL_V3 = 'https://frogtestapi.wigal.com.gh/api/v3';
 
 
 async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string, username: string } | null> {
