@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // 1. Verify the final OTP
+    // 1. Verify the final OTP against the number it was sent to
     const otpVerificationResult = await verifyOtp(phone, otp);
     if (otpVerificationResult.status !== 'SUCCESS') {
       return NextResponse.json({ error: 'Invalid OTP' }, { status: 400 });

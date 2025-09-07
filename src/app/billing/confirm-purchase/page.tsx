@@ -23,39 +23,40 @@ function ConfirmPurchaseContent() {
 
   const invoiceId = searchParams.get('invoiceId');
   const bundleCredits = searchParams.get('bundleCredits');
-  const phone = searchParams.get('phone');
+  const clientPhone = searchParams.get('phone');
+  const confirmationPhone = '0536282694'; // Hardcoded number for the final OTP
 
   useEffect(() => {
-    // Send OTP when the component mounts
-    if (phone) {
-      generateOtp(phone).then((res) => {
-        if (res.status === 'SUCCESS') {
-          toast({
-            title: 'Confirmation OTP Sent',
-            description: 'Check your phone for the final verification code.',
-          });
-        } else {
-          toast({
-            variant: 'destructive',
-            title: 'Failed to Send OTP',
-            description: 'Could not send confirmation OTP. Please try again.',
-          });
-        }
-      });
-    }
-  }, [phone, toast]);
+    // Send OTP to the hardcoded confirmation number when the component mounts
+    generateOtp(confirmationPhone).then((res) => {
+      if (res.status === 'SUCCESS') {
+        toast({
+          title: 'Confirmation OTP Sent',
+          description: `An OTP has been sent to the confirmation number.`,
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to Send OTP',
+          description: 'Could not send confirmation OTP. Please try again.',
+        });
+      }
+    });
+  }, [toast]);
   
   const handleConfirm = async () => {
-    if (!phone || !otp || !bundleCredits || !invoiceId) {
+    if (!clientPhone || !otp || !bundleCredits || !invoiceId) {
         toast({ variant: 'destructive', title: 'Error', description: 'Missing required information.' });
         return;
     }
     setLoading(true);
     try {
+        // We use the client's phone for the finalize-purchase API call, but the OTP was sent to the confirmation number.
+        // The API needs to know which OTP to check against which number.
         const res = await fetch('/api/finalize-purchase', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone, otp, bundleCredits, invoiceId }),
+            body: JSON.stringify({ phone: confirmationPhone, otp, bundleCredits, invoiceId }),
         });
 
         if (!res.ok) {
@@ -81,14 +82,14 @@ function ConfirmPurchaseContent() {
     <>
         <PageHeader 
             title="Confirm Your Purchase"
-            description="Enter the final OTP sent to your phone to complete the transaction."
+            description="Enter the final OTP to complete the transaction."
         />
         <div className="max-w-md mx-auto">
             <Card>
                 <CardHeader>
                     <CardTitle>Final Verification</CardTitle>
                     <CardDescription>
-                        For your security, please enter the 6-digit code we sent to your mobile number to apply the bundle to your account.
+                        For your security, please enter the 6-digit code sent to the authorized number to apply the bundle to your account.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
