@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -76,7 +75,7 @@ function CheckoutModal({
   const [otpSent, setOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<'details' | 'qr-payment'>('details');
-  const [invoice, setInvoice] = useState<InvoiceType | null>(null);
+  const [invoice, setInvoice] = useState<{ id: string; qrPayload: string } | null>(null);
   const router = useRouter();
 
   const { toast } = useToast();
@@ -145,7 +144,20 @@ function CheckoutModal({
 
       if (!invRes.ok) throw new Error("Invoice creation failed");
       const createdInvoice: InvoiceType = await invRes.json();
-      setInvoice(createdInvoice);
+      
+      // 2. Generate Gh-QR Payload
+      const qrRes = await fetch("/api/generate-gh-qr", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+              amount: bundle.price,
+              referenceId: createdInvoice.id,
+          })
+      });
+      if (!qrRes.ok) throw new Error("Failed to generate QR Code data.");
+      const { qrPayload } = await qrRes.json();
+      
+      setInvoice({ id: createdInvoice.id, qrPayload });
       setCheckoutStep('qr-payment');
 
     } catch (e: any) {
@@ -240,10 +252,10 @@ function CheckoutModal({
                  
                  <div className="p-4 bg-muted rounded-lg">
                     <Image 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`Amount: ${bundle.price}, Reference: ${invoice?.id}`)}`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(invoice?.qrPayload || '')}`}
                       width={250} 
                       height={250} 
-                      alt="QR Code for Payment"
+                      alt="Gh-QR Code for Payment"
                       data-ai-hint="qr code"
                     />
                  </div>
