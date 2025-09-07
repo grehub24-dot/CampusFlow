@@ -8,8 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import type { Bundle } from '@/types';
 
 function AwaitPaymentComponent() {
@@ -27,10 +25,12 @@ function AwaitPaymentComponent() {
   /* 1.  SEND SMS ONCE WHEN PAGE LOADS --------------------------- */
   useEffect(() => {
     if (!phone || !refId || !amount) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Missing payment details. Please try again.' });
-        router.push('/billing');
+        // Don't toast here, it can be annoying on initial render
         return;
     };
+    
+    // Prevent re-sending if already sent
+    if (smsSent) return;
     
     const msg = `CampusFlow payment instructions
 Reference : ${refId}
@@ -49,11 +49,17 @@ After SMS confirmation return to the portal and click “I have completed the pa
             toast({ title: 'Instructions Sent', description: 'Check your SMS for payment details.' }); 
             setSmsSent(true); 
         }
-        else throw new Error(res.error);
+        else {
+            throw new Error(res.error || "Unknown error");
+        }
       })
-      .catch(err => toast({ variant: 'destructive', title: 'SMS Failed', description: err.message }))
+      .catch(err => {
+        console.error("SMS Failed:", err);
+        toast({ variant: 'destructive', title: 'SMS Failed', description: err.message })
+      })
       .finally(() => setIsSending(false));
-  }, [phone, refId, amount, toast, router]);
+  // This is the critical fix: the effect must depend on the values it uses.
+  }, [phone, refId, amount, smsSent, toast, router]);
 
 
   /* 2.  WAIT FOR USER TO CLICK “I have completed the payment” -- */
@@ -76,7 +82,7 @@ After SMS confirmation return to the portal and click “I have completed the pa
             </CardDescription>
         </CardHeader>
         <CardContent>
-            {isSending ? (
+            {isSending && !smsSent ? (
                 <div className="flex justify-center items-center h-24">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
