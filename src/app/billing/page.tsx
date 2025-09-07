@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -166,6 +167,16 @@ function CheckoutModal({
       setLoading(false);
     }
   }
+
+  function handlePaymentComplete() {
+    if (!invoice || !bundle) return;
+    const params = new URLSearchParams({
+      invoiceId: invoice.id,
+      bundleCredits: String(bundle.msgCount),
+      phone: mobileNumber,
+    });
+    router.push(`/billing/confirm-purchase?${params.toString()}`);
+  }
   
   if (!bundle) return null;
 
@@ -265,8 +276,8 @@ function CheckoutModal({
                     <p>Reference: <span className="font-bold font-mono">{invoice?.id}</span></p>
                  </div>
 
-                 <Button className="w-full mt-6" onClick={onClose}>
-                    Close
+                 <Button className="w-full mt-6" onClick={handlePaymentComplete}>
+                    I have completed the payment
                  </Button>
              </div>
            )}
