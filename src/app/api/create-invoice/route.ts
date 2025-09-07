@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     // MOCK: Simulate calling a payment provider like Redde or Hubtel
     // In a real implementation, you would make an API call here.
     const mockInvoice: Invoice = {
-      id: `inv_${uuid()}`,
+      id: `inv_${uuid().substring(0, 8)}`,
       payToken: `token_${uuid()}`,
       amount,
       description,
