@@ -21,7 +21,7 @@ import type { Invoice as InvoiceType, MomoProvider, Bundle } from '@/types';
 import Image from 'next/image';
 import { doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { generateOtp, verifyOtp } from '@/lib/frog-api';
+import { generateOtp, verifyOtp, sendSms } from '@/lib/frog-api';
 
 const communicationBundles: Bundle[] = [
     { name: 'Basic Bundle', msgCount: 175, price: 5, validity: 30 },
@@ -178,14 +178,13 @@ function CheckoutModal({
       const createdInvoice: InvoiceType = await invRes.json();
       setInvoice(createdInvoice);
 
-      // 2. Send Prompt
-       await fetch("/api/send-prompt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: createdInvoice.id, provider }),
-      });
+      // 2. Send SMS with instructions
+      const referenceId = createdInvoice.id;
+      const instructions = `Your transaction reference is: ${referenceId}\n\nTo pay:\n1. Dial *170#\n2. Select 1 (Transfer)\n3. Select 1 (MM User)\n4. Enter 0536282694\n5. Enter Amount: GHS ${bundle.price}\n6. Enter Reference: ${referenceId}\n7. Enter PIN to confirm.`;
       
-      toast({ title: "Prompt sent", description: "Check your phone and approve the payment." });
+      await sendSms([mobileNumber], instructions);
+      
+      toast({ title: "Instructions sent", description: "Check your SMS for payment details and reference ID." });
       setCheckoutStep('await-approval');
 
     } catch (e: any) {
@@ -234,7 +233,7 @@ function CheckoutModal({
               )}
             </div>
             <Button className="w-full mt-8 bg-red-600 hover:bg-red-700 text-white" size="lg" onClick={handleVerifyOtp} disabled={loading || !otpSent || otp.length < 4}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirm OTP & Pay'}
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirm OTP & Continue'}
             </Button>
           </>
         );
@@ -243,9 +242,9 @@ function CheckoutModal({
         return (
           <div className="flex flex-col items-center justify-center text-center space-y-4 py-8 h-[250px]">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <p className="font-semibold text-lg">Processing Payment...</p>
+            <p className="font-semibold text-lg">Generating Invoice...</p>
             <p className="text-sm text-muted-foreground">
-                Generating reference and sending payment prompt to your phone.
+                Please wait while we create your transaction reference and send instructions.
             </p>
           </div>
         );
@@ -254,16 +253,16 @@ function CheckoutModal({
         return (
           <div className="flex flex-col items-center justify-center text-center space-y-4 py-8 h-[250px]">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
-            <p className="font-semibold text-lg">Approve Payment...</p>
+            <p className="font-semibold text-lg">Awaiting Payment...</p>
             <p className="text-sm text-muted-foreground">
-                Please check your phone and enter your PIN to approve the transaction.
+                Check your SMS for instructions and complete the payment on your phone using the provided reference ID.
             </p>
             <Button 
                 size="lg" 
                 className="bg-red-600 hover:bg-red-700 text-white"
                 onClick={onClose}
             >
-                Close
+                I have paid
             </Button>
           </div>
         );
@@ -383,3 +382,5 @@ export default function BillingPage() {
         </>
     )
 }
+
+    
