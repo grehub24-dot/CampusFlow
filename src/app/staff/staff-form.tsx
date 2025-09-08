@@ -34,28 +34,11 @@ const formSchema = z.object({
   subjectsTaught: z.string().optional(),
   notes: z.string().optional(),
   grossSalary: z.coerce.number().min(0, 'Salary must be a positive number.'),
-  paymentMethod: z.enum(['Bank', 'Mobile Money']),
+  paymentMethod: z.enum(['Bank', 'Mobile Money']).optional(),
   bankName: z.string().optional(),
   accountNumber: z.string().optional(),
   momoNumber: z.string().optional(),
   status: z.enum(['Active', 'Inactive']),
-  deductions: z.array(deductionSchema).optional(),
-}).refine(data => {
-    if (data.paymentMethod === 'Bank') {
-        return !!data.bankName && !!data.accountNumber;
-    }
-    return true;
-}, {
-    message: "Bank Name and Account Number are required for bank payments.",
-    path: ["bankName"]
-}).refine(data => {
-    if (data.paymentMethod === 'Mobile Money') {
-        return !!data.momoNumber;
-    }
-    return true;
-}, {
-    message: "Mobile Money number is required.",
-    path: ["momoNumber"]
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -72,12 +55,11 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
         name: defaultValues?.name || '',
         role: defaultValues?.role || '',
         grossSalary: defaultValues?.grossSalary || 0,
-        paymentMethod: defaultValues?.paymentMethod || undefined,
+        paymentMethod: defaultValues?.paymentMethod,
         bankName: defaultValues?.bankName || '',
         accountNumber: defaultValues?.accountNumber || '',
         momoNumber: defaultValues?.momoNumber || '',
         status: defaultValues?.status || 'Active',
-        deductions: defaultValues?.deductions || [],
         employmentDate: defaultValues?.employmentDate ? new Date(defaultValues.employmentDate) : undefined,
         qualification: defaultValues?.qualification || '',
         subjectsTaught: defaultValues?.subjectsTaught || '',
@@ -97,12 +79,11 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
         name: defaultValues?.name || '',
         role: defaultValues?.role || '',
         grossSalary: defaultValues?.grossSalary || 0,
-        paymentMethod: defaultValues?.paymentMethod || undefined,
+        paymentMethod: defaultValues?.paymentMethod,
         bankName: defaultValues?.bankName || '',
         accountNumber: defaultValues?.accountNumber || '',
         momoNumber: defaultValues?.momoNumber || '',
         status: defaultValues?.status || 'Active',
-        deductions: defaultValues?.deductions || [],
         employmentDate: defaultValues?.employmentDate ? new Date(defaultValues.employmentDate) : undefined,
         qualification: defaultValues?.qualification || '',
         subjectsTaught: defaultValues?.subjectsTaught || '',
@@ -223,35 +204,12 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
                         </FormItem>
                     )}
                 />
-                 <FormField
-                    control={form.control}
-                    name="paymentMethod"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Payment Method</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select method..." /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    <SelectItem value="Bank">Bank</SelectItem>
-                                    <SelectItem value="Mobile Money">Mobile Money</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
             </div>
-            {paymentMethod === 'Bank' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <FormField control={form.control} name="bankName" render={({ field }) => (<FormItem><FormLabel>Bank Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="accountNumber" render={({ field }) => (<FormItem><FormLabel>Account Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                </div>
-            )}
-            {paymentMethod === 'Mobile Money' && (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <FormField control={form.control} name="momoNumber" render={({ field }) => (<FormItem><FormLabel>Mobile Money Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <FormField control={form.control} name="bankName" render={({ field }) => (<FormItem><FormLabel>Bank Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="accountNumber" render={({ field }) => (<FormItem><FormLabel>Account Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="momoNumber" render={({ field }) => (<FormItem><FormLabel>Contact / Mobile Money No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
         </div>
         <div className="flex justify-end">
           <Button type="submit">
@@ -262,5 +220,3 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
     </Form>
   )
 }
-
-    

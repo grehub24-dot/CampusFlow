@@ -200,12 +200,11 @@ export type StaffMember = {
     taxableIncome: number;
     incomeTax: number;
     netSalary: number;
-    paymentMethod: 'Bank' | 'Mobile Money';
+    paymentMethod?: 'Bank' | 'Mobile Money';
     bankName?: string;
     accountNumber?: string;
     momoNumber?: string;
     status: 'Active' | 'Inactive';
-    deductions?: StaffDeduction[];
     arrears?: StaffArrears[];
     employmentDate?: string;
     qualification?: string;
