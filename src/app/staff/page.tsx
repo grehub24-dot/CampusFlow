@@ -2,7 +2,7 @@
 'use client'
 
 import React from 'react';
-import type { StaffMember, StaffArrears } from '@/types';
+import type { StaffMember } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { doc, addDoc, updateDoc, deleteDoc, collection, onSnapshot, query } from "firebase/firestore";
 import { db } from '@/lib/firebase';
@@ -76,18 +76,14 @@ export default function StaffPage() {
         const taxableIncome = gross - ssnitEmployee;
         
         let incomeTax = 0;
-        // Note: This is a simplified tax calculation based on GRA 2024 rates.
-        if (taxableIncome > 5880 / 12) { // Monthly calculation
-            const monthlyTaxable = taxableIncome / 12;
-            let monthlyTax = 0;
-            if (monthlyTaxable <= 490) monthlyTax = 0;
-            else if (monthlyTaxable <= 600) monthlyTax = (monthlyTaxable - 490) * 0.05;
-            else if (monthlyTaxable <= 730) monthlyTax = 5.5 + (monthlyTaxable - 600) * 0.10;
-            else if (monthlyTaxable <= 3000) monthlyTax = 18.5 + (monthlyTaxable - 730) * 0.175;
-            else if (monthlyTaxable <= 16491.67) monthlyTax = 415.75 + (monthlyTaxable - 3000) * 0.25;
-            else if (monthlyTaxable <= 50000) monthlyTax = 3788.67 + (monthlyTaxable - 16491.67) * 0.30;
-            else monthlyTax = 13841.17 + (monthlyTaxable - 50000) * 0.35;
-            incomeTax = monthlyTax * 12;
+        // Simplified tax calculation for annual income
+        if (taxableIncome > 5880) {
+            if (taxableIncome <= 7200) incomeTax = (taxableIncome - 5880) * 0.05;
+            else if (taxableIncome <= 8760) incomeTax = 66 + (taxableIncome - 7200) * 0.10;
+            else if (taxableIncome <= 36000) incomeTax = 222 + (taxableIncome - 8760) * 0.175;
+            else if (taxableIncome <= 197900) incomeTax = 4989 + (taxableIncome - 36000) * 0.25;
+            else if (taxableIncome <= 600000) incomeTax = 45464 + (taxableIncome - 197900) * 0.30;
+            else incomeTax = 166094 + (taxableIncome - 600000) * 0.35;
         }
 
         const customDeductionsTotal = employee.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
@@ -106,14 +102,28 @@ export default function StaffPage() {
     const onSubmit: SubmitHandler<FormValues> = async (values) => {
         setIsSubmitting(true);
         try {
+            const currentSalaryDetails = selectedStaff ? { grossSalary: selectedStaff.grossSalary, netSalary: selectedStaff.netSalary } : null;
+
             const payrollCalculations = calculatePayrollForEmployee(values);
-            const data = { ...values, ...payrollCalculations };
+            const data: Partial<StaffMember> = { ...values, ...payrollCalculations };
 
             if (selectedStaff) {
+                // Update
+                if (currentSalaryDetails && values.grossSalary !== currentSalaryDetails.grossSalary) {
+                    const salaryDifference = values.grossSalary - currentSalaryDetails.grossSalary;
+                     const arrears = {
+                        name: 'Salary Adjustment',
+                        amount: salaryDifference
+                    };
+                    data.arrears = [...(selectedStaff.arrears || []), arrears];
+                }
+
                 const staffDocRef = doc(db, "staff", selectedStaff.id);
                 await updateDoc(staffDocRef, data);
                 toast({ title: 'Staff Updated', description: 'The staff member details have been updated.' });
+
             } else {
+                // Create
                 await addDoc(collection(db, "staff"), data);
                 toast({ title: 'Staff Added', description: 'New staff member has been added.' });
             }

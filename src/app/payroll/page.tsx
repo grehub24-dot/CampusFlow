@@ -5,11 +5,10 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { collection, onSnapshot, doc, addDoc, query, getDocs, where } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, query, getDocs, where, writeBatch } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { format, getYear } from 'date-fns';
 import { Loader2, PlayCircle } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PayrollHistory } from './payroll-history';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import type { StaffMember, PayrollRun } from '@/types';
@@ -53,57 +52,40 @@ export default function PayrollPage() {
   }, []);
 
   const calculatePayrollForEmployee = (employee: StaffMember) => {
-      const gross = employee.grossSalary;
-      const ssnitEmployee = gross * 0.055;
-      const ssnitEmployer = gross * 0.13;
-      const taxableIncome = gross - ssnitEmployee;
+      const grossSalaryPerMonth = employee.grossSalary / 12;
+      const arrearsTotal = employee.arrears?.reduce((acc, d) => acc + d.amount, 0) || 0;
+      
+      const earnings = grossSalaryPerMonth + arrearsTotal;
+      
+      const ssnitEmployee = grossSalaryPerMonth * 0.055;
+      const ssnitEmployer = grossSalaryPerMonth * 0.13;
+      const taxableIncome = earnings - ssnitEmployee;
       
       let incomeTax = 0;
-      // Note: This is a simplified tax calculation based on GRA 2024 rates.
-       if (taxableIncome > 5880 / 12) { // Monthly calculation
-            const monthlyTaxable = taxableIncome / 12;
-            let monthlyTax = 0;
-            if (monthlyTaxable <= 490) monthlyTax = 0;
-            else if (monthlyTaxable <= 600) monthlyTax = (monthlyTaxable - 490) * 0.05;
-            else if (monthlyTaxable <= 730) monthlyTax = 5.5 + (monthlyTaxable - 600) * 0.10;
-            else if (monthlyTaxable <= 3000) monthlyTax = 18.5 + (monthlyTaxable - 730) * 0.175;
-            else if (monthlyTaxable <= 16491.67) monthlyTax = 415.75 + (monthlyTaxable - 3000) * 0.25;
-            else if (monthlyTaxable <= 50000) monthlyTax = 3788.67 + (monthlyTaxable - 16491.67) * 0.30;
-            else monthlyTax = 13841.17 + (monthlyTaxable - 50000) * 0.35;
-            incomeTax = monthlyTax * 12;
-        }
-
+      // Simplified tax calculation for monthly income
+      if (taxableIncome > 490) {
+        if (taxableIncome <= 600) incomeTax = (taxableIncome - 490) * 0.05;
+        else if (taxableIncome <= 730) incomeTax = 5.5 + (taxableIncome - 600) * 0.10;
+        else if (taxableIncome <= 3000) incomeTax = 18.5 + (taxableIncome - 730) * 0.175;
+        else if (taxableIncome <= 16491.67) incomeTax = 415.75 + (taxableIncome - 3000) * 0.25;
+        else if (taxableIncome <= 50000) incomeTax = 3788.67 + (taxableIncome - 16491.67) * 0.30;
+        else incomeTax = 13841.17 + (taxableIncome - 50000) * 0.35;
+      }
 
       const customDeductionsTotal = employee.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
       const totalDeductions = ssnitEmployee + incomeTax + customDeductionsTotal;
-      const netSalary = gross - totalDeductions;
+      const netSalary = earnings - totalDeductions;
 
       return {
-          ...employee,
+          grossSalary: grossSalaryPerMonth,
           ssnitEmployee,
           ssnitEmployer,
           incomeTax,
           netSalary,
           deductions: employee.deductions || [],
+          arrears: employee.arrears || [],
       };
   };
-
-  const getOrCreateDeductionsCategory = async () => {
-    const categoryName = 'Staff Deductions';
-    const categoriesRef = collection(db, "transaction-categories");
-    const q = query(categoriesRef, where("name", "==", categoryName), where("type", "==", "expense"));
-    
-    const querySnapshot = await getDocs(q);
-    if (!querySnapshot.empty) {
-      return querySnapshot.docs[0].id;
-    } else {
-      const newCategory = await addDoc(categoriesRef, {
-        name: categoryName,
-        type: 'expense'
-      });
-      return newCategory.id;
-    }
-  }
 
   const handleRunPayroll = async () => {
     setIsProcessing(true);
@@ -128,11 +110,18 @@ export default function PayrollPage() {
     }
     
     try {
+        const batch = writeBatch(db);
+
         const payslips = activeStaff.map(employee => {
             const calculated = calculatePayrollForEmployee(employee);
+            
+            // Clear arrears after calculating them for this payroll
+            const staffRef = doc(db, "staff", employee.id);
+            batch.update(staffRef, { arrears: [] });
+
             return {
-                id: calculated.id,
-                staffName: calculated.name,
+                id: employee.id,
+                staffName: employee.name,
                 period: period,
                 grossSalary: calculated.grossSalary,
                 ssnitEmployee: calculated.ssnitEmployee,
@@ -140,6 +129,7 @@ export default function PayrollPage() {
                 incomeTax: calculated.incomeTax,
                 netSalary: calculated.netSalary,
                 deductions: calculated.deductions,
+                arrears: calculated.arrears,
             };
         });
 
@@ -154,7 +144,9 @@ export default function PayrollPage() {
         };
 
         const payrollRunRef = doc(collection(db, "payroll-runs"));
-        await addDoc(collection(db, "payroll-runs"), newPayrollRun);
+        batch.set(payrollRunRef, newPayrollRun);
+        
+        await batch.commit();
         
         toast({
             title: 'Payroll Processed',
