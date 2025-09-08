@@ -77,6 +77,7 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
 
   const customDeductionsTotal = payslip.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
   const totalDeductions = payslip.ssnitEmployee + payslip.incomeTax + customDeductionsTotal;
+  const arrearsTotal = payslip.arrears?.reduce((acc, d) => acc + d.amount, 0) || 0;
 
   return (
     <div className="p-4">
@@ -118,6 +119,12 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
                 <span>Gross Salary</span>
                 <span>GHS {payslip.grossSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
+             {payslip.arrears?.map((arrear, index) => (
+              <div key={index} className="detail-row flex justify-between py-2 border-b border-gray-200">
+                <span>{arrear.name}</span>
+                <span>GHS {arrear.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            ))}
         </section>
 
         <section className="mt-4">

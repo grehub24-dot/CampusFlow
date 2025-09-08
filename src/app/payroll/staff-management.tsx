@@ -2,7 +2,7 @@
 'use client'
 
 import React from 'react';
-import type { StaffMember } from '@/types';
+import type { StaffMember, StaffArrears } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { doc, addDoc, updateDoc, deleteDoc, collection } from "firebase/firestore";
 import { db } from '@/lib/firebase';
@@ -64,15 +64,16 @@ export function StaffManagement({ staff, isLoading }: StaffManagementProps) {
         const taxableIncome = gross - ssnitEmployee;
         
         let incomeTax = 0;
-        // Note: This is a simplified tax calculation.
-        // In a real-world scenario, consult the official graduated rates from the GRA.
-        if (taxableIncome > 50000) incomeTax += (taxableIncome - 50000) * 0.35;
-        if (taxableIncome > 10000) incomeTax += (Math.min(taxableIncome, 50000) - 10000) * 0.30;
-        if (taxableIncome > 3000) incomeTax += (Math.min(taxableIncome, 10000) - 3000) * 0.25;
-        if (taxableIncome > 1000) incomeTax += (Math.min(taxableIncome, 3000) - 1000) * 0.175;
-        if (taxableIncome > 500) incomeTax += (Math.min(taxableIncome, 1000) - 500) * 0.10;
-        if (taxableIncome > 365) incomeTax += (Math.min(taxableIncome, 500) - 365) * 0.05;
-
+        // Note: This is a simplified tax calculation based on GRA 2024 rates.
+        if (taxableIncome > 5880) {
+            if (taxableIncome <= 6000) incomeTax += (taxableIncome - 5880) * 0.05;
+            else if (taxableIncome <= 7300) incomeTax += (120 * 0.05) + ((taxableIncome - 6000) * 0.10);
+            else if (taxableIncome <= 20000) incomeTax += (120 * 0.05) + (1300 * 0.10) + ((taxableIncome - 7300) * 0.15);
+            else if (taxableIncome <= 38000) incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + ((taxableIncome - 20000) * 0.20);
+            else if (taxableIncome <= 440000) incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + (18000 * 0.20) + ((taxableIncome - 38000) * 0.25);
+            else if (taxableIncome <= 600000) incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + (18000 * 0.20) + (402000 * 0.25) + ((taxableIncome - 440000) * 0.30);
+            else incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + (18000 * 0.20) + (402000 * 0.25) + (160000 * 0.30) + ((taxableIncome - 600000) * 0.35);
+        }
 
         const customDeductionsTotal = employee.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
         const totalDeductions = ssnitEmployee + incomeTax + customDeductionsTotal;
@@ -94,6 +95,16 @@ export function StaffManagement({ staff, isLoading }: StaffManagementProps) {
 
             if (selectedStaff) {
                 const staffDocRef = doc(db, "staff", selectedStaff.id);
+                // Calculate arrears
+                if (values.grossSalary !== selectedStaff.grossSalary) {
+                    const arrearsAmount = values.grossSalary - selectedStaff.grossSalary;
+                    const newArrears: StaffArrears = {
+                        name: 'Salary Arrears',
+                        amount: arrearsAmount,
+                    };
+                    data.arrears = [...(selectedStaff.arrears || []), newArrears];
+                }
+
                 await updateDoc(staffDocRef, data);
                 toast({ title: 'Staff Updated', description: 'The staff member details have been updated.' });
             } else {

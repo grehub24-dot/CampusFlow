@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { collection, onSnapshot, doc, addDoc, query, getDocs, where, writeBatch } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, query, getDocs, where, writeBatch, updateDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { format, getYear } from 'date-fns';
 import { Loader2, PlayCircle } from 'lucide-react';
@@ -54,19 +54,22 @@ export default function PayrollPage() {
   }, []);
 
   const calculatePayrollForEmployee = (employee: StaffMember) => {
-      const gross = employee.grossSalary;
-      const ssnitEmployee = gross * 0.055;
-      const taxableIncome = gross - ssnitEmployee;
+      const arrearsTotal = employee.arrears?.reduce((acc, d) => acc + d.amount, 0) || 0;
+      const gross = employee.grossSalary + arrearsTotal;
+      const ssnitEmployee = employee.grossSalary * 0.055;
+      const taxableIncome = employee.grossSalary - ssnitEmployee;
       
       let incomeTax = 0;
       // Note: This is a simplified tax calculation based on GRA 2024 rates.
-      if (taxableIncome > 600000) incomeTax += (taxableIncome - 600000) * 0.35;
-      if (taxableIncome > 440000) incomeTax += (Math.min(taxableIncome, 600000) - 440000) * 0.30;
-      if (taxableIncome > 38000) incomeTax += (Math.min(taxableIncome, 440000) - 38000) * 0.25;
-      if (taxableIncome > 20000) incomeTax += (Math.min(taxableIncome, 38000) - 20000) * 0.20;
-      if (taxableIncome > 7300) incomeTax += (Math.min(taxableIncome, 20000) - 7300) * 0.15;
-      if (taxableIncome > 6000) incomeTax += (Math.min(taxableIncome, 7300) - 6000) * 0.10;
-      if (taxableIncome > 5880) incomeTax += (Math.min(taxableIncome, 6000) - 5880) * 0.05;
+      if (taxableIncome > 5880) {
+        if (taxableIncome <= 6000) incomeTax += (taxableIncome - 5880) * 0.05;
+        else if (taxableIncome <= 7300) incomeTax += (120 * 0.05) + ((taxableIncome - 6000) * 0.10);
+        else if (taxableIncome <= 20000) incomeTax += (120 * 0.05) + (1300 * 0.10) + ((taxableIncome - 7300) * 0.15);
+        else if (taxableIncome <= 38000) incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + ((taxableIncome - 20000) * 0.20);
+        else if (taxableIncome <= 440000) incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + (18000 * 0.20) + ((taxableIncome - 38000) * 0.25);
+        else if (taxableIncome <= 600000) incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + (18000 * 0.20) + (402000 * 0.25) + ((taxableIncome - 440000) * 0.30);
+        else incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + (18000 * 0.20) + (402000 * 0.25) + (160000 * 0.30) + ((taxableIncome - 600000) * 0.35);
+      }
 
 
       const customDeductionsTotal = employee.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
@@ -79,6 +82,7 @@ export default function PayrollPage() {
           incomeTax,
           netSalary,
           deductions: employee.deductions || [],
+          arrears: employee.arrears || [],
       };
   };
 
@@ -133,6 +137,7 @@ export default function PayrollPage() {
                 incomeTax: calculated.incomeTax,
                 netSalary: calculated.netSalary,
                 deductions: calculated.deductions,
+                arrears: calculated.arrears,
             };
         });
 
@@ -153,6 +158,14 @@ export default function PayrollPage() {
         // Add the new payroll run to the batch
         const payrollRunRef = doc(collection(db, "payroll-runs"));
         batch.set(payrollRunRef, newPayrollRun);
+        
+        // Clear arrears for staff members after including in payroll
+        activeStaff.forEach(employee => {
+          if (employee.arrears && employee.arrears.length > 0) {
+            const staffRef = doc(db, "staff", employee.id);
+            batch.update(staffRef, { arrears: [] });
+          }
+        });
 
         payslips.forEach(payslip => {
             if (payslip.deductions && payslip.deductions.length > 0) {

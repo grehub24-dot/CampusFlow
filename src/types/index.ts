@@ -3,6 +3,7 @@
 
 
 
+
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -182,6 +183,11 @@ export type StaffDeduction = {
   amount: number;
 }
 
+export type StaffArrears = {
+  name: string;
+  amount: number;
+}
+
 export type StaffMember = {
     id: string;
     name: string;
@@ -198,6 +204,7 @@ export type StaffMember = {
     momoNumber?: string;
     status: 'Active' | 'Inactive';
     deductions?: StaffDeduction[];
+    arrears?: StaffArrears[];
 }
 
 export type Payslip = {
@@ -209,6 +216,7 @@ export type Payslip = {
     incomeTax: number;
     netSalary: number;
     deductions: StaffDeduction[];
+    arrears: StaffArrears[];
 }
 
 export type PayrollRun = {
