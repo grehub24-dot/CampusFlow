@@ -6,6 +6,7 @@
 
 
 
+
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -210,6 +211,7 @@ export type StaffMember = {
     qualification?: string;
     subjectsTaught?: string;
     notes?: string;
+    deductions?: StaffDeduction[];
 }
 
 export type Payslip = {

@@ -42,7 +42,10 @@ export const getStaffColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<S
     header: "Employment Date",
     cell: ({ row }) => {
         const date = row.getValue("employmentDate") as string;
-        return date ? format(new Date(date), 'PPP') : 'N/A';
+        if (!date || new Date(date).toString() === 'Invalid Date') {
+            return 'N/A';
+        }
+        return format(new Date(date), 'PPP');
     }
   },
   {

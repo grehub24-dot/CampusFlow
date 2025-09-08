@@ -105,7 +105,11 @@ export default function StaffPage() {
             const currentSalaryDetails = selectedStaff ? { grossSalary: selectedStaff.grossSalary, netSalary: selectedStaff.netSalary } : null;
 
             const payrollCalculations = calculatePayrollForEmployee(values);
-            const data: Partial<StaffMember> = { ...values, ...payrollCalculations };
+            const data: Partial<StaffMember> & { employmentDate?: string } = {
+                ...values,
+                ...payrollCalculations,
+                employmentDate: values.employmentDate?.toISOString(),
+            };
 
             if (selectedStaff) {
                 // Update

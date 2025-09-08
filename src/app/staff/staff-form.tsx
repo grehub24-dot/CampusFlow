@@ -78,10 +78,18 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
         notes: defaultValues?.notes || '',
     })
   }, [defaultValues, form]);
+  
+  const internalOnSubmit: SubmitHandler<FormValues> = (values) => {
+    const dataToSubmit = {
+      ...values,
+      employmentDate: values.employmentDate ? values.employmentDate : undefined,
+    };
+    onSubmit(dataToSubmit);
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(internalOnSubmit)} className="space-y-6">
         <div>
             <h3 className="text-lg font-medium mb-2">Personal & Role Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
