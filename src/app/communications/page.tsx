@@ -171,9 +171,9 @@ export default function CommunicationsPage() {
       if (doc.exists()) {
         setBalance(doc.data().smsBalance || 0);
       } else {
-        // If the document doesn't exist, create it with a default balance of 10.
-        await setDoc(billingSettingsRef, { smsBalance: 10 });
-        setBalance(50);
+        // If the document doesn't exist, create it with a default balance of 5.
+        await setDoc(billingSettingsRef, { smsBalance: 5 });
+        setBalance(5);
       }
     });
 
@@ -547,4 +547,6 @@ export default function CommunicationsPage() {
   );
 }
  
+    
+
     
