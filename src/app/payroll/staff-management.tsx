@@ -61,7 +61,6 @@ export function StaffManagement({ staff, isLoading }: StaffManagementProps) {
     const calculatePayrollForEmployee = (employee: { grossSalary: number }) => {
         const gross = employee.grossSalary;
         const ssnitEmployee = gross * 0.055;
-        const ssnitEmployer = gross * 0.13;
         const taxableIncome = gross - ssnitEmployee;
         
         let incomeTax = 0;
@@ -73,7 +72,6 @@ export function StaffManagement({ staff, isLoading }: StaffManagementProps) {
 
         return {
             ssnitEmployee,
-            ssnitEmployer,
             taxableIncome,
             incomeTax,
             netSalary,

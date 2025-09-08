@@ -45,7 +45,6 @@ export default function PayrollPage() {
   const calculatePayrollForEmployee = (employee: StaffMember) => {
       const gross = employee.grossSalary;
       const ssnitEmployee = gross * 0.055;
-      const ssnitEmployer = gross * 0.13;
       const taxableIncome = gross - ssnitEmployee;
       
       // Simplified tax calculation for demonstration
@@ -59,8 +58,6 @@ export default function PayrollPage() {
       return {
           ...employee,
           ssnitEmployee: ssnitEmployee,
-          ssnitEmployer: ssnitEmployer,
-          taxableIncome: taxableIncome,
           incomeTax: incomeTax,
           netSalary: netSalary,
       };

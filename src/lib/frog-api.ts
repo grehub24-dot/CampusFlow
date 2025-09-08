@@ -24,7 +24,7 @@ async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string,
         }
         return {
             apiKey: apiKey,
-            senderId: settings.frogSenderId || 'LOVE',
+            senderId: settings.frogSenderId || 'CampusFlow',
             username: username,
         };
     }
