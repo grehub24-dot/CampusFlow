@@ -169,16 +169,18 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
                         </FormItem>
                     )}
                 />
-                {paymentMethod === 'Bank' && (
-                    <>
-                        <FormField control={form.control} name="bankName" render={({ field }) => (<FormItem><FormLabel>Bank Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="accountNumber" render={({ field }) => (<FormItem><FormLabel>Account Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    </>
-                )}
-                {paymentMethod === 'Mobile Money' && (
-                    <FormField control={form.control} name="momoNumber" render={({ field }) => (<FormItem><FormLabel>Mobile Money Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                )}
             </div>
+            {paymentMethod === 'Bank' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField control={form.control} name="bankName" render={({ field }) => (<FormItem><FormLabel>Bank Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="accountNumber" render={({ field }) => (<FormItem><FormLabel>Account Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                </div>
+            )}
+            {paymentMethod === 'Mobile Money' && (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField control={form.control} name="momoNumber" render={({ field }) => (<FormItem><FormLabel>Mobile Money Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 </div>
+            )}
         </div>
 
         <Separator />
