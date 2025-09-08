@@ -62,7 +62,11 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
       <div id="payslip-printable" className="payslip-container text-sm">
         <header className="header">
             <div className="school-info-container mb-4">
-                 {schoolInfo.logoUrl && (
+                <div>
+                    <h2 className="text-2xl font-bold">{schoolInfo.schoolName}</h2>
+                    <p>{schoolInfo.address}</p>
+                </div>
+                {schoolInfo.logoUrl && (
                     <Image
                         src={schoolInfo.logoUrl}
                         alt="School Logo"
@@ -71,10 +75,6 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
                         className="rounded-md object-contain"
                     />
                 )}
-                <div>
-                    <h2 className="text-2xl font-bold">{schoolInfo.schoolName}</h2>
-                    <p>{schoolInfo.address}</p>
-                </div>
             </div>
             <p className="font-semibold text-lg">Payslip for {payslip.period}</p>
         </header>
