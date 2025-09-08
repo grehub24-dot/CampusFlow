@@ -253,53 +253,6 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
                  </div>
             )}
         </div>
-
-        <Separator />
-        
-        <div>
-            <h3 className="text-lg font-medium mb-4">Custom Deductions</h3>
-            <div className="space-y-4">
-            {fields.map((field, index) => (
-                <div key={field.id} className="flex items-end gap-2">
-                <FormField
-                    control={form.control}
-                    name={`deductions.${index}.name`}
-                    render={({ field }) => (
-                    <FormItem className="flex-1">
-                        <FormLabel>Deduction Name</FormLabel>
-                        <FormControl><Input {...field} placeholder="e.g., Staff Loan" /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name={`deductions.${index}.amount`}
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Amount (GHS)</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
-                    <Trash2 className="h-4 w-4" />
-                </Button>
-                </div>
-            ))}
-            </div>
-            <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-4"
-            onClick={() => append({ name: '', amount: 0 })}
-            >
-            Add Deduction
-            </Button>
-        </div>
-
         <div className="flex justify-end">
           <Button type="submit">
             {defaultValues ? 'Save Changes' : 'Add Staff Member'}
@@ -309,3 +262,5 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
     </Form>
   )
 }
+
+    
