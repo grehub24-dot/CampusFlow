@@ -16,15 +16,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
-
-const deductionSchema = z.object({
-  name: z.string().min(1, "Deduction name is required"),
-  amount: z.coerce.number().min(0, "Amount must be a positive number"),
-});
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
@@ -34,11 +28,11 @@ const formSchema = z.object({
   subjectsTaught: z.string().optional(),
   notes: z.string().optional(),
   grossSalary: z.coerce.number().min(0, 'Salary must be a positive number.'),
-  paymentMethod: z.enum(['Bank', 'Mobile Money']).optional(),
   bankName: z.string().optional(),
   accountNumber: z.string().optional(),
   momoNumber: z.string().optional(),
   status: z.enum(['Active', 'Inactive']),
+  contractStatus: z.enum(['Probation', 'Full-Time', 'Part-Time', 'Attachment', 'Service']).optional(),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -55,11 +49,11 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
         name: defaultValues?.name || '',
         role: defaultValues?.role || '',
         grossSalary: defaultValues?.grossSalary || 0,
-        paymentMethod: defaultValues?.paymentMethod,
         bankName: defaultValues?.bankName || '',
         accountNumber: defaultValues?.accountNumber || '',
         momoNumber: defaultValues?.momoNumber || '',
         status: defaultValues?.status || 'Active',
+        contractStatus: defaultValues?.contractStatus,
         employmentDate: defaultValues?.employmentDate ? new Date(defaultValues.employmentDate) : undefined,
         qualification: defaultValues?.qualification || '',
         subjectsTaught: defaultValues?.subjectsTaught || '',
@@ -67,23 +61,17 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
     }
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "deductions"
-  });
-
-  const paymentMethod = form.watch('paymentMethod');
 
   React.useEffect(() => {
     form.reset({
         name: defaultValues?.name || '',
         role: defaultValues?.role || '',
         grossSalary: defaultValues?.grossSalary || 0,
-        paymentMethod: defaultValues?.paymentMethod,
         bankName: defaultValues?.bankName || '',
         accountNumber: defaultValues?.accountNumber || '',
         momoNumber: defaultValues?.momoNumber || '',
         status: defaultValues?.status || 'Active',
+        contractStatus: defaultValues?.contractStatus,
         employmentDate: defaultValues?.employmentDate ? new Date(defaultValues.employmentDate) : undefined,
         qualification: defaultValues?.qualification || '',
         subjectsTaught: defaultValues?.subjectsTaught || '',
@@ -130,6 +118,26 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
                                 <SelectContent>
                                     <SelectItem value="Active">Active</SelectItem>
                                     <SelectItem value="Inactive">Inactive</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="contractStatus"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Contract Status</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select contract status..." /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Probation">Probation</SelectItem>
+                                    <SelectItem value="Full-Time">Full-Time</SelectItem>
+                                    <SelectItem value="Part-Time">Part-Time</SelectItem>
+                                    <SelectItem value="Attachment">Attachment</SelectItem>
+                                    <SelectItem value="Service">Service</SelectItem>
                                 </SelectContent>
                             </Select>
                             <FormMessage />

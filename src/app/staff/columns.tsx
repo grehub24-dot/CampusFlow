@@ -51,6 +51,14 @@ export const getStaffColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<S
     cell: ({ row }) => formatCurrency(row.getValue("grossSalary"))
   },
   {
+    accessorKey: "contractStatus",
+    header: "Contract Status",
+    cell: ({ row }) => {
+      const status = row.getValue("contractStatus") as string;
+      return status ? <Badge variant="outline">{status}</Badge> : null;
+    }
+  },
+  {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
