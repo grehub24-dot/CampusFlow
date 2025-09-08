@@ -1,5 +1,6 @@
 
 
+
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -172,4 +173,40 @@ export type Bundle = {
 export type OtpResponse = {
   status: "SUCCESS" | "ERROR" | "FAILED";
   message: string;
+}
+
+export type StaffMember = {
+    id: string;
+    name: string;
+    role: string;
+    grossSalary: number;
+    ssnitEmployee: number;
+    ssnitEmployer: number;
+    taxableIncome: number;
+    incomeTax: number;
+    netSalary: number;
+    paymentMethod: 'Bank' | 'Mobile Money';
+    bankName?: string;
+    accountNumber?: string;
+    momoNumber?: string;
+    status: 'Active' | 'Inactive';
+}
+
+export type Payslip = {
+    id: string; // Use staffId for this
+    staffName: string;
+    period: string; // e.g., "May 2024"
+    grossSalary: number;
+    ssnitEmployee: number;
+    incomeTax: number;
+    netSalary: number;
+}
+
+export type PayrollRun = {
+    id: string;
+    runDate: string;
+    period: string;
+    totalAmount: number;
+    employeeCount: number;
+    payslips: Payslip[];
 }

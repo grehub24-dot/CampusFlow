@@ -20,8 +20,8 @@ export default function IncomeExpensePage() {
                  <div className="mx-auto bg-muted rounded-full p-4">
                     <DollarSign className="h-12 w-12 text-muted-foreground" />
                 </div>
-                <CardTitle className="mt-4 text-2xl">Income & Expense Tracking Coming Soon</CardTitle>
-                <CardDescription>This section is under active development. You'll soon be able to log transactions, view financial reports, and manage budgets here.</CardDescription>
+                <CardTitle className="mt-4 text-2xl">Income & Expense Tracking</CardTitle>
+                <CardDescription>This feature is coming soon. The next step is to build the UI for logging transactions and viewing financial reports.</CardDescription>
             </CardHeader>
         </Card>
       </div>
