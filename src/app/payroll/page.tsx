@@ -7,13 +7,22 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { collection, onSnapshot, doc, addDoc, query, getDocs, where, writeBatch } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { format } from 'date-fns';
+import { format, getYear } from 'date-fns';
 import { Loader2, PlayCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StaffManagement } from './staff-management';
 import { PayrollHistory } from './payroll-history';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import type { StaffMember, PayrollRun } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+
+const months = [
+    "January", "February", "March", "April", "May", "June", 
+    "July", "August", "September", "October", "November", "December"
+];
+
+const years = Array.from({ length: 5 }, (_, i) => getYear(new Date()) - i);
 
 export default function PayrollPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -21,6 +30,8 @@ export default function PayrollPage() {
   const [isLoadingStaff, setIsLoadingStaff] = useState(true);
   const [isLoadingRuns, setIsLoadingRuns] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMMM'));
+  const [selectedYear, setSelectedYear] = useState(format(new Date(), 'yyyy'));
   const { toast } = useToast();
 
   useEffect(() => {
@@ -84,7 +95,7 @@ export default function PayrollPage() {
 
   const handleRunPayroll = async () => {
     setIsProcessing(true);
-    const period = format(new Date(), 'MMMM yyyy');
+    const period = `${selectedMonth} ${selectedYear}`;
     
     const existingRun = payrollRuns.find(run => run.period === period);
     if (existingRun) {
@@ -186,9 +197,34 @@ export default function PayrollPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirm Payroll Run</AlertDialogTitle>
               <AlertDialogDescription>
-                This will process payroll for all active staff for the current month, <strong>{format(new Date(), 'MMMM yyyy')}</strong>. This action cannot be undone. Are you sure you want to continue?
+                Select the period to process payroll for all active staff. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                     <div>
+                        <Label htmlFor="month">Month</Label>
+                        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                            <SelectTrigger id="month"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {months.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                     </div>
+                     <div>
+                        <Label htmlFor="year">Year</Label>
+                        <Select value={selectedYear} onValueChange={setSelectedYear}>
+                            <SelectTrigger id="year"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                     </div>
+                </div>
+                 <p className="text-sm text-center text-muted-foreground">
+                    You are about to run payroll for <strong>{selectedMonth} {selectedYear}</strong>.
+                 </p>
+            </div>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleRunPayroll} disabled={isProcessing}>
