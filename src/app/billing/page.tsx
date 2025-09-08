@@ -284,7 +284,6 @@ function CheckoutModal({
           
           {/* Right side: Invoice Details */}
           <div className="bg-[#EBF3FF] p-8 space-y-6">
-             <Image src="https://picsum.photos/100/40" width={100} height={40} alt="Frog Logo" data-ai-hint="logo" />
             
              <Card>
                 <CardHeader>
@@ -298,7 +297,6 @@ function CheckoutModal({
                    <div className="flex justify-between">
                      <span>Description:</span>
                      <span className="font-medium text-right flex items-center gap-1">
-                        <Image src="https://picsum.photos/16/16" width={16} height={16} alt="frog icon" data-ai-hint="logo" />
                          CF Invoice Payment
                      </span>
                    </div>

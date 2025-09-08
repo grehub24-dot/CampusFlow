@@ -77,7 +77,7 @@ export default function CommunicationsPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [smsTemplates, setSmsTemplates] = useState<Record<string, CommunicationTemplate>>({});
   const [emailTemplates, setEmailTemplates] = useState<Record<string, CommunicationTemplate>>({});
-  const [balance, setBalance] = useState<number>(0); 
+  const [balance, setBalance] = useState<number>(5); 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { toast } = useToast();
@@ -171,9 +171,9 @@ export default function CommunicationsPage() {
       if (doc.exists()) {
         setBalance(doc.data().smsBalance || 0);
       } else {
-        // If the document doesn't exist, create it with a default balance of 10.
-        await setDoc(billingSettingsRef, { smsBalance: 10 });
-        setBalance(10);
+        // If the document doesn't exist, create it with a default balance of 5.
+        await setDoc(billingSettingsRef, { smsBalance: 5 });
+        setBalance(5);
       }
     });
 
