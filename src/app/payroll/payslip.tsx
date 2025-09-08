@@ -82,8 +82,8 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
     <div className="p-4">
       <div id="payslip-printable" className="payslip-container text-sm bg-white text-black">
         <header className="header text-center mb-4">
-            {schoolInfo.logoUrl && (
-                <div className="flex justify-center mb-2">
+             <div className="flex justify-center items-center gap-4">
+                {schoolInfo.logoUrl && (
                     <Image
                         src={schoolInfo.logoUrl}
                         alt="School Logo"
@@ -91,9 +91,18 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
                         height={60}
                         className="object-contain"
                     />
-                </div>
-            )}
-            <h2 className="school-name text-2xl font-bold">{schoolInfo.schoolName}</h2>
+                )}
+                <h2 className="school-name text-2xl font-bold">{schoolInfo.schoolName}</h2>
+                 {schoolInfo.logoUrl && (
+                    <Image
+                        src={schoolInfo.logoUrl}
+                        alt="School Logo"
+                        width={60}
+                        height={60}
+                        className="object-contain"
+                    />
+                )}
+            </div>
             <p>{schoolInfo.address}</p>
             <p className="payslip-title font-semibold text-lg mt-2">Payslip for {payslip.period}</p>
         </header>
