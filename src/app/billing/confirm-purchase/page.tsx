@@ -30,14 +30,14 @@ function ConfirmPurchaseContent() {
     generateOtp(confirmationPhone).then((res) => {
       if (res.status === 'SUCCESS') {
         toast({
-          title: 'Confirmation OTP Sent',
-          description: `An OTP has been sent to the confirmation number.`,
+          title: 'Confirmation Code Sent',
+          description: `A 6-digit code has been sent to the confirmation number.`,
         });
       } else {
         toast({
           variant: 'destructive',
-          title: 'Failed to Send OTP',
-          description: 'Could not send confirmation OTP. Please try again.',
+          title: 'Failed to Send Code',
+          description: 'Could not send confirmation code. Please try again.',
         });
       }
     });
@@ -80,7 +80,7 @@ function ConfirmPurchaseContent() {
     <>
         <PageHeader 
             title="Confirm Your Purchase"
-            description="Enter the final OTP to complete the transaction."
+            description="Enter the final 6-digit code to complete the transaction."
         />
         <div className="max-w-md mx-auto">
             <Card>
@@ -95,12 +95,12 @@ function ConfirmPurchaseContent() {
                         <Timer className="h-4 w-4" />
                         <AlertTitle>Waiting for Payment Confirmation</AlertTitle>
                         <AlertDescription>
-                            Your payment is being processed. This can take up to 5 minutes. Once you enter the OTP, your balance will be updated.
+                            Your payment is being processed. This can take up to 5 minutes. Once you enter the 6-digit code, your balance will be updated.
                         </AlertDescription>
                     </Alert>
 
                     <div className="space-y-2">
-                        <Label htmlFor="otp">Confirmation OTP</Label>
+                        <Label htmlFor="otp">Confirmation Code</Label>
                         <Input 
                             id="otp" 
                             value={otp} 
