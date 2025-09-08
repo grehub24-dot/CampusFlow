@@ -92,7 +92,7 @@ export async function sendSms(recipients: string[], message: string) {
   }
 }
 
-export async function generateOtp(phoneNumber: string): Promise<OtpResponse> {
+export async function generateVerificationCode(phoneNumber: string): Promise<OtpResponse> {
   const url = `${FROG_API_BASE_URL_V3}/sms/otp/generate`;
   try {
     const credentials = await getFrogCredentials();
@@ -112,7 +112,7 @@ export async function generateOtp(phoneNumber: string): Promise<OtpResponse> {
         number: phoneNumber,
         expiry: 5, // 5 minutes
         length: 6,
-        messagetemplate: 'Your verification code for CampusFlow is: %OTPCODE%. It expires in %EXPIRY% minutes.',
+        messagetemplate: 'Your verification code for CompusFlow is: %OTPCODE%. It expires in %EXPIRY% minutes.',
         type: 'NUMERIC',
         senderid: senderId,
       }),
@@ -125,7 +125,45 @@ export async function generateOtp(phoneNumber: string): Promise<OtpResponse> {
 
     return data;
   } catch (error) {
-    console.error('Error generating OTP:', error);
+    console.error('Error generating verification code:', error);
+    return { status: 'ERROR', message: (error as Error).message };
+  }
+}
+
+export async function generateActivationCode(phoneNumber: string): Promise<OtpResponse> {
+  const url = `${FROG_API_BASE_URL_V3}/sms/otp/generate`;
+  try {
+    const credentials = await getFrogCredentials();
+    if (!credentials) {
+      throw new Error("Frog API credentials are not configured.");
+    }
+    const { apiKey, senderId, username } = credentials;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'API-KEY': apiKey,
+        'USERNAME': username,
+      },
+      body: JSON.stringify({
+        number: phoneNumber,
+        expiry: 20, // 20 minutes
+        length: 8,
+        messagetemplate: 'Your activation code for CompusFlow is: %OTPCODE%. It expires in %EXPIRY% minutes.',
+        type: 'NUMERIC',
+        senderid: senderId,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok || data.status !== 'SUCCESS') {
+       throw new Error(data.message || 'Failed to generate activation code');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error generating activation code:', error);
     return { status: 'ERROR', message: (error as Error).message };
   }
 }

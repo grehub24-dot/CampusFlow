@@ -10,7 +10,7 @@ import { collection, onSnapshot, query, where, orderBy, doc, setDoc, getDoc, wri
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider, CommunicationTemplate, Bundle } from '@/types';
-import { sendSms, generateOtp, verifyOtp } from '@/lib/frog-api';
+import { sendSms, generateVerificationCode, verifyOtp } from '@/lib/frog-api';
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -169,13 +169,7 @@ export default function CommunicationsPage() {
     const billingSettingsRef = doc(db, "settings", "billing");
     const unsubscribeBilling = onSnapshot(billingSettingsRef, async (doc) => {
       if (doc.exists()) {
-        const currentBalance = doc.data().smsBalance;
-        if (typeof currentBalance !== 'number') {
-             await setDoc(billingSettingsRef, { smsBalance: 10 }, { merge: true });
-             setBalance(10);
-        } else {
-            setBalance(currentBalance);
-        }
+        setBalance(doc.data().smsBalance || 0);
       } else {
         // If the document doesn't exist, create it with a default balance of 10.
         await setDoc(billingSettingsRef, { smsBalance: 10 });
@@ -558,6 +552,7 @@ export default function CommunicationsPage() {
     
 
     
+
 
 
 

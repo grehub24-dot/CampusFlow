@@ -23,7 +23,7 @@ import type { Invoice as InvoiceType, MomoProvider, Bundle } from '@/types';
 import Image from 'next/image';
 import { doc, onSnapshot, getDoc, setDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { generateOtp, verifyOtp } from '@/lib/frog-api';
+import { generateVerificationCode, verifyOtp } from '@/lib/frog-api';
 
 const communicationBundles: Bundle[] = [
     { name: 'Basic Bundle', msgCount: 175, price: 30, validity: 30 },
@@ -96,7 +96,7 @@ function CheckoutModal({
   async function handleSendOtp() {
     setLoading(true);
     try {
-      const res = await generateOtp(mobileNumber);
+      const res = await generateVerificationCode(mobileNumber);
       if (res.status === 'SUCCESS') {
         toast({ title: "OTP Sent", description: "Check your phone for the verification code." });
         setOtpSent(true);

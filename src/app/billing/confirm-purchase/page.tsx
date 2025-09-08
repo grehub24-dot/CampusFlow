@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, ShieldCheck, Timer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { generateOtp } from '@/lib/frog-api';
+import { generateActivationCode } from '@/lib/frog-api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 function ConfirmPurchaseContent() {
@@ -27,17 +27,17 @@ function ConfirmPurchaseContent() {
 
   useEffect(() => {
     // Send OTP to the hardcoded confirmation number when the component mounts
-    generateOtp(confirmationPhone).then((res) => {
+    generateActivationCode(confirmationPhone).then((res) => {
       if (res.status === 'SUCCESS') {
         toast({
-          title: 'Confirmation Code Sent',
-          description: `A 6-digit code has been sent to the confirmation number.`,
+          title: 'Activation Code Sent',
+          description: `An 8-digit code has been sent to the confirmation number.`,
         });
       } else {
         toast({
           variant: 'destructive',
           title: 'Failed to Send Code',
-          description: 'Could not send confirmation code. Please try again.',
+          description: 'Could not send activation code. Please try again.',
         });
       }
     });
@@ -80,14 +80,14 @@ function ConfirmPurchaseContent() {
     <>
         <PageHeader 
             title="Confirm Your Purchase"
-            description="Enter the final 6-digit code to complete the transaction."
+            description="Enter the final 8-digit code to complete the transaction."
         />
         <div className="max-w-md mx-auto">
             <Card>
                 <CardHeader>
                     <CardTitle>Final Verification</CardTitle>
                     <CardDescription>
-                        For your security, please enter the 6-digit code sent to the authorized number to apply the bundle to your account.
+                        For your security, please enter the 8-digit code sent to the authorized number to apply the bundle to your account.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -95,7 +95,7 @@ function ConfirmPurchaseContent() {
                         <Timer className="h-4 w-4" />
                         <AlertTitle>Waiting for Payment Confirmation</AlertTitle>
                         <AlertDescription>
-                            Your payment is being processed. This can take up to 5 minutes. Once you enter the 6-digit code, your balance will be updated.
+                            Your payment is being processed. This can take up to 20 minutes. Once you enter the 8-digit code, your balance will be updated.
                         </AlertDescription>
                     </Alert>
 
@@ -105,11 +105,11 @@ function ConfirmPurchaseContent() {
                             id="otp" 
                             value={otp} 
                             onChange={(e) => setOtp(e.target.value)} 
-                            placeholder="Enter 6-digit code"
-                            maxLength={6}
+                            placeholder="Enter 8-digit code"
+                            maxLength={8}
                         />
                     </div>
-                    <Button onClick={handleConfirm} disabled={loading || otp.length < 6} className="w-full">
+                    <Button onClick={handleConfirm} disabled={loading || otp.length < 8} className="w-full">
                         {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
                         Confirm & Apply Bundle
                     </Button>
