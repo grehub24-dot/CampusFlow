@@ -38,13 +38,8 @@ export const getStaffColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<S
   },
   {
     accessorKey: "grossSalary",
-    header: "Gross Salary",
+    header: "Gross Salary (Annual)",
     cell: ({ row }) => formatCurrency(row.getValue("grossSalary"))
-  },
-  {
-    accessorKey: "netSalary",
-    header: "Net Salary",
-    cell: ({ row }) => formatCurrency(row.getValue("netSalary"))
   },
   {
     accessorKey: "status",

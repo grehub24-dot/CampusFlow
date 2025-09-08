@@ -122,7 +122,7 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
                 name="grossSalary"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Gross Salary (GHS)</FormLabel>
+                    <FormLabel>Gross Annual Salary (GHS)</FormLabel>
                     <FormControl><Input type="number" {...field} /></FormControl>
                     <FormMessage />
                     </FormItem>
