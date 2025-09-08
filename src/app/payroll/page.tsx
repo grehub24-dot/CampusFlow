@@ -59,9 +59,15 @@ export default function PayrollPage() {
       const taxableIncome = gross - ssnitEmployee;
       
       let incomeTax = 0;
-      if (taxableIncome > 3000) incomeTax = (taxableIncome - 3000) * 0.25;
-      else if (taxableIncome > 1000) incomeTax = (taxableIncome - 1000) * 0.175;
-      else if (taxableIncome > 500) incomeTax = (taxableIncome - 500) * 0.1;
+      // Note: This is a simplified tax calculation.
+      // In a real-world scenario, consult the official graduated rates from the GRA.
+      if (taxableIncome > 50000) incomeTax += (taxableIncome - 50000) * 0.35;
+      if (taxableIncome > 10000) incomeTax += (Math.min(taxableIncome, 50000) - 10000) * 0.30;
+      if (taxableIncome > 3000) incomeTax += (Math.min(taxableIncome, 10000) - 3000) * 0.25;
+      if (taxableIncome > 1000) incomeTax += (Math.min(taxableIncome, 3000) - 1000) * 0.175;
+      if (taxableIncome > 500) incomeTax += (Math.min(taxableIncome, 1000) - 500) * 0.10;
+      if (taxableIncome > 365) incomeTax += (Math.min(taxableIncome, 500) - 365) * 0.05;
+
 
       const customDeductionsTotal = employee.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
       const totalDeductions = ssnitEmployee + incomeTax + customDeductionsTotal;
