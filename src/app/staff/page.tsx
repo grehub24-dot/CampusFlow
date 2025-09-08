@@ -4,7 +4,7 @@
 import React from 'react';
 import type { StaffMember, StaffArrears } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { doc, addDoc, updateDoc, deleteDoc, collection } from "firebase/firestore";
+import { doc, addDoc, updateDoc, deleteDoc, collection, onSnapshot, query } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { SubmitHandler } from 'react-hook-form';
 
@@ -13,22 +13,33 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Loader2, PlusCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getStaffColumns } from './staff-columns';
+import { getStaffColumns } from './columns';
 import { StaffForm, FormValues } from './staff-form';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { PageHeader } from '@/components/page-header';
 
-type StaffManagementProps = {
-    staff: StaffMember[];
-    isLoading: boolean;
-}
-
-export function StaffManagement({ staff, isLoading }: StaffManagementProps) {
+export default function StaffPage() {
+    const [staff, setStaff] = React.useState<StaffMember[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
     const [selectedStaff, setSelectedStaff] = React.useState<StaffMember | null>(null);
     const [staffToDelete, setStaffToDelete] = React.useState<StaffMember | null>(null);
     const { toast } = useToast();
+    
+    React.useEffect(() => {
+        const staffQuery = query(collection(db, "staff"));
+        const unsubscribeStaff = onSnapshot(staffQuery, (snapshot) => {
+            setStaff(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StaffMember)));
+            setIsLoading(false);
+        });
+
+        return () => {
+            unsubscribeStaff();
+        };
+  }, []);
+
 
     const handleAddNew = () => {
         setSelectedStaff(null);
@@ -61,18 +72,22 @@ export function StaffManagement({ staff, isLoading }: StaffManagementProps) {
     const calculatePayrollForEmployee = (employee: { grossSalary: number, deductions?: {name: string, amount: number}[] }) => {
         const gross = employee.grossSalary;
         const ssnitEmployee = gross * 0.055;
+        const ssnitEmployer = gross * 0.13;
         const taxableIncome = gross - ssnitEmployee;
         
         let incomeTax = 0;
         // Note: This is a simplified tax calculation based on GRA 2024 rates.
-        if (taxableIncome > 5880) {
-            if (taxableIncome <= 6000) incomeTax += (taxableIncome - 5880) * 0.05;
-            else if (taxableIncome <= 7300) incomeTax += (120 * 0.05) + ((taxableIncome - 6000) * 0.10);
-            else if (taxableIncome <= 20000) incomeTax += (120 * 0.05) + (1300 * 0.10) + ((taxableIncome - 7300) * 0.15);
-            else if (taxableIncome <= 38000) incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + ((taxableIncome - 20000) * 0.20);
-            else if (taxableIncome <= 440000) incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + (18000 * 0.20) + ((taxableIncome - 38000) * 0.25);
-            else if (taxableIncome <= 600000) incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + (18000 * 0.20) + (402000 * 0.25) + ((taxableIncome - 440000) * 0.30);
-            else incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + (18000 * 0.20) + (402000 * 0.25) + (160000 * 0.30) + ((taxableIncome - 600000) * 0.35);
+        if (taxableIncome > 5880 / 12) { // Monthly calculation
+            const monthlyTaxable = taxableIncome / 12;
+            let monthlyTax = 0;
+            if (monthlyTaxable <= 490) monthlyTax = 0;
+            else if (monthlyTaxable <= 600) monthlyTax = (monthlyTaxable - 490) * 0.05;
+            else if (monthlyTaxable <= 730) monthlyTax = 5.5 + (monthlyTaxable - 600) * 0.10;
+            else if (monthlyTaxable <= 3000) monthlyTax = 18.5 + (monthlyTaxable - 730) * 0.175;
+            else if (monthlyTaxable <= 16491.67) monthlyTax = 415.75 + (monthlyTaxable - 3000) * 0.25;
+            else if (monthlyTaxable <= 50000) monthlyTax = 3788.67 + (monthlyTaxable - 16491.67) * 0.30;
+            else monthlyTax = 13841.17 + (monthlyTaxable - 50000) * 0.35;
+            incomeTax = monthlyTax * 12;
         }
 
         const customDeductionsTotal = employee.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
@@ -81,6 +96,7 @@ export function StaffManagement({ staff, isLoading }: StaffManagementProps) {
 
         return {
             ssnitEmployee,
+            ssnitEmployer,
             taxableIncome,
             incomeTax,
             netSalary,
@@ -95,16 +111,6 @@ export function StaffManagement({ staff, isLoading }: StaffManagementProps) {
 
             if (selectedStaff) {
                 const staffDocRef = doc(db, "staff", selectedStaff.id);
-                // Calculate arrears
-                if (values.grossSalary !== selectedStaff.grossSalary) {
-                    const arrearsAmount = values.grossSalary - selectedStaff.grossSalary;
-                    const newArrears: StaffArrears = {
-                        name: 'Salary Arrears',
-                        amount: arrearsAmount,
-                    };
-                    data.arrears = [...(selectedStaff.arrears || []), newArrears];
-                }
-
                 await updateDoc(staffDocRef, data);
                 toast({ title: 'Staff Updated', description: 'The staff member details have been updated.' });
             } else {
@@ -131,18 +137,19 @@ export function StaffManagement({ staff, isLoading }: StaffManagementProps) {
 
     return (
         <>
+            <PageHeader
+                title="Staff Management"
+                description="Manage all employees in the school."
+            >
+                <Button onClick={handleAddNew}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Staff
+                </Button>
+            </PageHeader>
             <Card>
                 <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle>All Staff</CardTitle>
-                            <CardDescription>Manage all employees in the school.</CardDescription>
-                        </div>
-                        <Button onClick={handleAddNew}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add Staff
-                        </Button>
-                    </div>
+                    <CardTitle>All Staff</CardTitle>
+                    <CardDescription>A list of all staff members in the system.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="rounded-md border">

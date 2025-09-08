@@ -5,17 +5,17 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { collection, onSnapshot, doc, addDoc, query, getDocs, where, writeBatch, updateDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, query, getDocs, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { format, getYear } from 'date-fns';
 import { Loader2, PlayCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { StaffManagement } from './staff-management';
 import { PayrollHistory } from './payroll-history';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import type { StaffMember, PayrollRun } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
 
 const months = [
     "January", "February", "March", "April", "May", "June", 
@@ -27,18 +27,17 @@ const years = Array.from({ length: 5 }, (_, i) => getYear(new Date()) - i);
 export default function PayrollPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
-  const [isLoadingStaff, setIsLoadingStaff] = useState(true);
   const [isLoadingRuns, setIsLoadingRuns] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMMM'));
   const [selectedYear, setSelectedYear] = useState(format(new Date(), 'yyyy'));
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     const staffQuery = query(collection(db, "staff"));
     const unsubscribeStaff = onSnapshot(staffQuery, (snapshot) => {
       setStaff(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StaffMember)));
-      setIsLoadingStaff(false);
     });
 
     const runsQuery = query(collection(db, "payroll-runs"));
@@ -54,22 +53,25 @@ export default function PayrollPage() {
   }, []);
 
   const calculatePayrollForEmployee = (employee: StaffMember) => {
-      const arrearsTotal = employee.arrears?.reduce((acc, d) => acc + d.amount, 0) || 0;
-      const gross = employee.grossSalary + arrearsTotal;
-      const ssnitEmployee = employee.grossSalary * 0.055;
-      const taxableIncome = employee.grossSalary - ssnitEmployee;
+      const gross = employee.grossSalary;
+      const ssnitEmployee = gross * 0.055;
+      const ssnitEmployer = gross * 0.13;
+      const taxableIncome = gross - ssnitEmployee;
       
       let incomeTax = 0;
       // Note: This is a simplified tax calculation based on GRA 2024 rates.
-      if (taxableIncome > 5880) {
-        if (taxableIncome <= 6000) incomeTax += (taxableIncome - 5880) * 0.05;
-        else if (taxableIncome <= 7300) incomeTax += (120 * 0.05) + ((taxableIncome - 6000) * 0.10);
-        else if (taxableIncome <= 20000) incomeTax += (120 * 0.05) + (1300 * 0.10) + ((taxableIncome - 7300) * 0.15);
-        else if (taxableIncome <= 38000) incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + ((taxableIncome - 20000) * 0.20);
-        else if (taxableIncome <= 440000) incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + (18000 * 0.20) + ((taxableIncome - 38000) * 0.25);
-        else if (taxableIncome <= 600000) incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + (18000 * 0.20) + (402000 * 0.25) + ((taxableIncome - 440000) * 0.30);
-        else incomeTax += (120 * 0.05) + (1300 * 0.10) + (12700 * 0.15) + (18000 * 0.20) + (402000 * 0.25) + (160000 * 0.30) + ((taxableIncome - 600000) * 0.35);
-      }
+       if (taxableIncome > 5880 / 12) { // Monthly calculation
+            const monthlyTaxable = taxableIncome / 12;
+            let monthlyTax = 0;
+            if (monthlyTaxable <= 490) monthlyTax = 0;
+            else if (monthlyTaxable <= 600) monthlyTax = (monthlyTaxable - 490) * 0.05;
+            else if (monthlyTaxable <= 730) monthlyTax = 5.5 + (monthlyTaxable - 600) * 0.10;
+            else if (monthlyTaxable <= 3000) monthlyTax = 18.5 + (monthlyTaxable - 730) * 0.175;
+            else if (monthlyTaxable <= 16491.67) monthlyTax = 415.75 + (monthlyTaxable - 3000) * 0.25;
+            else if (monthlyTaxable <= 50000) monthlyTax = 3788.67 + (monthlyTaxable - 16491.67) * 0.30;
+            else monthlyTax = 13841.17 + (monthlyTaxable - 50000) * 0.35;
+            incomeTax = monthlyTax * 12;
+        }
 
 
       const customDeductionsTotal = employee.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
@@ -79,10 +81,10 @@ export default function PayrollPage() {
       return {
           ...employee,
           ssnitEmployee,
+          ssnitEmployer,
           incomeTax,
           netSalary,
           deductions: employee.deductions || [],
-          arrears: employee.arrears || [],
       };
   };
 
@@ -134,10 +136,10 @@ export default function PayrollPage() {
                 period: period,
                 grossSalary: calculated.grossSalary,
                 ssnitEmployee: calculated.ssnitEmployee,
+                ssnitEmployer: calculated.ssnitEmployer,
                 incomeTax: calculated.incomeTax,
                 netSalary: calculated.netSalary,
                 deductions: calculated.deductions,
-                arrears: calculated.arrears,
             };
         });
 
@@ -151,44 +153,12 @@ export default function PayrollPage() {
             payslips: payslips,
         };
 
-        // --- Create expense transactions for deductions ---
-        const deductionCategoryId = await getOrCreateDeductionsCategory();
-        const batch = writeBatch(db);
-
-        // Add the new payroll run to the batch
         const payrollRunRef = doc(collection(db, "payroll-runs"));
-        batch.set(payrollRunRef, newPayrollRun);
-        
-        // Clear arrears for staff members after including in payroll
-        activeStaff.forEach(employee => {
-          if (employee.arrears && employee.arrears.length > 0) {
-            const staffRef = doc(db, "staff", employee.id);
-            batch.update(staffRef, { arrears: [] });
-          }
-        });
-
-        payslips.forEach(payslip => {
-            if (payslip.deductions && payslip.deductions.length > 0) {
-                payslip.deductions.forEach(deduction => {
-                    const transactionRef = doc(collection(db, "transactions"));
-                    batch.set(transactionRef, {
-                        type: 'expense',
-                        amount: deduction.amount,
-                        date: new Date().toISOString(),
-                        categoryId: deductionCategoryId,
-                        categoryName: 'Staff Deductions',
-                        description: `Deduction: ${deduction.name} for ${payslip.staffName} - ${period}`,
-                    });
-                });
-            }
-        });
-
-        await batch.commit();
-        // --- End of expense transaction logic ---
+        await addDoc(collection(db, "payroll-runs"), newPayrollRun);
         
         toast({
             title: 'Payroll Processed',
-            description: `Payroll for ${period} has been successfully processed for ${activeStaff.length} employees. Deductions recorded as expenses.`,
+            description: `Payroll for ${period} has been successfully processed for ${activeStaff.length} employees.`,
         });
 
     } catch (error) {
@@ -202,8 +172,8 @@ export default function PayrollPage() {
   return (
     <>
       <PageHeader
-        title="Payroll Management"
-        description="Manage staff salaries, deductions, and payment schedules."
+        title="Payroll"
+        description="Run monthly payroll and view historical records."
       >
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -254,18 +224,7 @@ export default function PayrollPage() {
         </AlertDialog>
       </PageHeader>
       
-      <Tabs defaultValue="staff">
-          <TabsList>
-              <TabsTrigger value="staff">Staff Management</TabsTrigger>
-              <TabsTrigger value="history">Payroll History</TabsTrigger>
-          </TabsList>
-          <TabsContent value="staff">
-              <StaffManagement staff={staff} isLoading={isLoadingStaff} />
-          </TabsContent>
-          <TabsContent value="history">
-              <PayrollHistory payrollRuns={payrollRuns} isLoading={isLoadingRuns} />
-          </TabsContent>
-      </Tabs>
+      <PayrollHistory payrollRuns={payrollRuns} isLoading={isLoadingRuns} />
     </>
   );
 }

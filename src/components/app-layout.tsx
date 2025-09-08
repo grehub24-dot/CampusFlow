@@ -18,12 +18,12 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  SidebarProvider,
   SidebarInset,
   SidebarTrigger,
   SidebarSeparator,
   SidebarRail,
-  useSidebar
+  useSidebar,
+  SidebarProvider,
 } from "@/components/ui/sidebar"
 import {
   LayoutDashboard,
@@ -49,6 +49,7 @@ const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/admissions", icon: UserPlus, label: "Admissions" },
   { href: "/students", icon: Users, label: "Students" },
+  { href: "/staff", icon: Briefcase, label: "Staff" },
   { href: "/payments", icon: CreditCard, label: "Payments" },
   { href: "/invoices", icon: Receipt, label: "Invoices" },
   { href: "/fees", icon: FileText, label: "Fees" },
@@ -57,7 +58,7 @@ const navItems = [
 ];
 
 const secondaryNavItems = [
-  { href: "/payroll", icon: Briefcase, label: "Payroll" },
+  { href: "/payroll", icon: DollarSign, label: "Payroll" },
   { href: "/income-expense", icon: DollarSign, label: "Income & Expense" },
   { href: "/billing", icon: CreditCard, label: "Billing" },
   { href: "/settings", icon: Settings, label: "Settings" },

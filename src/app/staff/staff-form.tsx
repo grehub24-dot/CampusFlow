@@ -19,11 +19,6 @@ const deductionSchema = z.object({
   amount: z.coerce.number().min(0, "Amount must be a positive number"),
 });
 
-const arrearsSchema = z.object({
-  name: z.string().min(1, "Arrears name is required"),
-  amount: z.coerce.number(),
-});
-
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
   role: z.string().min(1, 'Role is required.'),
@@ -34,7 +29,6 @@ const formSchema = z.object({
   momoNumber: z.string().optional(),
   status: z.enum(['Active', 'Inactive']),
   deductions: z.array(deductionSchema).optional(),
-  arrears: z.array(arrearsSchema).optional(),
 }).refine(data => {
     if (data.paymentMethod === 'Bank') {
         return !!data.bankName && !!data.accountNumber;
@@ -73,18 +67,12 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
         momoNumber: defaultValues?.momoNumber || '',
         status: defaultValues?.status || 'Active',
         deductions: defaultValues?.deductions || [],
-        arrears: defaultValues?.arrears || [],
     }
   });
 
-  const { fields: deductionFields, append: appendDeduction, remove: removeDeduction } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "deductions"
-  });
-  
-  const { fields: arrearsFields, append: appendArrears, remove: removeArrears } = useFieldArray({
-    control: form.control,
-    name: "arrears"
   });
 
   const paymentMethod = form.watch('paymentMethod');
@@ -100,7 +88,6 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
         momoNumber: defaultValues?.momoNumber || '',
         status: defaultValues?.status || 'Active',
         deductions: defaultValues?.deductions || [],
-        arrears: defaultValues?.arrears || [],
     })
   }, [defaultValues, form]);
 
@@ -196,93 +183,48 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
 
         <Separator />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-                <h3 className="text-lg font-medium mb-4">Custom Deductions</h3>
-                <div className="space-y-4">
-                {deductionFields.map((field, index) => (
-                    <div key={field.id} className="flex items-end gap-2">
-                    <FormField
-                        control={form.control}
-                        name={`deductions.${index}.name`}
-                        render={({ field }) => (
-                        <FormItem className="flex-1">
-                            <FormLabel>Deduction Name</FormLabel>
-                            <FormControl><Input {...field} placeholder="e.g., Staff Loan" /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name={`deductions.${index}.amount`}
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Amount (GHS)</FormLabel>
-                            <FormControl><Input type="number" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <Button type="button" variant="destructive" size="icon" onClick={() => removeDeduction(index)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                    </div>
-                ))}
-                </div>
-                <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={() => appendDeduction({ name: '', amount: 0 })}
-                >
-                Add Deduction
+        <div>
+            <h3 className="text-lg font-medium mb-4">Custom Deductions</h3>
+            <div className="space-y-4">
+            {fields.map((field, index) => (
+                <div key={field.id} className="flex items-end gap-2">
+                <FormField
+                    control={form.control}
+                    name={`deductions.${index}.name`}
+                    render={({ field }) => (
+                    <FormItem className="flex-1">
+                        <FormLabel>Deduction Name</FormLabel>
+                        <FormControl><Input {...field} placeholder="e.g., Staff Loan" /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name={`deductions.${index}.amount`}
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Amount (GHS)</FormLabel>
+                        <FormControl><Input type="number" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                    <Trash2 className="h-4 w-4" />
                 </Button>
-            </div>
-             <div>
-                <h3 className="text-lg font-medium mb-4">Salary Arrears</h3>
-                <div className="space-y-4">
-                {arrearsFields.map((field, index) => (
-                    <div key={field.id} className="flex items-end gap-2">
-                    <FormField
-                        control={form.control}
-                        name={`arrears.${index}.name`}
-                        render={({ field }) => (
-                        <FormItem className="flex-1">
-                            <FormLabel>Arrears For</FormLabel>
-                            <FormControl><Input {...field} placeholder="e.g., May Salary" /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name={`arrears.${index}.amount`}
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Amount (GHS)</FormLabel>
-                            <FormControl><Input type="number" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <Button type="button" variant="destructive" size="icon" onClick={() => removeArrears(index)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                    </div>
-                ))}
                 </div>
-                <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={() => appendArrears({ name: '', amount: 0 })}
-                >
-                Add Arrears
-                </Button>
+            ))}
             </div>
+            <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => append({ name: '', amount: 0 })}
+            >
+            Add Deduction
+            </Button>
         </div>
 
         <div className="flex justify-end">
