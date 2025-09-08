@@ -5,6 +5,7 @@
 
 
 
+
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -206,6 +207,10 @@ export type StaffMember = {
     status: 'Active' | 'Inactive';
     deductions?: StaffDeduction[];
     arrears?: StaffArrears[];
+    employmentDate?: string;
+    qualification?: string;
+    subjectsTaught?: string;
+    notes?: string;
 }
 
 export type Payslip = {
@@ -214,6 +219,7 @@ export type Payslip = {
     period: string; // e.g., "May 2024"
     grossSalary: number;
     ssnitEmployee: number;
+    ssnitEmployer: number;
     incomeTax: number;
     netSalary: number;
     deductions: StaffDeduction[];

@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { format } from "date-fns"
 
 type ColumnsProps = {
   onEdit: (staff: StaffMember) => void;
@@ -35,6 +36,14 @@ export const getStaffColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<S
   {
     accessorKey: "role",
     header: "Role",
+  },
+  {
+    accessorKey: "employmentDate",
+    header: "Employment Date",
+    cell: ({ row }) => {
+        const date = row.getValue("employmentDate") as string;
+        return date ? format(new Date(date), 'PPP') : 'N/A';
+    }
   },
   {
     accessorKey: "grossSalary",

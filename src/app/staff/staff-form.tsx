@@ -6,6 +6,10 @@ import { useForm, useFieldArray, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { StaffMember } from '@/types';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { CalendarIcon } from 'lucide-react';
+
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -13,6 +17,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Trash2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Textarea } from '@/components/ui/textarea';
 
 const deductionSchema = z.object({
   name: z.string().min(1, "Deduction name is required"),
@@ -22,6 +29,10 @@ const deductionSchema = z.object({
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
   role: z.string().min(1, 'Role is required.'),
+  employmentDate: z.date().optional(),
+  qualification: z.string().optional(),
+  subjectsTaught: z.string().optional(),
+  notes: z.string().optional(),
   grossSalary: z.coerce.number().min(0, 'Salary must be a positive number.'),
   paymentMethod: z.enum(['Bank', 'Mobile Money']),
   bankName: z.string().optional(),
@@ -67,6 +78,10 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
         momoNumber: defaultValues?.momoNumber || '',
         status: defaultValues?.status || 'Active',
         deductions: defaultValues?.deductions || [],
+        employmentDate: defaultValues?.employmentDate ? new Date(defaultValues.employmentDate) : undefined,
+        qualification: defaultValues?.qualification || '',
+        subjectsTaught: defaultValues?.subjectsTaught || '',
+        notes: defaultValues?.notes || '',
     }
   });
 
@@ -88,70 +103,126 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
         momoNumber: defaultValues?.momoNumber || '',
         status: defaultValues?.status || 'Active',
         deductions: defaultValues?.deductions || [],
+        employmentDate: defaultValues?.employmentDate ? new Date(defaultValues.employmentDate) : undefined,
+        qualification: defaultValues?.qualification || '',
+        subjectsTaught: defaultValues?.subjectsTaught || '',
+        notes: defaultValues?.notes || '',
     })
   }, [defaultValues, form]);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Role / Position</FormLabel>
-                    <FormControl><Input placeholder="e.g., Teacher" {...field} /></FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <FormField
-                control={form.control}
-                name="grossSalary"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Gross Annual Salary (GHS)</FormLabel>
-                    <FormControl><Input type="number" {...field} /></FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-            />
-             <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                <SelectItem value="Active">Active</SelectItem>
-                                <SelectItem value="Inactive">Inactive</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-        </div>
-        
-        <Separator />
-
         <div>
-            <h3 className="text-lg font-medium mb-2">Payment Details</h3>
+            <h3 className="text-lg font-medium mb-2">Personal & Role Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Role / Position</FormLabel>
+                        <FormControl><Input placeholder="e.g., Teacher" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Status</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Active">Active</SelectItem>
+                                    <SelectItem value="Inactive">Inactive</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+        </div>
+
+        <Separator />
+        
+        <div>
+            <h3 className="text-lg font-medium mb-2">Employment Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="employmentDate"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                        <FormLabel>Employment Date</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                )}
+                                >
+                                {field.value ? (
+                                    format(field.value, "PPP")
+                                ) : (
+                                    <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                            </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                            />
+                            </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                <FormField control={form.control} name="qualification" render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input placeholder="e.g., B.Ed. Basic Education" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="subjectsTaught" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Subjects / Classes Taught</FormLabel><FormControl><Input placeholder="e.g., Primary 4 English, Maths" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Notes</FormLabel><FormControl><Textarea placeholder="Any additional information..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+        </div>
+
+        <Separator />
+        
+         <div>
+            <h3 className="text-lg font-medium mb-2">Salary & Payment</h3>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="grossSalary"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Gross Annual Salary (GHS)</FormLabel>
+                        <FormControl><Input type="number" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
                  <FormField
                     control={form.control}
                     name="paymentMethod"
