@@ -10,6 +10,7 @@ import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-tabl
 import { getPayrollHistoryColumns } from './payroll-history-columns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { PayslipDetails } from './payslip';
+import { Button } from '@/components/ui/button';
 
 type PayrollHistoryProps = {
     payrollRuns: PayrollRun[];
