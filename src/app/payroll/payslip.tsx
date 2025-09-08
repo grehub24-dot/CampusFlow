@@ -14,12 +14,13 @@ interface PayslipDetailsProps {
     payslip: Payslip;
 }
 
-const DetailRow = ({ label, value, isBold = false }: { label: string, value: string | number, isBold?: boolean }) => (
-    <div className={`flex justify-between py-2 ${isBold ? 'font-bold' : ''}`}>
+const DetailRow = ({ label, value, isBold = false, isTotal=false }: { label: string, value: string | number, isBold?: boolean, isTotal?: boolean }) => (
+    <div className={`flex justify-between py-1 ${isBold ? 'font-bold' : ''}`}>
         <span>{label}</span>
-        <span>{typeof value === 'number' ? `GHS ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : value}</span>
+        <span>{isTotal ? 'GHS ' : ''}{typeof value === 'number' ? `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : value}</span>
     </div>
 );
+
 
 export function PayslipDetails({ payslip }: PayslipDetailsProps) {
   const { schoolInfo } = useSchoolInfo();
@@ -31,28 +32,27 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
   const handlePrint = () => {
     const printableArea = document.getElementById('payslip-printable');
     if (printableArea) {
-      const printWindow = window.open('', '', 'height=600,width=800');
+      const printWindow = window.open('', '', 'height=800,width=600');
       printWindow?.document.write('<html><head><title>Payslip</title>');
-      // A very basic styling for printing
+      
+      const tailwindStyles = Array.from(document.styleSheets).find(s => s.href?.includes('tailwind'))?.ownerNode as HTMLLinkElement | undefined;
+      const appStyles = Array.from(document.styleSheets).find(s => !s.href)?.ownerNode as HTMLStyleElement | undefined;
+
+      if(tailwindStyles) printWindow?.document.write(tailwindStyles.outerHTML);
+      if(appStyles) printWindow?.document.write(`<style>${appStyles.innerHTML}</style>`);
+      
       printWindow?.document.write(`
         <style>
-          body { font-family: sans-serif; }
-          .payslip-container { max-width: 800px; margin: auto; padding: 20px; }
-          .header { text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
-          .school-info-container { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; }
-          .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-          .section { margin-top: 20px; }
-          .section h3 { border-bottom: 1px solid #eee; padding-bottom: 5px; }
-          .flex-between { display: flex; justify-content: space-between; padding: 5px 0; }
-          .bold { font-weight: bold; }
-          hr { border: none; border-top: 1px solid #ccc; margin: 1rem 0; }
+          body { -webkit-print-color-adjust: exact; }
+          .payslip-container { max-width: 500px; margin: auto; padding: 20px; }
+          .no-print { display: none; }
         </style>
       `);
-      printWindow?.document.write('</head><body>');
+
+      printWindow?.document.write('</head><body onload="window.print(); window.close();">');
       printWindow?.document.write(printableArea.innerHTML);
       printWindow?.document.write('</body></html>');
       printWindow?.document.close();
-      printWindow?.print();
     }
   }
 
@@ -61,12 +61,12 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
 
   return (
     <div className="p-4">
-      <div id="payslip-printable" className="payslip-container text-sm">
-        <header className="header">
-            <div className="school-info-container mb-4 text-center">
-                <h2 className="text-2xl font-bold">{schoolInfo.schoolName}</h2>
-                <p>{schoolInfo.address}</p>
-                {schoolInfo.logoUrl && (
+      <div id="payslip-printable" className="payslip-container text-sm bg-white">
+        <header className="header text-center mb-4">
+            <h2 className="school-name text-2xl font-bold">{schoolInfo.schoolName}</h2>
+            <p>{schoolInfo.address}</p>
+            {schoolInfo.logoUrl && (
+                <div className="flex justify-center my-2">
                     <Image
                         src={schoolInfo.logoUrl}
                         alt="School Logo"
@@ -74,39 +74,44 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
                         height={60}
                         className="rounded-md object-contain"
                     />
-                )}
-            </div>
-            <p className="font-semibold text-lg">Payslip for {payslip.period}</p>
+                </div>
+            )}
+            <p className="font-semibold text-lg mt-2">Payslip for {payslip.period}</p>
         </header>
+        
+        <Separator className="my-2 bg-black" />
 
-        <section className="details-grid mb-6">
+        <section className="details-grid flex justify-between mb-4">
             <div><strong>Employee:</strong> {payslip.staffName}</div>
             <div><strong>Pay Date:</strong> {format(new Date(), 'PPP')}</div>
         </section>
 
         <section className="section">
-            <h3 className="font-bold text-lg mb-2">Earnings</h3>
-            <DetailRow label="Gross Salary" value={payslip.grossSalary} />
+            <h3 className="section-title font-bold mb-1">Earnings</h3>
+             <Separator className="my-1 bg-black" />
+            <DetailRow label="Gross Salary" value={`GHS ${payslip.grossSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
         </section>
 
-        <section className="section">
-            <h3 className="font-bold text-lg mb-2">Deductions</h3>
-            <DetailRow label="Employee SSNIT (5.5%)" value={payslip.ssnitEmployee} />
-            <DetailRow label="Income Tax (PAYE)" value={payslip.incomeTax} />
+        <section className="section mt-4">
+            <h3 className="section-title font-bold mb-1">Deductions</h3>
+            <Separator className="my-1 bg-black" />
+            <DetailRow label="Employee SSNIT (5.5%)" value={`GHS ${payslip.ssnitEmployee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+            <DetailRow label="Income Tax (PAYE)" value={`GHS ${payslip.incomeTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
             {payslip.deductions?.map((deduction, index) => (
-              <DetailRow key={index} label={deduction.name} value={deduction.amount} />
+              <DetailRow key={index} label={deduction.name} value={`GHS ${deduction.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
             ))}
-            <Separator className="my-2" />
+            <Separator className="my-2 bg-black" />
             <DetailRow 
                 label="Total Deductions" 
                 value={totalDeductions}
-                isBold 
+                isBold
+                isTotal
             />
         </section>
         
-        <section className="section mt-6 pt-4">
-            <Separator className="my-2" />
-            <DetailRow label="Net Salary" value={payslip.netSalary} isBold />
+        <section className="section mt-4">
+            <Separator className="my-2 bg-black" />
+            <DetailRow label="Net Salary" value={payslip.netSalary} isBold isTotal />
         </section>
       </div>
 
