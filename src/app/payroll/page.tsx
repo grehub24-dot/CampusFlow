@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { collection, onSnapshot, doc, addDoc, query } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, query, getDocs, where, writeBatch } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { format } from 'date-fns';
 import { Loader2, PlayCircle } from 'lucide-react';
@@ -65,6 +65,23 @@ export default function PayrollPage() {
       };
   };
 
+  const getOrCreateDeductionsCategory = async () => {
+    const categoryName = 'Staff Deductions';
+    const categoriesRef = collection(db, "transaction-categories");
+    const q = query(categoriesRef, where("name", "==", categoryName), where("type", "==", "expense"));
+    
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      return querySnapshot.docs[0].id;
+    } else {
+      const newCategory = await addDoc(categoriesRef, {
+        name: categoryName,
+        type: 'expense'
+      });
+      return newCategory.id;
+    }
+  }
+
   const handleRunPayroll = async () => {
     setIsProcessing(true);
     const period = format(new Date(), 'MMMM yyyy');
@@ -112,11 +129,36 @@ export default function PayrollPage() {
             payslips: payslips,
         };
 
-        await addDoc(collection(db, "payroll-runs"), newPayrollRun);
+        // --- Create expense transactions for deductions ---
+        const deductionCategoryId = await getOrCreateDeductionsCategory();
+        const batch = writeBatch(db);
+
+        // Add the new payroll run to the batch
+        const payrollRunRef = doc(collection(db, "payroll-runs"));
+        batch.set(payrollRunRef, newPayrollRun);
+
+        payslips.forEach(payslip => {
+            if (payslip.deductions && payslip.deductions.length > 0) {
+                payslip.deductions.forEach(deduction => {
+                    const transactionRef = doc(collection(db, "transactions"));
+                    batch.set(transactionRef, {
+                        type: 'expense',
+                        amount: deduction.amount,
+                        date: new Date().toISOString(),
+                        categoryId: deductionCategoryId,
+                        categoryName: 'Staff Deductions',
+                        description: `Deduction: ${deduction.name} for ${payslip.staffName} - ${period}`,
+                    });
+                });
+            }
+        });
+
+        await batch.commit();
+        // --- End of expense transaction logic ---
         
         toast({
             title: 'Payroll Processed',
-            description: `Payroll for ${period} has been successfully processed for ${activeStaff.length} employees.`,
+            description: `Payroll for ${period} has been successfully processed for ${activeStaff.length} employees. Deductions recorded as expenses.`,
         });
 
     } catch (error) {
