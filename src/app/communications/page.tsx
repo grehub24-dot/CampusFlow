@@ -169,12 +169,17 @@ export default function CommunicationsPage() {
     const billingSettingsRef = doc(db, "settings", "billing");
     const unsubscribeBilling = onSnapshot(billingSettingsRef, async (doc) => {
       if (doc.exists()) {
-        await setDoc(billingSettingsRef, { smsBalance: 5 }, { merge: true });
-        setBalance(5);
+        const currentBalance = doc.data().smsBalance;
+        if (typeof currentBalance !== 'number') {
+             await setDoc(billingSettingsRef, { smsBalance: 10 }, { merge: true });
+             setBalance(10);
+        } else {
+            setBalance(currentBalance);
+        }
       } else {
-        // If the document doesn't exist, create it with a default balance of 5.
-        await setDoc(billingSettingsRef, { smsBalance: 5 });
-        setBalance(5);
+        // If the document doesn't exist, create it with a default balance of 10.
+        await setDoc(billingSettingsRef, { smsBalance: 10 });
+        setBalance(10);
       }
     });
 
@@ -553,5 +558,6 @@ export default function CommunicationsPage() {
     
 
     
+
 
 
