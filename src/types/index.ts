@@ -1,6 +1,7 @@
 
 
 
+
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -209,4 +210,20 @@ export type PayrollRun = {
     totalAmount: number;
     employeeCount: number;
     payslips: Payslip[];
+}
+
+export type TransactionCategory = {
+    id: string;
+    name: string;
+    type: 'income' | 'expense';
+}
+
+export type Transaction = {
+    id: string;
+    date: string;
+    type: 'income' | 'expense';
+    amount: number;
+    categoryId: string;
+    categoryName: string;
+    description: string;
 }
