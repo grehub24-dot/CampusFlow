@@ -7,6 +7,7 @@ import { useSchoolInfo } from '@/context/school-info-context';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
+import Image from 'next/image';
 
 interface PayslipDetailsProps {
     payslip: Payslip;
@@ -37,6 +38,7 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
           body { font-family: sans-serif; }
           .payslip-container { max-width: 800px; margin: auto; padding: 20px; }
           .header { text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+          .school-info-container { display: flex; align-items: center; justify-content: center; gap: 1rem; }
           .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
           .section { margin-top: 20px; }
           .section h3 { border-bottom: 1px solid #eee; padding-bottom: 5px; }
@@ -59,9 +61,22 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
     <div className="p-4">
       <div id="payslip-printable" className="payslip-container text-sm">
         <header className="header">
-            <h2 className="text-2xl font-bold">{schoolInfo.schoolName}</h2>
-            <p>{schoolInfo.address}</p>
-            <p>Payslip for {payslip.period}</p>
+            <div className="school-info-container mb-4">
+                 {schoolInfo.logoUrl && (
+                    <Image
+                        src={schoolInfo.logoUrl}
+                        alt="School Logo"
+                        width={60}
+                        height={60}
+                        className="rounded-md object-contain"
+                    />
+                )}
+                <div>
+                    <h2 className="text-2xl font-bold">{schoolInfo.schoolName}</h2>
+                    <p>{schoolInfo.address}</p>
+                </div>
+            </div>
+            <p className="font-semibold text-lg">Payslip for {payslip.period}</p>
         </header>
 
         <section className="details-grid">
