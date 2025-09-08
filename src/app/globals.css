@@ -130,7 +130,6 @@
     font-size: 0.8rem;
     color: #555;
 }
-.invoice-final-footer p { margin: 0.25rem 0; }
 
 
 @media print {
@@ -150,8 +149,13 @@
     top: 0;
     width: 100%;
     height: 100%;
+    color: #000 !important; /* Ensure text is black for printing */
   }
   .no-print {
     display: none !important;
   }
+  .payslip-container .header {
+    border-bottom: 1px solid #000;
+  }
 }
+

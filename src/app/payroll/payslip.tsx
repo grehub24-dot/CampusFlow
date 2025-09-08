@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 import Image from 'next/image';
+import { Separator } from '@/components/ui/separator';
 
 interface PayslipDetailsProps {
     payslip: Payslip;
@@ -38,12 +39,13 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
           body { font-family: sans-serif; }
           .payslip-container { max-width: 800px; margin: auto; padding: 20px; }
           .header { text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
-          .school-info-container { display: flex; align-items: center; justify-content: center; gap: 1rem; }
+          .school-info-container { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; }
           .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
           .section { margin-top: 20px; }
           .section h3 { border-bottom: 1px solid #eee; padding-bottom: 5px; }
           .flex-between { display: flex; justify-content: space-between; padding: 5px 0; }
           .bold { font-weight: bold; }
+          hr { border: none; border-top: 1px solid #ccc; margin: 1rem 0; }
         </style>
       `);
       printWindow?.document.write('</head><body>');
@@ -61,11 +63,9 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
     <div className="p-4">
       <div id="payslip-printable" className="payslip-container text-sm">
         <header className="header">
-            <div className="school-info-container mb-4">
-                <div>
-                    <h2 className="text-2xl font-bold">{schoolInfo.schoolName}</h2>
-                    <p>{schoolInfo.address}</p>
-                </div>
+            <div className="school-info-container mb-4 text-center">
+                <h2 className="text-2xl font-bold">{schoolInfo.schoolName}</h2>
+                <p>{schoolInfo.address}</p>
                 {schoolInfo.logoUrl && (
                     <Image
                         src={schoolInfo.logoUrl}
@@ -79,7 +79,7 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
             <p className="font-semibold text-lg">Payslip for {payslip.period}</p>
         </header>
 
-        <section className="details-grid">
+        <section className="details-grid mb-6">
             <div><strong>Employee:</strong> {payslip.staffName}</div>
             <div><strong>Pay Date:</strong> {format(new Date(), 'PPP')}</div>
         </section>
@@ -96,6 +96,7 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
             {payslip.deductions?.map((deduction, index) => (
               <DetailRow key={index} label={deduction.name} value={deduction.amount} />
             ))}
+            <Separator className="my-2" />
             <DetailRow 
                 label="Total Deductions" 
                 value={totalDeductions}
@@ -103,12 +104,13 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
             />
         </section>
         
-        <section className="section mt-6 border-t-2 border-black pt-4">
+        <section className="section mt-6 pt-4">
+            <Separator className="my-2" />
             <DetailRow label="Net Salary" value={payslip.netSalary} isBold />
         </section>
       </div>
 
-       <div className="mt-6 flex justify-end gap-2">
+       <div className="mt-6 flex justify-end gap-2 no-print">
             <Button variant="outline" onClick={handlePrint}>
                 <Printer className="mr-2 h-4 w-4" />
                 Print
