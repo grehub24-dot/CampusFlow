@@ -2,7 +2,7 @@
 'use client'
 
 import React from 'react';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useForm, useFieldArray, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { StaffMember } from '@/types';
@@ -11,6 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Trash2 } from 'lucide-react';
+
+const deductionSchema = z.object({
+  name: z.string().min(1, "Deduction name is required"),
+  amount: z.coerce.number().min(0, "Amount must be a positive number"),
+});
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
@@ -21,6 +28,7 @@ const formSchema = z.object({
   accountNumber: z.string().optional(),
   momoNumber: z.string().optional(),
   status: z.enum(['Active', 'Inactive']),
+  deductions: z.array(deductionSchema).optional(),
 }).refine(data => {
     if (data.paymentMethod === 'Bank') {
         return !!data.bankName && !!data.accountNumber;
@@ -58,7 +66,13 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
         accountNumber: defaultValues?.accountNumber || '',
         momoNumber: defaultValues?.momoNumber || '',
         status: defaultValues?.status || 'Active',
+        deductions: defaultValues?.deductions || [],
     }
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "deductions"
   });
 
   const paymentMethod = form.watch('paymentMethod');
@@ -73,6 +87,7 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
         accountNumber: defaultValues?.accountNumber || '',
         momoNumber: defaultValues?.momoNumber || '',
         status: defaultValues?.status || 'Active',
+        deductions: defaultValues?.deductions || [],
     })
   }, [defaultValues, form]);
 
@@ -131,6 +146,9 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
                 )}
             />
         </div>
+        
+        <Separator />
+
         <div>
             <h3 className="text-lg font-medium mb-2">Payment Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -162,6 +180,54 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
                 )}
             </div>
         </div>
+
+        <Separator />
+
+        <div>
+            <h3 className="text-lg font-medium mb-4">Custom Deductions</h3>
+            <div className="space-y-4">
+              {fields.map((field, index) => (
+                <div key={field.id} className="flex items-end gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`deductions.${index}.name`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Deduction Name</FormLabel>
+                        <FormControl><Input {...field} placeholder="e.g., Staff Loan" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`deductions.${index}.amount`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Amount (GHS)</FormLabel>
+                        <FormControl><Input type="number" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-4"
+              onClick={() => append({ name: '', amount: 0 })}
+            >
+              Add Deduction
+            </Button>
+        </div>
+
+
         <div className="flex justify-end">
           <Button type="submit">
             {defaultValues ? 'Save Changes' : 'Add Staff Member'}

@@ -58,7 +58,7 @@ export function StaffManagement({ staff, isLoading }: StaffManagementProps) {
         }
     }
     
-    const calculatePayrollForEmployee = (employee: { grossSalary: number }) => {
+    const calculatePayrollForEmployee = (employee: { grossSalary: number, deductions?: {name: string, amount: number}[] }) => {
         const gross = employee.grossSalary;
         const ssnitEmployee = gross * 0.055;
         const taxableIncome = gross - ssnitEmployee;
@@ -68,7 +68,9 @@ export function StaffManagement({ staff, isLoading }: StaffManagementProps) {
         else if (taxableIncome > 1000) incomeTax = (taxableIncome - 1000) * 0.175;
         else if (taxableIncome > 500) incomeTax = (taxableIncome - 500) * 0.1;
 
-        const netSalary = taxableIncome - incomeTax;
+        const customDeductionsTotal = employee.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
+        const totalDeductions = ssnitEmployee + incomeTax + customDeductionsTotal;
+        const netSalary = gross - totalDeductions;
 
         return {
             ssnitEmployee,
@@ -160,7 +162,7 @@ export function StaffManagement({ staff, isLoading }: StaffManagementProps) {
             </Card>
 
             <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
-                <DialogContent className="sm:max-w-[600px]">
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{selectedStaff ? 'Edit' : 'Add New'} Staff Member</DialogTitle>
                     </DialogHeader>

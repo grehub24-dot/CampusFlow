@@ -15,7 +15,7 @@ interface PayslipDetailsProps {
 const DetailRow = ({ label, value, isBold = false }: { label: string, value: string | number, isBold?: boolean }) => (
     <div className={`flex justify-between py-2 ${isBold ? 'font-bold' : ''}`}>
         <span>{label}</span>
-        <span>{typeof value === 'number' ? `GHS ${value.toLocaleString()}` : value}</span>
+        <span>{typeof value === 'number' ? `GHS ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : value}</span>
     </div>
 );
 
@@ -52,6 +52,9 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
     }
   }
 
+  const customDeductionsTotal = payslip.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
+  const totalDeductions = payslip.ssnitEmployee + payslip.incomeTax + customDeductionsTotal;
+
   return (
     <div className="p-4">
       <div id="payslip-printable" className="payslip-container text-sm">
@@ -75,9 +78,12 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
             <h3 className="font-bold text-lg mb-2">Deductions</h3>
             <DetailRow label="Employee SSNIT (5.5%)" value={payslip.ssnitEmployee} />
             <DetailRow label="Income Tax (PAYE)" value={payslip.incomeTax} />
+            {payslip.deductions?.map((deduction, index) => (
+              <DetailRow key={index} label={deduction.name} value={deduction.amount} />
+            ))}
             <DetailRow 
                 label="Total Deductions" 
-                value={(payslip.ssnitEmployee + payslip.incomeTax).toFixed(2)} 
+                value={totalDeductions}
                 isBold 
             />
         </section>

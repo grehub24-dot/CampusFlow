@@ -47,19 +47,21 @@ export default function PayrollPage() {
       const ssnitEmployee = gross * 0.055;
       const taxableIncome = gross - ssnitEmployee;
       
-      // Simplified tax calculation for demonstration
       let incomeTax = 0;
       if (taxableIncome > 3000) incomeTax = (taxableIncome - 3000) * 0.25;
       else if (taxableIncome > 1000) incomeTax = (taxableIncome - 1000) * 0.175;
       else if (taxableIncome > 500) incomeTax = (taxableIncome - 500) * 0.1;
 
-      const netSalary = taxableIncome - incomeTax;
+      const customDeductionsTotal = employee.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
+      const totalDeductions = ssnitEmployee + incomeTax + customDeductionsTotal;
+      const netSalary = gross - totalDeductions;
 
       return {
           ...employee,
-          ssnitEmployee: ssnitEmployee,
-          incomeTax: incomeTax,
-          netSalary: netSalary,
+          ssnitEmployee,
+          incomeTax,
+          netSalary,
+          deductions: employee.deductions || [],
       };
   };
 
@@ -96,6 +98,7 @@ export default function PayrollPage() {
                 ssnitEmployee: calculated.ssnitEmployee,
                 incomeTax: calculated.incomeTax,
                 netSalary: calculated.netSalary,
+                deductions: calculated.deductions,
             };
         });
 
