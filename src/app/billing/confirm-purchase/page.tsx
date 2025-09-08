@@ -23,7 +23,6 @@ function ConfirmPurchaseContent() {
 
   const invoiceId = searchParams.get('invoiceId');
   const bundleCredits = searchParams.get('bundleCredits');
-  const clientPhone = searchParams.get('phone');
   const confirmationPhone = '0536282694'; // Hardcoded number for the final OTP
 
   useEffect(() => {
@@ -45,13 +44,12 @@ function ConfirmPurchaseContent() {
   }, [toast]);
   
   const handleConfirm = async () => {
-    if (!clientPhone || !otp || !bundleCredits || !invoiceId) {
+    if (!otp || !bundleCredits || !invoiceId) {
         toast({ variant: 'destructive', title: 'Error', description: 'Missing required information.' });
         return;
     }
     setLoading(true);
     try {
-        // We use the client's phone for the finalize-purchase API call, but the OTP was sent to the confirmation number.
         // The API needs to know which OTP to check against which number.
         const res = await fetch('/api/finalize-purchase', {
             method: 'POST',
