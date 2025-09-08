@@ -26,10 +26,10 @@ import { db } from '@/lib/firebase';
 import { generateOtp, verifyOtp } from '@/lib/frog-api';
 
 const communicationBundles: Bundle[] = [
-    { name: 'Basic Bundle', msgCount: 175, price: 5, validity: 30 },
-    { name: 'Standard Bundle', msgCount: 350, price: 10, validity: 30 },
-    { name: 'Pro Bundle', msgCount: 700, price: 20, validity: 30 },
-    { name: 'Business Bundle', msgCount: 1750, price: 50, validity: 30 },
+    { name: 'Basic Bundle', msgCount: 175, price: 30, validity: 30 },
+    { name: 'Standard Bundle', msgCount: 350, price: 60, validity: 30 },
+    { name: 'Pro Bundle', msgCount: 700, price: 120, validity: 30 },
+    { name: 'Business Bundle', msgCount: 1750, price: 240, validity: 30 },
 ];
 
 const MOMO_PROVIDERS = [
