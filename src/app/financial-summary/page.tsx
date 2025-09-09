@@ -41,13 +41,21 @@ function SummaryDisplay({
         return payments.filter(p => p.academicYear === currentTerm.academicYear);
     }, [payments, scope, currentTerm]);
 
-    const newAdmissionsSummary: FinancialSummaryItem[] = React.useMemo(() => {
-        const newStudentIds = new Set(
-            students
-                .filter(s => s.admissionYear === currentTerm.academicYear && s.admissionTerm === currentTerm.session)
-                .map(s => s.id)
-        );
+    const { newStudentIds, continuingStudentIds } = React.useMemo(() => {
+        const newIds = new Set<string>();
+        const continuingIds = new Set<string>();
+        students.forEach(s => {
+            if (s.admissionYear === currentTerm.academicYear && s.admissionTerm === currentTerm.session) {
+                newIds.add(s.id);
+            } else {
+                continuingIds.add(s.id);
+            }
+        });
+        return { newStudentIds: newIds, continuingStudentIds: continuingIds };
+    }, [students, currentTerm]);
 
+
+    const newAdmissionsSummary: FinancialSummaryItem[] = React.useMemo(() => {
         const newStudentPayments = filteredPayments.filter(p => newStudentIds.has(p.studentId));
 
         const incomeByCategory = new Map<string, number>();
@@ -61,16 +69,10 @@ function SummaryDisplay({
         return Array.from(incomeByCategory.entries())
             .map(([category, total]) => ({ category, total }))
             .sort((a, b) => b.total - a.total);
-    }, [students, filteredPayments, currentTerm]);
+    }, [newStudentIds, filteredPayments]);
     
     const continuingStudentsSummary: FinancialSummaryItem[] = React.useMemo(() => {
-        const newStudentIds = new Set(
-            students
-                .filter(s => s.admissionYear === currentTerm.academicYear && s.admissionTerm === currentTerm.session)
-                .map(s => s.id)
-        );
-        
-        const continuingStudentPayments = filteredPayments.filter(p => !newStudentIds.has(p.studentId));
+        const continuingStudentPayments = filteredPayments.filter(p => continuingStudentIds.has(p.studentId));
 
         const incomeByCategory = new Map<string, number>();
         continuingStudentPayments.forEach(payment => {
@@ -83,7 +85,7 @@ function SummaryDisplay({
         return Array.from(incomeByCategory.entries())
             .map(([category, total]) => ({ category, total }))
             .sort((a, b) => b.total - a.total);
-    }, [students, filteredPayments, currentTerm]);
+    }, [continuingStudentIds, filteredPayments]);
 
 
     const newAdmissionsIncome = newAdmissionsSummary.reduce((sum, item) => sum + item.total, 0);
@@ -91,18 +93,20 @@ function SummaryDisplay({
     
     return (
         <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
                  <StatCard 
                     title="Total Income (New Admissions)"
                     value={formatCurrency(newAdmissionsIncome)}
                     icon={DollarSign}
                     color="text-green-500"
+                    description={`${newStudentIds.size} new students`}
                 />
                 <StatCard 
                     title="Total Income (Continuing)"
                     value={formatCurrency(continuingStudentsIncome)}
                     icon={DollarSign}
                     color="text-purple-500"
+                    description={`${continuingStudentIds.size} continuing students`}
                 />
                  <StatCard 
                     title="Total Combined Income"
@@ -283,4 +287,3 @@ export default function FinancialSummaryPage() {
         </>
     );
 }
-
