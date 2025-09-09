@@ -37,7 +37,8 @@ import {
   Receipt,
   FileText,
   Briefcase,
-  DollarSign
+  DollarSign,
+  FileBarChart
 } from "lucide-react"
 
 import { Button } from './ui/button';
@@ -60,6 +61,7 @@ const navItems = [
 const secondaryNavItems = [
   { href: "/payroll", icon: DollarSign, label: "Payroll" },
   { href: "/income-expense", icon: DollarSign, label: "Income & Expense" },
+  { href: "/financial-summary", icon: FileBarChart, label: "Financial Summary" },
   { href: "/billing", icon: CreditCard, label: "Billing" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ]

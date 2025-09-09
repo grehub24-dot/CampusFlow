@@ -12,6 +12,7 @@
 
 
 
+
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -257,4 +258,9 @@ export type Transaction = {
     categoryId: string;
     categoryName: string;
     description: string;
+}
+
+export type FinancialSummaryItem = {
+    category: string;
+    total: number;
 }
