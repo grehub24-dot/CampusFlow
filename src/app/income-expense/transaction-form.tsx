@@ -160,4 +160,3 @@ export function TransactionForm({ onSubmit, defaultValues, categories }: Transac
     </Form>
   )
 }
-
