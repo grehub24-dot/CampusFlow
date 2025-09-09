@@ -39,7 +39,8 @@ interface Props {
   defaultStudentId?: string;
 }
 
-const MANDATORY_NEW_ADMISSION_FEES = ['Admission fees', 'Books', 'Uniforms', 'School Fees'];
+// Define which fees should be prioritized for payment.
+const CORE_FEE_PRIORITY = ['Admission fees', 'School Fees', 'Books', 'Uniforms'];
 
 
 export default function PaymentForm({
@@ -132,21 +133,10 @@ export default function PaymentForm({
 
   const isNewAdmissionForTerm = useMemo(() => {
     if (!selectedStudent || !currentTerm) return false;
-     // Student is considered new if their admission term matches the current term.
     const isNew = selectedStudent.admissionTerm === currentTerm.session &&
                   selectedStudent.admissionYear === currentTerm.academicYear;
-    if (isNew) return true;
-
-    // Also check if any payment has been made for this term. If not, treat as first payment.
-    const paymentsThisTerm = payments.some(p => 
-      p.studentId === selectedStudent.id &&
-      p.academicYear === currentTerm.academicYear &&
-      p.term === currentTerm.session
-    );
-
-    return !paymentsThisTerm;
-
-  }, [selectedStudent, currentTerm, payments]);
+    return isNew;
+  }, [selectedStudent, currentTerm]);
 
   useEffect(() => {
     if (!selectedStudent || !matchingStructure || !currentTerm || feeItems.length === 0 || !Array.isArray(matchingStructure.items)) {
@@ -162,14 +152,8 @@ export default function PaymentForm({
         const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
         if (feeItemInfo) {
             if (isNewAdmissionForTerm) {
-                // Logic for new admissions
-                if (MANDATORY_NEW_ADMISSION_FEES.includes(feeItemInfo.name)) {
-                    initialChecks[feeItemInfo.name] = true; // Mandatory and checked
-                } else {
-                     initialChecks[feeItemInfo.name] = !feeItemInfo.isOptional; // Optional fees are unchecked
-                }
+                initialChecks[feeItemInfo.name] = !feeItemInfo.isOptional;
             } else {
-                // Logic for continuing students
                 if (feeItemInfo.isOptional) {
                     initialChecks[feeItemInfo.name] = false;
                 } else if (termNumber === 1) {
@@ -180,7 +164,6 @@ export default function PaymentForm({
             }
         }
     });
-
     setCheckedItems(initialChecks);
 
   }, [selectedStudent, matchingStructure, currentTerm, feeItems, isNewAdmissionForTerm]);
@@ -192,22 +175,53 @@ export default function PaymentForm({
     );
   }, [allFeeItemsForForm, checkedItems]);
   
-  const previouslyPaid = useMemo(() => {
-    if (!selectedStudent || !currentTerm) return 0;
-    return payments
-        .filter(p => 
+  const studentPaymentsThisTerm = useMemo(() => {
+      if (!selectedStudent || !currentTerm) return [];
+      return payments.filter(p => 
             p.studentId === selectedStudent.id &&
             p.academicYear === currentTerm.academicYear &&
             p.term === currentTerm.session
-        )
-        .reduce((sum, p) => sum + p.amount, 0);
+        );
   }, [selectedStudent, currentTerm, payments]);
 
+  const amountPaidPerItem = useMemo(() => {
+      const paidMap = new Map<string, number>();
+      studentPaymentsThisTerm.forEach(p => {
+          if(Array.isArray(p.items)) {
+              p.items.forEach(item => {
+                  paidMap.set(item.name, (paidMap.get(item.name) || 0) + item.amount);
+              });
+          }
+      });
+      return paidMap;
+  }, [studentPaymentsThisTerm]);
+
+  const outstandingBalancePerItem = useMemo(() => {
+    const balanceMap = new Map<string, number>();
+    allFeeItemsForForm.forEach(item => {
+        if (checkedItems[item.name]) {
+            const paid = amountPaidPerItem.get(item.name) || 0;
+            const balance = item.amount - paid;
+            if (balance > 0) {
+                balanceMap.set(item.name, balance);
+            }
+        }
+    });
+    return balanceMap;
+  }, [allFeeItemsForForm, checkedItems, amountPaidPerItem]);
+
+
   const outstandingBalance = useMemo(() => {
-      const balance = totalAmountDue - previouslyPaid;
-      return Math.max(0, balance);
-  }, [totalAmountDue, previouslyPaid]);
-  
+    let total = 0;
+    outstandingBalancePerItem.forEach(balance => total += balance);
+    return total;
+  }, [outstandingBalancePerItem]);
+
+
+  const previouslyPaid = useMemo(() => {
+    return studentPaymentsThisTerm.reduce((sum, p) => sum + p.amount, 0);
+  }, [studentPaymentsThisTerm]);
+
   const newBalance = useMemo(() => {
     const balance = outstandingBalance - payingAmount;
     return Math.max(0, balance);
@@ -233,28 +247,7 @@ export default function PaymentForm({
     if (defaultStudentId) setSelectedStudentId(defaultStudentId);
   }, [defaultStudentId]);
   
-  useEffect(() => {
-    const correctStatusIfNeeded = async () => {
-      if (selectedStudent && selectedStudent.paymentStatus !== 'Paid' && totalAmountDue > 0 && previouslyPaid >= totalAmountDue) {
-        try {
-          await updateDoc(doc(db, 'students', selectedStudent.id), {
-            paymentStatus: 'Paid',
-          });
-          toast({
-            title: 'Status Corrected',
-            description: `${selectedStudent.name}'s status was updated to Paid due to overpayment.`,
-          });
-        } catch (error) {
-           console.error('Error correcting student status: ', error);
-        }
-      }
-    };
-    correctStatusIfNeeded();
-  }, [selectedStudent, previouslyPaid, totalAmountDue, toast]);
-
-
-  const toggleCheck = (name: string, isMandatory: boolean) => {
-    if (isMandatory) return; // Do not allow unchecking mandatory fees for new admissions
+  const toggleCheck = (name: string) => {
     setCheckedItems((prev) => ({ ...prev, [name]: !prev[name] }));
   }
 
@@ -262,10 +255,36 @@ export default function PaymentForm({
     e.preventDefault();
     if (!selectedStudent || payingAmount <= 0 || totalAmountDue <= 0) return;
     setIsSubmitting(true);
+    
+    // --- Allocation Logic ---
+    let amountToAllocate = payingAmount;
+    const allocatedItems: PaymentFeeItem[] = [];
+
+    const sortedFeeItems = [...allFeeItemsForForm].sort((a, b) => {
+        const aIsCore = CORE_FEE_PRIORITY.includes(a.name);
+        const bIsCore = CORE_FEE_PRIORITY.includes(b.name);
+        if (aIsCore && !bIsCore) return -1;
+        if (!aIsCore && bIsCore) return 1;
+        if (aIsCore && bIsCore) {
+            return CORE_FEE_PRIORITY.indexOf(a.name) - CORE_FEE_PRIORITY.indexOf(b.name);
+        }
+        return 0; // or sort by name/amount if needed for non-core items
+    });
+    
+    for (const item of sortedFeeItems) {
+        if (amountToAllocate <= 0) break;
+        
+        const balanceForItem = outstandingBalancePerItem.get(item.name) || 0;
+
+        if (balanceForItem > 0) {
+            const amountToPayForItem = Math.min(amountToAllocate, balanceForItem);
+            allocatedItems.push({ name: item.name, amount: amountToPayForItem });
+            amountToAllocate -= amountToPayForItem;
+        }
+    }
+    // --- End Allocation Logic ---
 
     try {
-      const itemsToPay = allFeeItemsForForm.filter((i) => checkedItems[i.name]);
-      
       const newPaymentStatus = payingAmount < outstandingBalance ? 'Part Payment' : 'Full Payment';
       const newStudentStatus = newBalance <= 0 ? 'Paid' : 'Part-Payment';
 
@@ -281,7 +300,7 @@ export default function PaymentForm({
         paymentMethod,
         academicYear: currentTerm.academicYear,
         term: currentTerm.session,
-        items: itemsToPay.map(i => ({ name: i.name, amount: i.amount })),
+        items: allocatedItems,
       };
 
       await addDoc(collection(db, 'payments'), payload);
@@ -363,7 +382,6 @@ export default function PaymentForm({
         </h3>
         <div className="space-y-2 border rounded-md p-4 max-h-[250px] overflow-y-auto">
           {allFeeItemsForForm.length > 0 ? allFeeItemsForForm.map((item) => {
-            const isMandatory = isNewAdmissionForTerm && MANDATORY_NEW_ADMISSION_FEES.includes(item.name);
             return (
                 <div
                 key={item.id}
@@ -373,14 +391,13 @@ export default function PaymentForm({
                     <Checkbox
                     id={item.name}
                     checked={checkedItems[item.name] ?? false}
-                    onCheckedChange={() => toggleCheck(item.name, isMandatory)}
-                    disabled={isMandatory}
+                    onCheckedChange={() => toggleCheck(item.name)}
                     />
                     <Label
                     htmlFor={item.name}
-                    className={cn("text-sm font-normal", !isMandatory && "cursor-pointer")}
+                    className={cn("text-sm font-normal cursor-pointer")}
                     >
-                    {item.name} {isMandatory && <span className="text-muted-foreground text-xs">(Mandatory)</span>}
+                    {item.name} {item.isOptional && <span className="text-muted-foreground text-xs">(Optional)</span>}
                     </Label>
                 </div>
                 <span className="text-sm font-medium">
