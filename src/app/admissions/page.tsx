@@ -401,6 +401,47 @@ export default function AdmissionsPage() {
     }
   }, []);
 
+  const studentsWithStatus = React.useMemo(() => {
+    if (!currentTerm || feeItems.length === 0 || feeStructures.length === 0) {
+      return admittedStudents.map(s => ({ ...s, paymentStatus: 'Pending' as const }));
+    }
+
+    return admittedStudents.map(student => {
+      const structure = feeStructures.find(fs => fs.classId === student.classId && fs.academicTermId === currentTerm.id);
+      if (!structure || !Array.isArray(structure.items)) {
+        return { ...student, paymentStatus: 'Unpaid' as const };
+      }
+
+      const totalDue = structure.items
+        .map(item => {
+          const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
+          if (!feeItemInfo || feeItemInfo.isOptional) return 0;
+          return feeItemInfo.appliesTo.includes('new') ? item.amount : 0;
+        })
+        .reduce((total, amount) => total + amount, 0);
+
+      if (totalDue === 0) {
+        return { ...student, paymentStatus: 'Paid' as const };
+      }
+
+      const totalPaid = payments
+        .filter(p => p.studentId === student.id && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session)
+        .reduce((sum, p) => sum + p.amount, 0);
+
+      let status: 'Paid' | 'Part-Payment' | 'Unpaid';
+      if (totalPaid >= totalDue) {
+        status = 'Paid';
+      } else if (totalPaid > 0) {
+        status = 'Part-Payment';
+      } else {
+        status = 'Unpaid';
+      }
+      
+      return { ...student, paymentStatus: status };
+    });
+  }, [admittedStudents, payments, feeStructures, feeItems, currentTerm]);
+
+
   React.useEffect(() => {
     if (!currentTerm) {
       setAdmittedStudents([]);
@@ -494,7 +535,7 @@ export default function AdmissionsPage() {
                 classCategory: values.admissionClassCategory,
                 gender: values.gender,
                 status: 'Active' as const,
-                paymentStatus: 'Pending' as const,
+                paymentStatus: 'Unpaid' as const,
                 email: `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@example.com`,
                 admissionDate: new Date().toISOString(),
                 admissionTerm: currentTerm.session,
@@ -595,8 +636,10 @@ export default function AdmissionsPage() {
   }
 
   const admissionStats = {
-    totalPayments: admittedStudents.filter(s => s.paymentStatus === 'Paid').length * 500, // Example fee
-    pendingInvoices: admittedStudents.filter(s => s.paymentStatus !== 'Paid').length * 500, // Example fee
+    totalPayments: studentsWithStatus.filter(s => s.paymentStatus === 'Paid' || s.paymentStatus === 'Part-Payment').reduce((acc, student) => {
+        const studentPayments = payments.filter(p => p.studentId === student.id);
+        return acc + studentPayments.reduce((sum, p) => sum + p.amount, 0);
+    }, 0),
   };
 
   return (
@@ -659,7 +702,7 @@ export default function AdmissionsPage() {
       </div>
       
       <div className="space-y-6">
-        <AdmittedStudentTable data={admittedStudents} onViewApplication={handleViewApplication} onPay={handlePay} />
+        <AdmittedStudentTable data={studentsWithStatus} onViewApplication={handleViewApplication} onPay={handlePay} />
       </div>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -694,7 +737,3 @@ export default function AdmissionsPage() {
     </>
   );
 }
-
-    
-
-    

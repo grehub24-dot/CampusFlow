@@ -1,11 +1,10 @@
 
-
 'use client'
 
 import React from 'react';
 import { collection, onSnapshot, doc, addDoc, updateDoc, writeBatch, deleteDoc, query, where, getDocs, runTransaction, limit } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment, AdmissionSettings } from '@/types';
+import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment, AdmissionSettings, FeeItem } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import type { SubmitHandler } from 'react-hook-form';
 import Papa from 'papaparse';
@@ -41,6 +40,7 @@ export default function StudentsPage() {
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const [classes, setClasses] = React.useState<SchoolClass[]>([]);
   const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
+  const [feeItems, setFeeItems] = React.useState<FeeItem[]>([]);
   const [payments, setPayments] = React.useState<Payment[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
@@ -90,6 +90,11 @@ export default function StudentsPage() {
       setFeeStructures(feeStructuresData);
     });
 
+    const feeItemsQuery = query(collection(db, "fee-items"));
+    const unsubscribeFeeItems = onSnapshot(feeItemsQuery, (snapshot) => {
+        setFeeItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeItem)));
+    });
+
     const paymentsQuery = collection(db, "payments");
     const unsubscribePayments = onSnapshot(paymentsQuery, (querySnapshot) => {
       const paymentsData: Payment[] = [];
@@ -105,8 +110,61 @@ export default function StudentsPage() {
       unsubscribeClasses();
       unsubscribeFeeStructures();
       unsubscribePayments();
+      unsubscribeFeeItems();
     };
   }, [toast]);
+
+  const studentsWithStatus = React.useMemo(() => {
+    if (!currentTerm || feeItems.length === 0 || feeStructures.length === 0) {
+      return students.map(s => ({ ...s, paymentStatus: 'Pending' as const }));
+    }
+
+    return students.map(student => {
+      const structure = feeStructures.find(fs => fs.classId === student.classId && fs.academicTermId === currentTerm.id);
+      if (!structure || !Array.isArray(structure.items)) {
+        return { ...student, paymentStatus: 'Unpaid' as const };
+      }
+
+      const isNew = student.admissionTerm === currentTerm.session && student.admissionYear === currentTerm.academicYear;
+      const termNumber = parseInt(currentTerm.session.split(' ')[0], 10);
+
+      const totalDue = structure.items
+        .map(item => {
+          const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
+          if (!feeItemInfo || feeItemInfo.isOptional) return 0;
+          
+          let isApplicable = false;
+          if (isNew) {
+              if (feeItemInfo.appliesTo.includes('new')) isApplicable = true;
+          } else {
+              if (termNumber === 1 && feeItemInfo.appliesTo.includes('term1')) isApplicable = true;
+              if (termNumber > 1 && feeItemInfo.appliesTo.includes('term2_3')) isApplicable = true;
+          }
+          
+          return isApplicable ? item.amount : 0;
+        })
+        .reduce((total, amount) => total + amount, 0);
+      
+      if (totalDue === 0) {
+        return { ...student, paymentStatus: 'Paid' as const };
+      }
+
+      const totalPaid = payments
+        .filter(p => p.studentId === student.id && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session)
+        .reduce((sum, p) => sum + p.amount, 0);
+
+      let status: 'Paid' | 'Part-Payment' | 'Unpaid';
+      if (totalPaid >= totalDue) {
+        status = 'Paid';
+      } else if (totalPaid > 0) {
+        status = 'Part-Payment';
+      } else {
+        status = 'Unpaid';
+      }
+      
+      return { ...student, paymentStatus: status };
+    });
+  }, [students, payments, feeStructures, feeItems, currentTerm]);
 
   const handleEditStudent = (student: Student) => {
     setSelectedStudent(student);
@@ -504,7 +562,7 @@ export default function StudentsPage() {
       </div>
 
       <DataTable 
-        data={students} 
+        data={studentsWithStatus} 
         onEdit={handleEditStudent} 
         onViewDetails={handleViewDetails} 
         onDelete={handleDeleteStudent} 
@@ -594,6 +652,3 @@ export default function StudentsPage() {
     </>
   );
 }
-
-
-    

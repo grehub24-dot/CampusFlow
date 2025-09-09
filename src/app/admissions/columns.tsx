@@ -66,7 +66,7 @@ export const getColumns = ({ onViewApplication, onPay }: ColumnsProps): ColumnDe
     accessorKey: "paymentStatus",
     header: "Payment Status",
     cell: ({ row }) => {
-      const status = row.getValue("paymentStatus") as string;
+      const status = row.original.paymentStatus || "Pending";
       
       return (
         <Badge 
@@ -117,7 +117,3 @@ export const getColumns = ({ onViewApplication, onPay }: ColumnsProps): ColumnDe
     },
   },
 ];
-
-// We need to export a memoized version of the columns array
-// to prevent react-table from re-rendering unnecessarily.
-export const columns = getColumns({ onViewApplication: () => {}, onPay: () => {} });
