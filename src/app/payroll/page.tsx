@@ -305,16 +305,16 @@ export default function PayrollPage() {
         </AlertDialog>
       </PageHeader>
       
-      <Tabs defaultValue="history">
+      <Tabs defaultValue="manage">
           <TabsList>
-              <TabsTrigger value="history">Payroll Run History</TabsTrigger>
               <TabsTrigger value="manage">Manage Staff Payroll</TabsTrigger>
+              <TabsTrigger value="history">Payroll Run History</TabsTrigger>
           </TabsList>
-          <TabsContent value="history" className="space-y-4">
-            <PayrollHistory payrollRuns={payrollRuns} isLoading={isLoadingRuns} />
-          </TabsContent>
           <TabsContent value="manage" className="space-y-4">
             <StaffPayrollTable staff={staff} onEdit={handleEditStaff} />
+          </TabsContent>
+          <TabsContent value="history" className="space-y-4">
+            <PayrollHistory payrollRuns={payrollRuns} isLoading={isLoadingRuns} />
           </TabsContent>
       </Tabs>
       
