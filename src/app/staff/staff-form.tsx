@@ -217,77 +217,6 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
             </div>
         </div>
 
-        <Separator />
-        
-         <div>
-            <h3 className="text-lg font-medium mb-2">Salary & Payment</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <FormField
-                    control={form.control}
-                    name="grossSalary"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Gross Annual Salary (GHS)</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <FormField control={form.control} name="bankName" render={({ field }) => (<FormItem><FormLabel>Bank Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="accountNumber" render={({ field }) => (<FormItem><FormLabel>Account Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="momoNumber" render={({ field }) => (<FormItem><FormLabel>Contact / Mobile Money No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-        </div>
-        
-        <Separator />
-
-        <div>
-            <h3 className="text-lg font-medium mb-2">Custom Deductions</h3>
-            <div className="space-y-4">
-                {fields.map((field, index) => (
-                    <div key={field.id} className="flex items-end gap-2">
-                        <FormField
-                            control={form.control}
-                            name={`deductions.${index}.name`}
-                            render={({ field }) => (
-                                <FormItem className="flex-grow">
-                                    <FormLabel>Deduction Name</FormLabel>
-                                    <FormControl><Input placeholder="e.g. Welfare" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name={`deductions.${index}.amount`}
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Amount (GHS)</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
-                ))}
-                 <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => append({ name: '', amount: 0 })}
-                    className="mt-2"
-                    >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Deduction
-                </Button>
-            </div>
-        </div>
-
         <div className="flex justify-end">
           <Button type="submit">
             {defaultValues ? 'Save Changes' : 'Add Staff Member'}
@@ -297,5 +226,3 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
     </Form>
   )
 }
-
-
