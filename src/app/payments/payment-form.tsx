@@ -474,87 +474,88 @@ export default function PaymentForm({
           />
         </div>
       </div>
-
-       <div className="border p-4 rounded-md bg-muted/50 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="payingAmount">Paying Amount (GHS)</Label>
-              <Input
-                id="payingAmount"
-                type="number"
-                value={payingAmount || ''}
-                onChange={(e) => setPayingAmount(parseFloat(e.target.value) || 0)}
-                 className="bg-background font-bold text-blue-600 text-3xl h-auto p-2"
-              />
-            </div>
-            <div>
-              <Label>New Balance</Label>
-              <Input
-                type="text"
-                value={`GHS ${newBalance.toFixed(2)}`}
-                readOnly
-                className={cn(
-                  "bg-background font-bold h-auto p-2 text-2xl",
-                  newBalance > 0 ? "text-red-500" : "text-green-600"
-                )}
-              />
-            </div>
+      
+      <div className="border p-4 rounded-md bg-muted/50 space-y-4">
+        {payingAmount > 0 && (
+          <div>
+              <Label className="text-sm font-medium">Payment Allocation Breakdown</Label>
+              <div className="rounded-md border bg-background mt-2">
+                  <Table>
+                      <TableHeader>
+                          <TableRow>
+                              <TableHead>Fee Item</TableHead>
+                              <TableHead className="text-right">Outstanding</TableHead>
+                              <TableHead className="text-right">Allocated</TableHead>
+                          </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                          {Array.from(outstandingBalancePerItem.entries()).map(([name, balance]) => {
+                              const allocated = paymentAllocation.get(name) || 0;
+                              if(balance > 0) {
+                                return (
+                                    <TableRow key={name}>
+                                        <TableCell>{name}</TableCell>
+                                        <TableCell className="text-right">GHS {balance.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-semibold text-green-600">GHS {allocated.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                )
+                              }
+                              return null;
+                          })}
+                      </TableBody>
+                  </Table>
+              </div>
           </div>
-           {payingAmount > 0 && (
-                <div>
-                    <Label className="text-sm font-medium">Payment Allocation Breakdown</Label>
-                    <div className="rounded-md border bg-background mt-2">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Fee Item</TableHead>
-                                    <TableHead className="text-right">Outstanding</TableHead>
-                                    <TableHead className="text-right">Allocated</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {Array.from(outstandingBalancePerItem.entries()).map(([name, balance]) => {
-                                    const allocated = paymentAllocation.get(name) || 0;
-                                    if(balance > 0) {
-                                      return (
-                                          <TableRow key={name}>
-                                              <TableCell>{name}</TableCell>
-                                              <TableCell className="text-right">GHS {balance.toFixed(2)}</TableCell>
-                                              <TableCell className="text-right font-semibold text-green-600">GHS {allocated.toFixed(2)}</TableCell>
-                                          </TableRow>
-                                      )
-                                    }
-                                    return null;
-                                })}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
-            )}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="amountTendered">Amount Tendered</Label>
-              <Input
-                id="amountTendered"
-                type="number"
-                value={amountTendered || ''}
-                onChange={(e) => setAmountTendered(parseFloat(e.target.value) || 0)}
-                 className="bg-background"
-              />
-            </div>
-            {amountTendered > 0 && (
-             <div >
-              <Label>Change</Label>
-              <Input
-                type="text"
-                value={`GHS ${change.toFixed(2)}`}
-                readOnly
-                className="bg-background font-bold text-green-600"
-              />
-            </div>
-            )}
+        )}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="payingAmount">Paying Amount (GHS)</Label>
+            <Input
+              id="payingAmount"
+              type="number"
+              value={payingAmount || ''}
+              onChange={(e) => setPayingAmount(parseFloat(e.target.value) || 0)}
+                className="bg-background font-bold text-blue-600 text-3xl h-auto p-2"
+            />
           </div>
+          <div>
+            <Label>New Balance</Label>
+            <Input
+              type="text"
+              value={`GHS ${newBalance.toFixed(2)}`}
+              readOnly
+              className={cn(
+                "bg-background font-bold h-auto p-2 text-2xl",
+                newBalance > 0 ? "text-red-500" : "text-green-600"
+              )}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="amountTendered">Amount Tendered</Label>
+            <Input
+              id="amountTendered"
+              type="number"
+              value={amountTendered || ''}
+              onChange={(e) => setAmountTendered(parseFloat(e.target.value) || 0)}
+                className="bg-background"
+            />
+          </div>
+          {amountTendered > 0 && (
+            <div >
+            <Label>Change</Label>
+            <Input
+              type="text"
+              value={`GHS ${change.toFixed(2)}`}
+              readOnly
+              className="bg-background font-bold text-green-600"
+            />
+          </div>
+          )}
+        </div>
       </div>
+
 
       <div className="flex justify-end">
         <Button
