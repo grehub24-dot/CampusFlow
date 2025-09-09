@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Loader2 } from "lucide-react";
 import StatCard from '@/components/dashboard/stat-card';
 import { DollarSign, UserPlus, Users } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const formatCurrency = (amount: number) => {
@@ -20,6 +21,172 @@ const formatCurrency = (amount: number) => {
         style: "currency",
         currency: "GHS",
     }).format(amount)
+}
+
+function SummaryDisplay({
+    payments,
+    students,
+    scope,
+    currentTerm,
+}: {
+    payments: Payment[];
+    students: Student[];
+    scope: 'term' | 'year';
+    currentTerm: AcademicTerm;
+}) {
+    const filteredPayments = React.useMemo(() => {
+        if (scope === 'term') {
+            return payments.filter(p => p.academicYear === currentTerm.academicYear && p.term === currentTerm.session);
+        }
+        return payments.filter(p => p.academicYear === currentTerm.academicYear);
+    }, [payments, scope, currentTerm]);
+
+    const newAdmissionsSummary: FinancialSummaryItem[] = React.useMemo(() => {
+        const newStudentIds = new Set(
+            students
+                .filter(s => s.admissionYear === currentTerm.academicYear && s.admissionTerm === currentTerm.session)
+                .map(s => s.id)
+        );
+
+        const newStudentPayments = filteredPayments.filter(p => newStudentIds.has(p.studentId));
+
+        const incomeByCategory = new Map<string, number>();
+        newStudentPayments.forEach(payment => {
+            payment.items?.forEach(item => {
+                const currentAmount = incomeByCategory.get(item.name) || 0;
+                incomeByCategory.set(item.name, currentAmount + item.amount);
+            });
+        });
+
+        return Array.from(incomeByCategory.entries())
+            .map(([category, total]) => ({ category, total }))
+            .sort((a, b) => b.total - a.total);
+    }, [students, filteredPayments, currentTerm]);
+    
+    const continuingStudentsSummary: FinancialSummaryItem[] = React.useMemo(() => {
+        const newStudentIds = new Set(
+            students
+                .filter(s => s.admissionYear === currentTerm.academicYear && s.admissionTerm === currentTerm.session)
+                .map(s => s.id)
+        );
+        
+        const continuingStudentPayments = filteredPayments.filter(p => !newStudentIds.has(p.studentId));
+
+        const incomeByCategory = new Map<string, number>();
+        continuingStudentPayments.forEach(payment => {
+            payment.items?.forEach(item => {
+                const currentAmount = incomeByCategory.get(item.name) || 0;
+                incomeByCategory.set(item.name, currentAmount + item.amount);
+            });
+        });
+
+        return Array.from(incomeByCategory.entries())
+            .map(([category, total]) => ({ category, total }))
+            .sort((a, b) => b.total - a.total);
+    }, [students, filteredPayments, currentTerm]);
+
+
+    const newAdmissionsIncome = newAdmissionsSummary.reduce((sum, item) => sum + item.total, 0);
+    const continuingStudentsIncome = continuingStudentsSummary.reduce((sum, item) => sum + item.total, 0);
+    
+    return (
+        <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+                 <StatCard 
+                    title="Total Income (New Admissions)"
+                    value={formatCurrency(newAdmissionsIncome)}
+                    icon={DollarSign}
+                    color="text-green-500"
+                />
+                <StatCard 
+                    title="Total Income (Continuing)"
+                    value={formatCurrency(continuingStudentsIncome)}
+                    icon={DollarSign}
+                    color="text-purple-500"
+                />
+                 <StatCard 
+                    title="Total Combined Income"
+                    value={formatCurrency(newAdmissionsIncome + continuingStudentsIncome)}
+                    icon={DollarSign}
+                    color="text-blue-500"
+                />
+            </div>
+            <div className="grid lg:grid-cols-2 gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Income from New Admissions</CardTitle>
+                        <CardDescription>
+                            This table shows the total amount received for each fee category from newly admitted students.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Fee Category</TableHead>
+                                        <TableHead className="text-right">Total Amount Received</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {newAdmissionsSummary.length > 0 ? (
+                                        newAdmissionsSummary.map(item => (
+                                            <TableRow key={item.category}>
+                                                <TableCell className="font-medium">{item.category}</TableCell>
+                                                <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={2} className="h-24 text-center">
+                                                No income from new admissions recorded for this period yet.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Income from Continuing Students</CardTitle>
+                        <CardDescription>
+                            This table shows the total amount received for each fee category from continuing students for this period.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Fee Category</TableHead>
+                                        <TableHead className="text-right">Total Amount Received</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {continuingStudentsSummary.length > 0 ? (
+                                        continuingStudentsSummary.map(item => (
+                                            <TableRow key={item.category}>
+                                                <TableCell className="font-medium">{item.category}</TableCell>
+                                                <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={2} className="h-24 text-center">
+                                                No income from continuing students recorded for this period yet.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
 }
 
 export default function FinancialSummaryPage() {
@@ -62,194 +229,57 @@ export default function FinancialSummaryPage() {
         };
     }, [toast]);
 
-    const newAdmissionsSummary: FinancialSummaryItem[] = React.useMemo(() => {
-        if (!currentTerm) return [];
-
-        const newStudentIds = new Set(
-            students
-                .filter(s => s.admissionYear === currentTerm.academicYear && s.admissionTerm === currentTerm.session)
-                .map(s => s.id)
-        );
-        
-        const newStudentPayments = payments.filter(p => 
-            newStudentIds.has(p.studentId) &&
-            p.academicYear === currentTerm.academicYear &&
-            p.term === currentTerm.session
-        );
-
-        const incomeByCategory = new Map<string, number>();
-
-        newStudentPayments.forEach(payment => {
-            payment.items?.forEach(item => {
-                const currentAmount = incomeByCategory.get(item.name) || 0;
-                incomeByCategory.set(item.name, currentAmount + item.amount);
-            });
-        });
-
-        return Array.from(incomeByCategory.entries())
-            .map(([category, total]) => ({ category, total }))
-            .sort((a, b) => b.total - a.total);
-
-    }, [students, payments, currentTerm]);
-
-    const continuingStudentsSummary: FinancialSummaryItem[] = React.useMemo(() => {
-        if (!currentTerm) return [];
-
-        const newStudentIds = new Set(
-            students
-                .filter(s => s.admissionYear === currentTerm.academicYear && s.admissionTerm === currentTerm.session)
-                .map(s => s.id)
-        );
-
-        const continuingStudentPayments = payments.filter(p => 
-            !newStudentIds.has(p.studentId) &&
-            p.academicYear === currentTerm.academicYear &&
-            p.term === currentTerm.session
-        );
-
-        const incomeByCategory = new Map<string, number>();
-
-        continuingStudentPayments.forEach(payment => {
-            payment.items?.forEach(item => {
-                const currentAmount = incomeByCategory.get(item.name) || 0;
-                incomeByCategory.set(item.name, currentAmount + item.amount);
-            });
-        });
-
-        return Array.from(incomeByCategory.entries())
-            .map(([category, total]) => ({ category, total }))
-            .sort((a, b) => b.total - a.total);
-
-    }, [students, payments, currentTerm]);
-
-    const totalNewAdmissions = students.filter(s => currentTerm && s.admissionYear === currentTerm.academicYear && s.admissionTerm === currentTerm.session).length;
-    const totalContinuingStudents = students.filter(s => currentTerm && !(s.admissionYear === currentTerm.academicYear && s.admissionTerm === currentTerm.session)).length;
-    
-    const newAdmissionsIncome = newAdmissionsSummary.reduce((sum, item) => sum + item.total, 0);
-    const continuingStudentsIncome = continuingStudentsSummary.reduce((sum, item) => sum + item.total, 0);
-
     return (
         <>
             <PageHeader
                 title="Financial Summary"
-                description={`A breakdown of income for the current term (${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}).`}
+                description={`An overview of income for the ${currentTerm?.academicYear || ''} academic year.`}
             />
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-                <StatCard 
-                    title="New Admissions"
-                    value={totalNewAdmissions.toLocaleString()}
-                    icon={UserPlus}
-                    color="text-blue-500"
-                    description={`Income: ${formatCurrency(newAdmissionsIncome)}`}
-                />
-                <StatCard 
-                    title="Continuing Students"
-                    value={totalContinuingStudents.toLocaleString()}
-                    icon={Users}
-                    color="text-purple-500"
-                    description={`Income: ${formatCurrency(continuingStudentsIncome)}`}
-                />
-                 <StatCard 
-                    title="Total Income (New Admissions)"
-                    value={formatCurrency(newAdmissionsIncome)}
-                    icon={DollarSign}
-                    color="text-green-500"
-                />
-                <StatCard 
-                    title="Total Income (Continuing)"
-                    value={formatCurrency(continuingStudentsIncome)}
-                    icon={DollarSign}
-                    color="text-green-500"
-                />
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-6">
+            {isLoading ? (
+                <div className="flex justify-center items-center h-64">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+                </div>
+            ) : !currentTerm ? (
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Income from New Admissions</CardTitle>
-                        <CardDescription>
-                            This table shows the total amount received for each fee category from newly admitted students.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="rounded-md border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Fee Category</TableHead>
-                                        <TableHead className="text-right">Total Amount Received</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {isLoading ? (
-                                        <TableRow>
-                                            <TableCell colSpan={2} className="h-24 text-center">
-                                                <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : newAdmissionsSummary.length > 0 ? (
-                                        newAdmissionsSummary.map(item => (
-                                            <TableRow key={item.category}>
-                                                <TableCell className="font-medium">{item.category}</TableCell>
-                                                <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={2} className="h-24 text-center">
-                                                No income from new admissions recorded for this term yet.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
+                    <CardContent className="pt-6">
+                        <p className="text-center text-muted-foreground">Please set a current academic term in settings to view the financial summary.</p>
                     </CardContent>
                 </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Income from Continuing Students</CardTitle>
-                        <CardDescription>
-                            This table shows the total amount received for each fee category from continuing students for this term.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="rounded-md border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Fee Category</TableHead>
-                                        <TableHead className="text-right">Total Amount Received</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {isLoading ? (
-                                        <TableRow>
-                                            <TableCell colSpan={2} className="h-24 text-center">
-                                                <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : continuingStudentsSummary.length > 0 ? (
-                                        continuingStudentsSummary.map(item => (
-                                            <TableRow key={item.category}>
-                                                <TableCell className="font-medium">{item.category}</TableCell>
-                                                <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={2} className="h-24 text-center">
-                                                No income from continuing students recorded for this term yet.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+            ) : (
+                <Tabs defaultValue="term">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="term">Current Term Summary</TabsTrigger>
+                        <TabsTrigger value="year">Full Academic Year Summary</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="term">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Current Term Summary</CardTitle>
+                                <CardDescription>
+                                    Financial breakdown for {currentTerm.session} of the {currentTerm.academicYear} academic year.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <SummaryDisplay payments={payments} students={students} scope="term" currentTerm={currentTerm} />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="year">
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Full Year Summary</CardTitle>
+                                <CardDescription>
+                                    Financial breakdown for the entire {currentTerm.academicYear} academic year.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <SummaryDisplay payments={payments} students={students} scope="year" currentTerm={currentTerm} />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+            )}
         </>
     );
 }
