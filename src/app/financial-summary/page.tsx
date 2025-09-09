@@ -32,18 +32,25 @@ function SummaryDisplay({
     newStudents: Student[];
     continuingStudents: Student[];
 }) {
-    const newStudentIds = new Set(newStudents.map(s => s.id));
-    
-    const newStudentPayments = filteredPayments.filter(p => newStudentIds.has(p.studentId));
-    const continuingStudentPayments = filteredPayments.filter(p => !newStudentIds.has(p.studentId));
+    const newStudentPayments = React.useMemo(() => {
+        const newStudentIds = new Set(newStudents.map(s => s.id));
+        return filteredPayments.filter(p => newStudentIds.has(p.studentId));
+    }, [filteredPayments, newStudents]);
+
+    const continuingStudentPayments = React.useMemo(() => {
+        const continuingStudentIds = new Set(continuingStudents.map(s => s.id));
+        return filteredPayments.filter(p => continuingStudentIds.has(p.studentId));
+    }, [filteredPayments, continuingStudents]);
 
     const newAdmissionsSummary: FinancialSummaryItem[] = React.useMemo(() => {
         const incomeByCategory = new Map<string, number>();
         newStudentPayments.forEach(payment => {
-            payment.items?.forEach(item => {
-                const currentAmount = incomeByCategory.get(item.name) || 0;
-                incomeByCategory.set(item.name, currentAmount + item.amount);
-            });
+            if (Array.isArray(payment.items)) {
+                payment.items.forEach(item => {
+                    const currentAmount = incomeByCategory.get(item.name) || 0;
+                    incomeByCategory.set(item.name, currentAmount + item.amount);
+                });
+            }
         });
         return Array.from(incomeByCategory.entries())
             .map(([category, total]) => ({ category, total }))
@@ -53,10 +60,12 @@ function SummaryDisplay({
     const continuingStudentsSummary: FinancialSummaryItem[] = React.useMemo(() => {
         const incomeByCategory = new Map<string, number>();
         continuingStudentPayments.forEach(payment => {
-            payment.items?.forEach(item => {
-                const currentAmount = incomeByCategory.get(item.name) || 0;
-                incomeByCategory.set(item.name, currentAmount + item.amount);
-            });
+            if (Array.isArray(payment.items)) {
+                payment.items.forEach(item => {
+                    const currentAmount = incomeByCategory.get(item.name) || 0;
+                    incomeByCategory.set(item.name, currentAmount + item.amount);
+                });
+            }
         });
         return Array.from(incomeByCategory.entries())
             .map(([category, total]) => ({ category, total }))
