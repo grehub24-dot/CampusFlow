@@ -11,6 +11,7 @@
 
 
 
+
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -186,11 +187,13 @@ export type OtpResponse = {
 }
 
 export type StaffDeduction = {
+  id?: string;
   name: string;
   amount: number;
 }
 
 export type StaffArrears = {
+  id?: string;
   name: string;
   amount: number;
 }
