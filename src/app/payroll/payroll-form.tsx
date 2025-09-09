@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { StaffMember } from '@/types';
 import { PlusCircle, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
