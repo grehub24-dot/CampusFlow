@@ -32,16 +32,11 @@ function SummaryDisplay({
     newStudents: Student[];
     continuingStudents: Student[];
 }) {
-    const newStudentIds = React.useMemo(() => new Set(newStudents.map(s => s.id)), [newStudents]);
-    const continuingStudentIds = React.useMemo(() => new Set(continuingStudents.map(s => s.id)), [continuingStudents]);
+    const newStudentIds = new Set(newStudents.map(s => s.id));
+    const continuingStudentIds = new Set(continuingStudents.map(s => s.id));
 
-    const newStudentPayments = React.useMemo(() => {
-        return filteredPayments.filter(p => newStudentIds.has(p.studentId));
-    }, [filteredPayments, newStudentIds]);
-
-    const continuingStudentPayments = React.useMemo(() => {
-        return filteredPayments.filter(p => continuingStudentIds.has(p.studentId));
-    }, [filteredPayments, continuingStudentIds]);
+    const newStudentPayments = filteredPayments.filter(p => newStudentIds.has(p.studentId));
+    const continuingStudentPayments = filteredPayments.filter(p => continuingStudentIds.has(p.studentId));
 
     const newAdmissionsSummary: FinancialSummaryItem[] = React.useMemo(() => {
         const incomeByCategory = new Map<string, number>();
