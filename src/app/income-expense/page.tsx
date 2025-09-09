@@ -27,6 +27,7 @@ export default function IncomeExpensePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,6 +52,16 @@ export default function IncomeExpensePage() {
     const unsubscribePayments = onSnapshot(paymentsQuery, (snapshot) => {
         setPayments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment)));
     });
+
+    const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
+    const unsubscribeSettings = onSnapshot(academicTermsQuery, (snapshot) => {
+        if (!snapshot.empty) {
+            const termDoc = snapshot.docs[0];
+            setCurrentTerm({ id: termDoc.id, ...termDoc.data() } as AcademicTerm);
+        } else {
+            setCurrentTerm(null);
+        }
+    });
     
     setIsLoading(false);
 
@@ -58,6 +69,7 @@ export default function IncomeExpensePage() {
       unsubscribeTransactions();
       unsubscribeCategories();
       unsubscribePayments();
+      unsubscribeSettings();
     };
   }, []);
 
@@ -122,7 +134,11 @@ export default function IncomeExpensePage() {
   const manualIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
 
-  const schoolFeesIncome = payments.reduce((sum, p) => sum + p.amount, 0);
+  const schoolFeesIncome = currentTerm
+    ? payments
+        .filter(p => p.academicYear === currentTerm.academicYear && p.term === currentTerm.session)
+        .reduce((sum, p) => sum + p.amount, 0)
+    : 0;
 
   const totalIncome = manualIncome + schoolFeesIncome;
   const netBalance = totalIncome - totalExpense;

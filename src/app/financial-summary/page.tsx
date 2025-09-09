@@ -71,7 +71,11 @@ export default function FinancialSummaryPage() {
                 .map(s => s.id)
         );
         
-        const newStudentPayments = payments.filter(p => newStudentIds.has(p.studentId));
+        const newStudentPayments = payments.filter(p => 
+            newStudentIds.has(p.studentId) &&
+            p.academicYear === currentTerm.academicYear &&
+            p.term === currentTerm.session
+        );
 
         const incomeByCategory = new Map<string, number>();
 
