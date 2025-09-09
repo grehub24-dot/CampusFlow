@@ -41,7 +41,9 @@ export default function PayrollPage() {
 
     const runsQuery = query(collection(db, "payroll-runs"));
     const unsubscribeRuns = onSnapshot(runsQuery, (snapshot) => {
-      setPayrollRuns(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PayrollRun)));
+      const runsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PayrollRun));
+      runsData.sort((a, b) => new Date(b.runDate).getTime() - new Date(a.runDate).getTime());
+      setPayrollRuns(runsData);
       setIsLoadingRuns(false);
     });
 
