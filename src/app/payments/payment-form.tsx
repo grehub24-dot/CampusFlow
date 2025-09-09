@@ -29,6 +29,7 @@ import {
 import { Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface Props {
   students: Student[];
@@ -234,6 +235,34 @@ export default function PaymentForm({
     return 0;
   }, [amountTendered, payingAmount]);
 
+    const paymentAllocation = useMemo(() => {
+        let amountToAllocate = payingAmount;
+        const allocationMap = new Map<string, number>();
+
+        const sortedFeeItems = [...allFeeItemsForForm].sort((a, b) => {
+            const aIsCore = CORE_FEE_PRIORITY.includes(a.name);
+            const bIsCore = CORE_FEE_PRIORITY.includes(b.name);
+            if (aIsCore && !bIsCore) return -1;
+            if (!aIsCore && bIsCore) return 1;
+            if (aIsCore && bIsCore) {
+                return CORE_FEE_PRIORITY.indexOf(a.name) - CORE_FEE_PRIORITY.indexOf(b.name);
+            }
+            return 0; // or sort by name/amount if needed for non-core items
+        });
+
+        for (const item of sortedFeeItems) {
+            if (amountToAllocate <= 0) break;
+            const balanceForItem = outstandingBalancePerItem.get(item.name) || 0;
+
+            if (balanceForItem > 0) {
+                const amountToPayForItem = Math.min(amountToAllocate, balanceForItem);
+                allocationMap.set(item.name, amountToPayForItem);
+                amountToAllocate -= amountToPayForItem;
+            }
+        }
+        return allocationMap;
+    }, [payingAmount, outstandingBalancePerItem, allFeeItemsForForm]);
+
 
   useEffect(() => {
     if (!selectedStudent || !currentTerm) {
@@ -256,33 +285,12 @@ export default function PaymentForm({
     if (!selectedStudent || payingAmount <= 0 || totalAmountDue <= 0) return;
     setIsSubmitting(true);
     
-    // --- Allocation Logic ---
-    let amountToAllocate = payingAmount;
     const allocatedItems: PaymentFeeItem[] = [];
-
-    const sortedFeeItems = [...allFeeItemsForForm].sort((a, b) => {
-        const aIsCore = CORE_FEE_PRIORITY.includes(a.name);
-        const bIsCore = CORE_FEE_PRIORITY.includes(b.name);
-        if (aIsCore && !bIsCore) return -1;
-        if (!aIsCore && bIsCore) return 1;
-        if (aIsCore && bIsCore) {
-            return CORE_FEE_PRIORITY.indexOf(a.name) - CORE_FEE_PRIORITY.indexOf(b.name);
+    paymentAllocation.forEach((amount, name) => {
+        if (amount > 0) {
+            allocatedItems.push({ name, amount });
         }
-        return 0; // or sort by name/amount if needed for non-core items
     });
-    
-    for (const item of sortedFeeItems) {
-        if (amountToAllocate <= 0) break;
-        
-        const balanceForItem = outstandingBalancePerItem.get(item.name) || 0;
-
-        if (balanceForItem > 0) {
-            const amountToPayForItem = Math.min(amountToAllocate, balanceForItem);
-            allocatedItems.push({ name: item.name, amount: amountToPayForItem });
-            amountToAllocate -= amountToPayForItem;
-        }
-    }
-    // --- End Allocation Logic ---
 
     try {
       const newPaymentStatus = payingAmount < outstandingBalance ? 'Part Payment' : 'Full Payment';
@@ -492,6 +500,37 @@ export default function PaymentForm({
               />
             </div>
           </div>
+           {payingAmount > 0 && (
+                <div>
+                    <Label className="text-sm font-medium">Payment Allocation Breakdown</Label>
+                    <div className="rounded-md border bg-background mt-2">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Fee Item</TableHead>
+                                    <TableHead className="text-right">Outstanding</TableHead>
+                                    <TableHead className="text-right">Allocated</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {Array.from(outstandingBalancePerItem.entries()).map(([name, balance]) => {
+                                    const allocated = paymentAllocation.get(name) || 0;
+                                    if(balance > 0) {
+                                      return (
+                                          <TableRow key={name}>
+                                              <TableCell>{name}</TableCell>
+                                              <TableCell className="text-right">GHS {balance.toFixed(2)}</TableCell>
+                                              <TableCell className="text-right font-semibold text-green-600">GHS {allocated.toFixed(2)}</TableCell>
+                                          </TableRow>
+                                      )
+                                    }
+                                    return null;
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="amountTendered">Amount Tendered</Label>
