@@ -3,9 +3,9 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Payment, Invoice, AcademicTerm, Student, FeeStructure, FeeItem } from '@/types';
+import type { Payment, Invoice, AcademicTerm, Student, FeeStructure, FeeItem, IntegrationSettings } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { sendSms } from '@/lib/frog-api';
 
@@ -25,6 +25,7 @@ export default function InvoicesPage() {
   const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
   const [feeItems, setFeeItems] = React.useState<FeeItem[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
+  const [integrationSettings, setIntegrationSettings] = React.useState<IntegrationSettings | null>(null);
 
   const [isLoading, setIsLoading] = React.useState(true);
   const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null);
@@ -71,12 +72,18 @@ export default function InvoicesPage() {
         setIsLoading(false);
     });
     
+    const integrationsSettingsRef = doc(db, "settings", "integrations");
+    const unsubscribeIntegrations = onSnapshot(integrationsSettingsRef, (doc) => {
+        setIntegrationSettings(doc.data() as IntegrationSettings);
+    });
+
     return () => {
       unsubscribeSettings();
       unsubscribePayments();
       unsubscribeStudents();
       unsubscribeFeeStructures();
       unsubscribeFeeItems();
+      unsubscribeIntegrations();
     };
   }, []);
 
@@ -105,6 +112,11 @@ export default function InvoicesPage() {
   }
 
   const handleSendReminder = async (invoice: Invoice) => {
+    if (!integrationSettings?.smsOnFeeReminder) {
+        toast({ variant: 'destructive', title: 'Reminders Disabled', description: 'SMS reminders for fees are currently disabled in settings.' });
+        return;
+    }
+    
     const student = students.find(s => s.id === invoice.studentId);
     if (!student || !student.guardianPhone) {
         toast({ variant: 'destructive', title: 'Error', description: 'Guardian phone number not found.' });
@@ -183,7 +195,7 @@ export default function InvoicesPage() {
   const memoizedInvoiceColumns = React.useMemo(
       () => getInvoiceColumns({ onViewInvoice: handleViewInvoice, onSendReminder: handleSendReminder, onPay: handlePay }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [students] 
+      [students, integrationSettings] 
   );
 
   const pendingInvoicesTotal = pendingInvoices.reduce((acc, i) => acc + i.amount, 0);

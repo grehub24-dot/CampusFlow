@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { sendSms } from '@/lib/frog-api';
 
 
-import type { Student, FeeStructure, AcademicTerm, PaymentFeeItem, FeeItem, Payment, CommunicationTemplate } from '@/types';
+import type { Student, FeeStructure, AcademicTerm, PaymentFeeItem, FeeItem, Payment, CommunicationTemplate, IntegrationSettings } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -65,6 +65,7 @@ export default function PaymentForm({
   const [receiptLabel, setReceiptLabel] = useState('Receipt No.');
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [smsTemplates, setSmsTemplates] = useState<Record<string, CommunicationTemplate>>({});
+  const [integrationSettings, setIntegrationSettings] = useState<IntegrationSettings | null>(null);
 
   useEffect(() => {
     switch (paymentMethod) {
@@ -97,10 +98,16 @@ export default function PaymentForm({
         });
         setSmsTemplates(fetchedTemplates);
     });
+    
+    const integrationsSettingsRef = doc(db, "settings", "integrations");
+    const unsubscribeIntegrations = onSnapshot(integrationsSettingsRef, (doc) => {
+        setIntegrationSettings(doc.data() as IntegrationSettings);
+    });
 
     return () => {
       unsubscribeFeeItems();
       unsubscribeSmsTemplates();
+      unsubscribeIntegrations();
     }
   }, []);
 
@@ -325,7 +332,7 @@ export default function PaymentForm({
       });
       
       // Send SMS notification
-      if (selectedStudent.guardianPhone) {
+      if (selectedStudent.guardianPhone && integrationSettings?.smsOnPayment) {
         const template = smsTemplates['payment-confirmation'];
         if (template && template.content) {
             let message = template.content

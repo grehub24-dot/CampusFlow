@@ -2,9 +2,9 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot, query, where, orderBy, limit } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy, limit, doc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Student, Payment, Invoice, AcademicTerm, FeeStructure, FeeItem } from '@/types';
+import type { Student, Payment, Invoice, AcademicTerm, FeeStructure, FeeItem, IntegrationSettings } from '@/types';
 import { sendSms } from '@/lib/frog-api';
 
 import { PageHeader } from "@/components/page-header";
@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [isStudentSheetOpen, setIsStudentSheetOpen] = React.useState(false);
   const [isInvoiceSheetOpen, setIsInvoiceSheetOpen] = React.useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = React.useState(false);
+  const [integrationSettings, setIntegrationSettings] = React.useState<IntegrationSettings | null>(null);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -93,6 +94,10 @@ export default function Dashboard() {
         setFeeItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeItem)));
     });
 
+    const integrationsSettingsRef = doc(db, "settings", "integrations");
+    const unsubscribeIntegrations = onSnapshot(integrationsSettingsRef, (doc) => {
+        setIntegrationSettings(doc.data() as IntegrationSettings);
+    });
 
     return () => {
         unsubscribeSettings();
@@ -101,6 +106,7 @@ export default function Dashboard() {
         unsubscribeRecentPayments();
         unsubscribeFeeStructures();
         unsubscribeFeeItems();
+        unsubscribeIntegrations();
     };
   }, [toast]);
   
@@ -144,6 +150,11 @@ export default function Dashboard() {
   }
 
   const handleSendReminder = async (invoice: Invoice) => {
+    if (!integrationSettings?.smsOnFeeReminder) {
+        toast({ variant: 'destructive', title: 'Reminders Disabled', description: 'SMS reminders for fees are currently disabled in settings.' });
+        return;
+    }
+
     const student = students.find(s => s.id === invoice.studentId);
     if (!student || !student.guardianPhone) {
         toast({ variant: 'destructive', title: 'Error', description: 'Guardian phone number not found.' });
@@ -171,7 +182,7 @@ export default function Dashboard() {
   const memoizedInvoiceColumns = React.useMemo(
       () => getInvoiceColumns({ onViewInvoice: handleViewInvoice, onSendReminder: handleSendReminder, onPay: handlePay }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [students] 
+      [students, integrationSettings] 
   );
   
   const pendingInvoices: Invoice[] = React.useMemo(() => {

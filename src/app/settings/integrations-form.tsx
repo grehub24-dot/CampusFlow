@@ -12,11 +12,16 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
   frogApiKey: z.string().optional(),
   frogSenderId: z.string().optional(),
   frogUsername: z.string().optional(),
+  smsOnAdmission: z.boolean().default(false),
+  smsOnPayment: z.boolean().default(false),
+  smsOnFeeReminder: z.boolean().default(false),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -34,6 +39,9 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
       frogApiKey: defaultValues?.frogApiKey || '',
       frogSenderId: defaultValues?.frogSenderId || '',
       frogUsername: defaultValues?.frogUsername || '',
+      smsOnAdmission: defaultValues?.smsOnAdmission || false,
+      smsOnPayment: defaultValues?.smsOnPayment || false,
+      smsOnFeeReminder: defaultValues?.smsOnFeeReminder || false,
     }
   });
 
@@ -42,6 +50,9 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
       frogApiKey: defaultValues?.frogApiKey || '',
       frogSenderId: defaultValues?.frogSenderId || '',
       frogUsername: defaultValues?.frogUsername || '',
+      smsOnAdmission: defaultValues?.smsOnAdmission || false,
+      smsOnPayment: defaultValues?.smsOnPayment || false,
+      smsOnFeeReminder: defaultValues?.smsOnFeeReminder || false,
     })
   }, [defaultValues, form]);
 
@@ -95,6 +106,54 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
                     )}
                 />
             </CardContent>
+        </Card>
+
+        <Card className="border shadow-sm">
+          <CardHeader>
+            <CardTitle>Automated SMS Notifications</CardTitle>
+            <CardDescription>Enable or disable automated SMS messages for key events. This requires the Frog SMS API to be configured above.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+             <FormField
+                control={form.control}
+                name="smsOnAdmission"
+                render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                            <FormLabel className="text-base">New Student Admission</FormLabel>
+                            <FormDescription>Send a welcome SMS to the guardian when a new student is admitted.</FormDescription>
+                        </div>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    </FormItem>
+                )}
+            />
+             <FormField
+                control={form.control}
+                name="smsOnPayment"
+                render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                            <FormLabel className="text-base">Payment Confirmation</FormLabel>
+                            <FormDescription>Send an SMS receipt to the guardian after a payment is recorded.</FormDescription>
+                        </div>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    </FormItem>
+                )}
+            />
+             <FormField
+                control={form.control}
+                name="smsOnFeeReminder"
+                render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                            <FormLabel className="text-base">Fee Reminders</FormLabel>
+                            <FormDescription>Allow sending of SMS reminders for outstanding fee balances.</FormDescription>
+                        </div>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    </FormItem>
+                )}
+            />
+          </CardContent>
         </Card>
         
         <div className="flex justify-end">

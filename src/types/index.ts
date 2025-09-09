@@ -13,6 +13,7 @@
 
 
 
+
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -146,6 +147,9 @@ export type IntegrationSettings = {
     frogApiKey?: string;
     frogSenderId?: string;
     frogUsername?: string;
+    smsOnAdmission?: boolean;
+    smsOnPayment?: boolean;
+    smsOnFeeReminder?: boolean;
 }
 
 export type AdmissionSettings = {

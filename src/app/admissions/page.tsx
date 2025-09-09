@@ -23,7 +23,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Users, User, Wallet, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment, AdmissionSettings, FeeItem, CommunicationTemplate } from '@/types';
+import type { Student, AcademicTerm, SchoolClass, FeeStructure, Payment, AdmissionSettings, FeeItem, CommunicationTemplate, IntegrationSettings } from '@/types';
 import { AdmittedStudentTable } from './admitted-student-table';
 import { ToastAction } from '@/components/ui/toast';
 import { db } from '@/lib/firebase';
@@ -315,6 +315,7 @@ export default function AdmissionsPage() {
   const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
   const [feeItems, setFeeItems] = React.useState<FeeItem[]>([]);
   const [smsTemplates, setSmsTemplates] = React.useState<Record<string, CommunicationTemplate>>({});
+  const [integrationSettings, setIntegrationSettings] = React.useState<IntegrationSettings | null>(null);
   const [payments, setPayments] = React.useState<Payment[]>([]);
   const { toast } = useToast();
   const router = useRouter();
@@ -384,6 +385,11 @@ export default function AdmissionsPage() {
       setPayments(paymentsData);
     });
 
+    const integrationsSettingsRef = doc(db, "settings", "integrations");
+    const unsubscribeIntegrations = onSnapshot(integrationsSettingsRef, (doc) => {
+        setIntegrationSettings(doc.data() as IntegrationSettings);
+    });
+
     return () => {
       unsubscribeSettings();
       unsubscribeClasses();
@@ -391,6 +397,7 @@ export default function AdmissionsPage() {
       unsubscribePayments();
       unsubscribeFeeItems();
       unsubscribeSmsTemplates();
+      unsubscribeIntegrations();
     }
   }, []);
 
@@ -516,31 +523,33 @@ export default function AdmissionsPage() {
         const newStudent = { id: newStudentSnapshot.id, ...newStudentSnapshot.data() } as Student;
         
         // --- Calculate fees and send SMS ---
-        const structure = feeStructures.find(fs => fs.classId === newStudent.classId && fs.academicTermId === currentTerm.id);
-        if (structure && Array.isArray(structure.items)) {
-            const totalFeesDue = structure.items
-                .map(item => {
-                    const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
-                    if (!feeItemInfo || feeItemInfo.isOptional) return 0;
-                    return feeItemInfo.appliesTo.includes('new') ? item.amount : 0;
-                })
-                .reduce((total, amount) => total + amount, 0);
+        if (integrationSettings?.smsOnAdmission) {
+            const structure = feeStructures.find(fs => fs.classId === newStudent.classId && fs.academicTermId === currentTerm.id);
+            if (structure && Array.isArray(structure.items)) {
+                const totalFeesDue = structure.items
+                    .map(item => {
+                        const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
+                        if (!feeItemInfo || feeItemInfo.isOptional) return 0;
+                        return feeItemInfo.appliesTo.includes('new') ? item.amount : 0;
+                    })
+                    .reduce((total, amount) => total + amount, 0);
 
-            const template = smsTemplates['welcome-message'];
-            if (template && template.content && newStudent.guardianPhone) {
-                let message = template.content
-                    .replace('{{studentName}}', newStudent.name)
-                    .replace('{{schoolName}}', schoolInfo?.schoolName || 'the school')
-                    .replace('{{className}}', newStudent.class)
-                    .replace('{{feesDue}}', totalFeesDue.toFixed(2));
-                
-                sendSms([newStudent.guardianPhone], message).then(result => {
-                    if (result.success) {
-                        toast({ title: 'Welcome SMS Sent', description: 'Guardian has been notified.' });
-                    } else {
-                        toast({ variant: 'destructive', title: 'SMS Failed', description: 'Could not send welcome SMS to guardian.' });
-                    }
-                });
+                const template = smsTemplates['welcome-message'];
+                if (template && template.content && newStudent.guardianPhone) {
+                    let message = template.content
+                        .replace('{{studentName}}', newStudent.name)
+                        .replace('{{schoolName}}', schoolInfo?.schoolName || 'the school')
+                        .replace('{{className}}', newStudent.class)
+                        .replace('{{feesDue}}', totalFeesDue.toFixed(2));
+                    
+                    sendSms([newStudent.guardianPhone], message).then(result => {
+                        if (result.success) {
+                            toast({ title: 'Welcome SMS Sent', description: 'Guardian has been notified.' });
+                        } else {
+                            toast({ variant: 'destructive', title: 'SMS Failed', description: 'Could not send welcome SMS to guardian.' });
+                        }
+                    });
+                }
             }
         }
         // --- End of SMS logic ---
@@ -689,4 +698,3 @@ export default function AdmissionsPage() {
     
 
     
-
