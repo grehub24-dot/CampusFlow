@@ -24,11 +24,11 @@ const formatCurrency = (amount: number) => {
 }
 
 function SummaryDisplay({
-    payments,
+    filteredPayments,
     newStudents,
     continuingStudents,
 }: {
-    payments: Payment[];
+    filteredPayments: Payment[];
     newStudents: Student[];
     continuingStudents: Student[];
 }) {
@@ -36,12 +36,12 @@ function SummaryDisplay({
     const continuingStudentIds = React.useMemo(() => new Set(continuingStudents.map(s => s.id)), [continuingStudents]);
 
     const newStudentPayments = React.useMemo(() => {
-        return payments.filter(p => newStudentIds.has(p.studentId));
-    }, [payments, newStudentIds]);
+        return filteredPayments.filter(p => newStudentIds.has(p.studentId));
+    }, [filteredPayments, newStudentIds]);
 
     const continuingStudentPayments = React.useMemo(() => {
-        return payments.filter(p => continuingStudentIds.has(p.studentId));
-    }, [payments, continuingStudentIds]);
+        return filteredPayments.filter(p => continuingStudentIds.has(p.studentId));
+    }, [filteredPayments, continuingStudentIds]);
 
     const newAdmissionsSummary: FinancialSummaryItem[] = React.useMemo(() => {
         const incomeByCategory = new Map<string, number>();
@@ -272,7 +272,7 @@ export default function FinancialSummaryPage() {
                             </CardHeader>
                             <CardContent>
                                 <SummaryDisplay 
-                                    payments={termPayments} 
+                                    filteredPayments={termPayments} 
                                     newStudents={newStudents}
                                     continuingStudents={continuingStudents}
                                 />
@@ -289,7 +289,7 @@ export default function FinancialSummaryPage() {
                             </CardHeader>
                             <CardContent>
                                <SummaryDisplay 
-                                    payments={yearPayments} 
+                                    filteredPayments={yearPayments} 
                                     newStudents={newStudents}
                                     continuingStudents={continuingStudents}
                                 />
@@ -301,4 +301,3 @@ export default function FinancialSummaryPage() {
         </>
     );
 }
-
