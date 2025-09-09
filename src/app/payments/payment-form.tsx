@@ -247,7 +247,7 @@ export default function PaymentForm({
             if (aIsCore && bIsCore) {
                 return CORE_FEE_PRIORITY.indexOf(a.name) - CORE_FEE_PRIORITY.indexOf(b.name);
             }
-            return 0; // or sort by name/amount if needed for non-core items
+            return a.name.localeCompare(b.name);
         });
 
         for (const item of sortedFeeItems) {
@@ -489,7 +489,18 @@ export default function PaymentForm({
                           </TableRow>
                       </TableHeader>
                       <TableBody>
-                          {Array.from(outstandingBalancePerItem.entries()).map(([name, balance]) => {
+                          {Array.from(outstandingBalancePerItem.entries())
+                            .sort(([a], [b]) => {
+                                const aIsCore = CORE_FEE_PRIORITY.includes(a);
+                                const bIsCore = CORE_FEE_PRIORITY.includes(b);
+                                if (aIsCore && !bIsCore) return -1;
+                                if (!aIsCore && bIsCore) return 1;
+                                if (aIsCore && bIsCore) {
+                                    return CORE_FEE_PRIORITY.indexOf(a) - CORE_FEE_PRIORITY.indexOf(b);
+                                }
+                                return a.localeCompare(b);
+                            })
+                            .map(([name, balance]) => {
                               const allocated = paymentAllocation.get(name) || 0;
                               if(balance > 0) {
                                 return (
