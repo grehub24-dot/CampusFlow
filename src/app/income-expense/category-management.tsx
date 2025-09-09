@@ -1,7 +1,7 @@
 
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { TransactionCategory } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Trash2 } from 'lucide-react';
-import { addDoc, collection, deleteDoc, doc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, writeBatch, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -70,6 +70,33 @@ function CategoryForm({ onSubmit }: { onSubmit: SubmitHandler<FormValues> }) {
     )
 }
 
+const defaultIncomeCategories = [
+    { name: 'Canteen Fees', type: 'income' as const },
+    { name: 'Transport Fees', type: 'income' as const },
+    { name: 'School Fees (New Admissions)', type: 'income' as const },
+    { name: 'School Fees (Continuing)', type: 'income' as const },
+    { name: 'Book Sales', type: 'income' as const },
+    { name: 'Uniform Sales', type: 'income' as const },
+    { name: 'Printing & Photocopying', type: 'income' as const },
+    { name: 'Miscellaneous Income', type: 'income' as const },
+];
+
+const defaultExpenseCategories = [
+    { name: 'Salary', type: 'expense' as const },
+    { name: 'Canteen Supplies', type: 'expense' as const },
+    { name: 'Utilities (Water/Electricity)', type: 'expense' as const },
+    { name: 'Transportation (Fuel/Maintenance)', type: 'expense' as const },
+    { name: 'Teacher Motivation/Allowances', type: 'expense' as const },
+    { name: 'Administrative Costs', type: 'expense' as const },
+    { name: 'Repairs & Maintenance', type: 'expense' as const },
+    { name: 'Printing & Stationery', type: 'expense' as const },
+    { name: 'Extra-Curricular Activities', type: 'expense' as const },
+    { name: 'Advertisement', type: 'expense' as const },
+    { name: 'Petty Expenses', type: 'expense' as const },
+    { name: 'Bank Charges', type: 'expense' as const },
+];
+
+
 
 type CategoryManagementProps = {
     categories: TransactionCategory[];
@@ -78,6 +105,45 @@ export function CategoryManagement({ categories }: CategoryManagementProps) {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [categoryToDelete, setCategoryToDelete] = useState<TransactionCategory | null>(null);
     const { toast } = useToast();
+    
+    useEffect(() => {
+        const seedDefaultCategories = async () => {
+            if (categories.length === 0) {
+                console.log('No categories found. Seeding default categories...');
+                const batch = writeBatch(db);
+                const allDefaultCategories = [...defaultIncomeCategories, ...defaultExpenseCategories];
+                
+                allDefaultCategories.forEach(category => {
+                    const docRef = doc(collection(db, "transaction-categories"));
+                    batch.set(docRef, category);
+                });
+
+                try {
+                    await batch.commit();
+                    toast({
+                        title: "Default Categories Added",
+                        description: "Standard income and expense categories have been set up for you."
+                    });
+                } catch (error) {
+                    console.error("Failed to seed default categories:", error);
+                    toast({
+                        variant: "destructive",
+                        title: "Setup Error",
+                        description: "Could not add default categories."
+                    });
+                }
+            }
+        };
+
+        const checkAndSeed = async () => {
+            const querySnapshot = await getDocs(collection(db, "transaction-categories"));
+            if (querySnapshot.empty) {
+                seedDefaultCategories();
+            }
+        };
+
+        checkAndSeed();
+    }, []);
 
     const incomeCategories = categories.filter(c => c.type === 'income');
     const expenseCategories = categories.filter(c => c.type === 'expense');
