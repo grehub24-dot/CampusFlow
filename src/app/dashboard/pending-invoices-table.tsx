@@ -46,9 +46,14 @@ export function PendingInvoicesTable<TData, TValue>({
 
   return (
     <Card>
-      <CardHeader>
-          <CardTitle>Pending Invoices</CardTitle>
-          <CardDescription>A list of invoices awaiting payment.</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Pending Invoices</CardTitle>
+            <CardDescription>A list of invoices awaiting payment.</CardDescription>
+          </div>
+           <Button variant="outline" size="sm" onClick={() => router.push('/invoices')}>
+                View All
+            </Button>
       </CardHeader>
       <CardContent>
         <div className="rounded-md border">
@@ -96,9 +101,31 @@ export function PendingInvoicesTable<TData, TValue>({
           </Table>
         </div>
         <div className="flex items-center justify-end space-x-2 py-4">
-            <Button variant="outline" size="sm" onClick={() => router.push('/invoices')}>
-                View All Invoices
-            </Button>
+            <div className="flex-1 text-sm text-muted-foreground">
+                Total {table.getFilteredRowModel().rows.length} row(s).
+            </div>
+            <div className="flex items-center space-x-2">
+                 <p className="text-sm font-medium">
+                    Page {table.getState().pagination.pageIndex + 1} of{" "}
+                    {table.getPageCount()}
+                </p>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                >
+                    Previous
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                >
+                    Next
+                </Button>
+            </div>
         </div>
       </CardContent>
     </Card>

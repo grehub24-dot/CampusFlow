@@ -38,9 +38,14 @@ export function RecentPaymentsTable<TData, TValue>({
 
   return (
     <Card>
-      <CardHeader>
-          <CardTitle>Recent Payments</CardTitle>
-          <CardDescription>A list of the most recent payments.</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Recent Payments</CardTitle>
+            <CardDescription>A list of the most recent payments.</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => router.push('/payments')}>
+                View All
+            </Button>
       </CardHeader>
       <CardContent>
         <div className="rounded-md border">
@@ -86,11 +91,6 @@ export function RecentPaymentsTable<TData, TValue>({
               )}
             </TableBody>
           </Table>
-        </div>
-        <div className="flex items-center justify-end space-x-2 py-4">
-            <Button variant="outline" size="sm" onClick={() => router.push('/payments')}>
-                View All Payments
-            </Button>
         </div>
       </CardContent>
     </Card>
