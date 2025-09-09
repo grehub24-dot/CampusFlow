@@ -8,7 +8,7 @@ import { z } from 'zod';
 import type { StaffMember } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,11 @@ import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
+
+const deductionSchema = z.object({
+  name: z.string().min(1, "Deduction name is required."),
+  amount: z.coerce.number().min(0, "Amount must be a positive number."),
+});
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
@@ -33,6 +38,7 @@ const formSchema = z.object({
   momoNumber: z.string().optional(),
   status: z.enum(['Active', 'Inactive']),
   contractStatus: z.enum(['Probation', 'Full-Time', 'Part-Time', 'Attachment', 'Service']).optional(),
+  deductions: z.array(deductionSchema).optional(),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -58,7 +64,13 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
         qualification: defaultValues?.qualification || '',
         subjectsTaught: defaultValues?.subjectsTaught || '',
         notes: defaultValues?.notes || '',
+        deductions: defaultValues?.deductions || [],
     }
+  });
+
+   const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "deductions"
   });
 
 
@@ -76,6 +88,7 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
         qualification: defaultValues?.qualification || '',
         subjectsTaught: defaultValues?.subjectsTaught || '',
         notes: defaultValues?.notes || '',
+        deductions: defaultValues?.deductions || [],
     })
   }, [defaultValues, form]);
   
@@ -227,6 +240,54 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
                 <FormField control={form.control} name="momoNumber" render={({ field }) => (<FormItem><FormLabel>Contact / Mobile Money No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
         </div>
+        
+        <Separator />
+
+        <div>
+            <h3 className="text-lg font-medium mb-2">Custom Deductions</h3>
+            <div className="space-y-4">
+                {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-end gap-2">
+                        <FormField
+                            control={form.control}
+                            name={`deductions.${index}.name`}
+                            render={({ field }) => (
+                                <FormItem className="flex-grow">
+                                    <FormLabel>Deduction Name</FormLabel>
+                                    <FormControl><Input placeholder="e.g. Welfare" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name={`deductions.${index}.amount`}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Amount (GHS)</FormLabel>
+                                    <FormControl><Input type="number" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ))}
+                 <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => append({ name: '', amount: 0 })}
+                    className="mt-2"
+                    >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Deduction
+                </Button>
+            </div>
+        </div>
+
         <div className="flex justify-end">
           <Button type="submit">
             {defaultValues ? 'Save Changes' : 'Add Staff Member'}
@@ -236,4 +297,5 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
     </Form>
   )
 }
+
 
