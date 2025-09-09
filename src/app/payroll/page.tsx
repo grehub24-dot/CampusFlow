@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { collection, onSnapshot, doc, addDoc, query, getDocs, where, writeBatch } from "firebase/firestore";
+import { collection, onSnapshot, doc, addDoc, query, getDocs, where, writeBatch, updateDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { format, getYear } from 'date-fns';
 import { Loader2, PlayCircle } from 'lucide-react';
@@ -15,6 +15,14 @@ import type { StaffMember, PayrollRun } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getStaffPayrollColumns } from './staff-payroll-columns';
+import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PayrollForm, type FormValues as PayrollFormValues } from './payroll-form';
+import type { SubmitHandler } from 'react-hook-form';
 
 const months = [
     "January", "February", "March", "April", "May", "June", 
@@ -23,6 +31,55 @@ const months = [
 
 const years = Array.from({ length: 5 }, (_, i) => getYear(new Date()) - i);
 
+function StaffPayrollTable({ staff, onEdit }: { staff: StaffMember[], onEdit: (staff: StaffMember) => void }) {
+    const columns = React.useMemo(() => getStaffPayrollColumns({ onEdit }), [onEdit]);
+    const table = useReactTable({
+        data: staff,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+    });
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Manage Staff Payroll</CardTitle>
+                <CardDescription>Set salary, payment details, and recurring deductions for each staff member.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <TableRow key={headerGroup.id}>
+                                {headerGroup.headers.map((header) => (
+                                    <TableHead key={header.id}>
+                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                    </TableHead>
+                                ))}
+                                </TableRow>
+                            ))}
+                        </TableHeader>
+                        <TableBody>
+                            {table.getRowModel().rows?.length ? (
+                                table.getRowModel().rows.map((row) => (
+                                    <TableRow key={row.id}>
+                                        {row.getVisibleCells().map((cell) => (
+                                            <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow><TableCell colSpan={columns.length} className="h-24 text-center">No staff found.</TableCell></TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+
 export default function PayrollPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
@@ -30,6 +87,8 @@ export default function PayrollPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMMM'));
   const [selectedYear, setSelectedYear] = useState(format(new Date(), 'yyyy'));
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -52,6 +111,11 @@ export default function PayrollPage() {
       unsubscribeRuns();
     };
   }, []);
+  
+  const handleEditStaff = (staffMember: StaffMember) => {
+    setSelectedStaff(staffMember);
+    setIsFormOpen(true);
+  }
 
   const calculatePayrollForEmployee = (employee: StaffMember) => {
       const grossSalaryPerMonth = employee.grossSalary / 12;
@@ -88,6 +152,29 @@ export default function PayrollPage() {
           arrears: employee.arrears || [],
       };
   };
+  
+    const onPayrollFormSubmit: SubmitHandler<PayrollFormValues> = async (values) => {
+        if (!selectedStaff) return;
+        setIsProcessing(true);
+        try {
+            const dataToUpdate = {
+                grossSalary: values.grossSalary,
+                bankName: values.bankName,
+                accountNumber: values.accountNumber,
+                momoNumber: values.momoNumber,
+                deductions: values.deductions,
+            };
+            const staffRef = doc(db, "staff", selectedStaff.id);
+            await updateDoc(staffRef, dataToUpdate);
+            toast({ title: "Payroll Details Updated", description: `Financial information for ${selectedStaff.name} has been saved.` });
+            setIsFormOpen(false);
+        } catch(e) {
+            console.error("Error updating payroll details:", e);
+            toast({ variant: "destructive", title: "Error", description: "Could not save payroll details." });
+        } finally {
+            setIsProcessing(false);
+        }
+    }
 
   const handleRunPayroll = async () => {
     setIsProcessing(true);
@@ -167,7 +254,7 @@ export default function PayrollPage() {
     <>
       <PageHeader
         title="Payroll"
-        description="Run monthly payroll and view historical records."
+        description="Manage and run monthly payroll."
       >
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -218,7 +305,34 @@ export default function PayrollPage() {
         </AlertDialog>
       </PageHeader>
       
-      <PayrollHistory payrollRuns={payrollRuns} isLoading={isLoadingRuns} />
+      <Tabs defaultValue="history">
+          <TabsList>
+              <TabsTrigger value="history">Payroll Run History</TabsTrigger>
+              <TabsTrigger value="manage">Manage Staff Payroll</TabsTrigger>
+          </TabsList>
+          <TabsContent value="history" className="space-y-4">
+            <PayrollHistory payrollRuns={payrollRuns} isLoading={isLoadingRuns} />
+          </TabsContent>
+          <TabsContent value="manage" className="space-y-4">
+            <StaffPayrollTable staff={staff} onEdit={handleEditStaff} />
+          </TabsContent>
+      </Tabs>
+      
+       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>Manage Payroll for {selectedStaff?.name}</DialogTitle>
+                </DialogHeader>
+                <div className="p-1">
+                    <PayrollForm onSubmit={onPayrollFormSubmit} defaultValues={selectedStaff || undefined} />
+                </div>
+                 {isProcessing && (
+                    <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                )}
+            </DialogContent>
+       </Dialog>
     </>
   );
 }
