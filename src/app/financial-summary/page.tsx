@@ -33,10 +33,9 @@ function SummaryDisplay({
     continuingStudents: Student[];
 }) {
     const newStudentIds = new Set(newStudents.map(s => s.id));
-    const continuingStudentIds = new Set(continuingStudents.map(s => s.id));
-
+    
     const newStudentPayments = filteredPayments.filter(p => newStudentIds.has(p.studentId));
-    const continuingStudentPayments = filteredPayments.filter(p => continuingStudentIds.has(p.studentId));
+    const continuingStudentPayments = filteredPayments.filter(p => !newStudentIds.has(p.studentId));
 
     const newAdmissionsSummary: FinancialSummaryItem[] = React.useMemo(() => {
         const incomeByCategory = new Map<string, number>();
