@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
 import StatCard from '@/components/dashboard/stat-card';
-import { DollarSign, UserPlus, Users } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
@@ -25,39 +25,25 @@ const formatCurrency = (amount: number) => {
 
 function SummaryDisplay({
     payments,
-    students,
-    scope,
-    currentTerm,
+    newStudents,
+    continuingStudents,
 }: {
     payments: Payment[];
-    students: Student[];
-    scope: 'term' | 'year';
-    currentTerm: AcademicTerm;
+    newStudents: Student[];
+    continuingStudents: Student[];
 }) {
-    const filteredPayments = React.useMemo(() => {
-        if (scope === 'term') {
-            return payments.filter(p => p.academicYear === currentTerm.academicYear && p.term === currentTerm.session);
-        }
-        return payments.filter(p => p.academicYear === currentTerm.academicYear);
-    }, [payments, scope, currentTerm]);
+    const newStudentIds = React.useMemo(() => new Set(newStudents.map(s => s.id)), [newStudents]);
+    const continuingStudentIds = React.useMemo(() => new Set(continuingStudents.map(s => s.id)), [continuingStudents]);
 
-    const { newStudentIds, continuingStudentIds } = React.useMemo(() => {
-        const newIds = new Set<string>();
-        const continuingIds = new Set<string>();
-        students.forEach(s => {
-            if (s.admissionYear === currentTerm.academicYear && s.admissionTerm === currentTerm.session) {
-                newIds.add(s.id);
-            } else {
-                continuingIds.add(s.id);
-            }
-        });
-        return { newStudentIds: newIds, continuingStudentIds: continuingIds };
-    }, [students, currentTerm]);
+    const newStudentPayments = React.useMemo(() => {
+        return payments.filter(p => newStudentIds.has(p.studentId));
+    }, [payments, newStudentIds]);
 
+    const continuingStudentPayments = React.useMemo(() => {
+        return payments.filter(p => continuingStudentIds.has(p.studentId));
+    }, [payments, continuingStudentIds]);
 
     const newAdmissionsSummary: FinancialSummaryItem[] = React.useMemo(() => {
-        const newStudentPayments = filteredPayments.filter(p => newStudentIds.has(p.studentId));
-
         const incomeByCategory = new Map<string, number>();
         newStudentPayments.forEach(payment => {
             payment.items?.forEach(item => {
@@ -65,15 +51,12 @@ function SummaryDisplay({
                 incomeByCategory.set(item.name, currentAmount + item.amount);
             });
         });
-
         return Array.from(incomeByCategory.entries())
             .map(([category, total]) => ({ category, total }))
             .sort((a, b) => b.total - a.total);
-    }, [newStudentIds, filteredPayments]);
+    }, [newStudentPayments]);
     
     const continuingStudentsSummary: FinancialSummaryItem[] = React.useMemo(() => {
-        const continuingStudentPayments = filteredPayments.filter(p => continuingStudentIds.has(p.studentId));
-
         const incomeByCategory = new Map<string, number>();
         continuingStudentPayments.forEach(payment => {
             payment.items?.forEach(item => {
@@ -81,11 +64,10 @@ function SummaryDisplay({
                 incomeByCategory.set(item.name, currentAmount + item.amount);
             });
         });
-
         return Array.from(incomeByCategory.entries())
             .map(([category, total]) => ({ category, total }))
             .sort((a, b) => b.total - a.total);
-    }, [continuingStudentIds, filteredPayments]);
+    }, [continuingStudentPayments]);
 
 
     const newAdmissionsIncome = newAdmissionsSummary.reduce((sum, item) => sum + item.total, 0);
@@ -99,14 +81,14 @@ function SummaryDisplay({
                     value={formatCurrency(newAdmissionsIncome)}
                     icon={DollarSign}
                     color="text-green-500"
-                    description={`${newStudentIds.size} new students`}
+                    description={`${newStudents.length} new students`}
                 />
                 <StatCard 
                     title="Total Income (Continuing)"
                     value={formatCurrency(continuingStudentsIncome)}
                     icon={DollarSign}
                     color="text-purple-500"
-                    description={`${continuingStudentIds.size} continuing students`}
+                    description={`${continuingStudents.length} continuing students`}
                 />
                  <StatCard 
                     title="Total Combined Income"
@@ -194,8 +176,8 @@ function SummaryDisplay({
 }
 
 export default function FinancialSummaryPage() {
-    const [students, setStudents] = useState<Student[]>([]);
-    const [payments, setPayments] = useState<Payment[]>([]);
+    const [allStudents, setAllStudents] = useState<Student[]>([]);
+    const [allPayments, setAllPayments] = useState<Payment[]>([]);
     const [currentTerm, setCurrentTerm] = useState<AcademicTerm | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
@@ -203,12 +185,12 @@ export default function FinancialSummaryPage() {
     useEffect(() => {
         const studentsQuery = query(collection(db, "students"));
         const unsubscribeStudents = onSnapshot(studentsQuery, (snapshot) => {
-            setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student)));
+            setAllStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student)));
         });
         
         const paymentsQuery = query(collection(db, "payments"));
         const unsubscribePayments = onSnapshot(paymentsQuery, (snapshot) => {
-            setPayments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment)));
+            setAllPayments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment)));
         });
 
         const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
@@ -232,6 +214,30 @@ export default function FinancialSummaryPage() {
             unsubscribeSettings();
         };
     }, [toast]);
+    
+    const { newStudents, continuingStudents } = React.useMemo(() => {
+        if (!currentTerm) return { newStudents: [], continuingStudents: [] };
+        const newStudentList: Student[] = [];
+        const continuingStudentList: Student[] = [];
+        allStudents.forEach(s => {
+            if (s.admissionYear === currentTerm.academicYear && s.admissionTerm === currentTerm.session) {
+                newStudentList.push(s);
+            } else {
+                continuingStudentList.push(s);
+            }
+        });
+        return { newStudents: newStudentList, continuingStudents: continuingStudentList };
+    }, [allStudents, currentTerm]);
+
+    const termPayments = React.useMemo(() => {
+        if (!currentTerm) return [];
+        return allPayments.filter(p => p.academicYear === currentTerm.academicYear && p.term === currentTerm.session);
+    }, [allPayments, currentTerm]);
+    
+    const yearPayments = React.useMemo(() => {
+        if (!currentTerm) return [];
+        return allPayments.filter(p => p.academicYear === currentTerm.academicYear);
+    }, [allPayments, currentTerm]);
 
     return (
         <>
@@ -265,7 +271,11 @@ export default function FinancialSummaryPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <SummaryDisplay payments={payments} students={students} scope="term" currentTerm={currentTerm} />
+                                <SummaryDisplay 
+                                    payments={termPayments} 
+                                    newStudents={newStudents}
+                                    continuingStudents={continuingStudents}
+                                />
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -278,7 +288,11 @@ export default function FinancialSummaryPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <SummaryDisplay payments={payments} students={students} scope="year" currentTerm={currentTerm} />
+                               <SummaryDisplay 
+                                    payments={yearPayments} 
+                                    newStudents={newStudents}
+                                    continuingStudents={continuingStudents}
+                                />
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -287,3 +301,4 @@ export default function FinancialSummaryPage() {
         </>
     );
 }
+
