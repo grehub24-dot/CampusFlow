@@ -233,7 +233,7 @@ export default function FinancialSummaryPage() {
         <>
             <PageHeader
                 title="Financial Summary"
-                description={`An overview of income for the ${currentTerm?.academicYear || ''} academic year.`}
+                description={`A breakdown of income for the ${currentTerm?.academicYear || ''} academic year.`}
             />
 
             {isLoading ? (
@@ -283,3 +283,4 @@ export default function FinancialSummaryPage() {
         </>
     );
 }
+
