@@ -27,10 +27,12 @@ function SummaryDisplay({
     filteredPayments,
     newStudents,
     continuingStudents,
+    allTimeIncome
 }: {
     filteredPayments: Payment[];
     newStudents: Student[];
     continuingStudents: Student[];
+    allTimeIncome: number;
 }) {
     const newStudentPayments = React.useMemo(() => {
         const newStudentIds = new Set(newStudents.map(s => s.id));
@@ -98,6 +100,7 @@ function SummaryDisplay({
                     value={formatCurrency(newAdmissionsIncome + continuingStudentsIncome)}
                     icon={DollarSign}
                     color="text-blue-500"
+                    description={`All-time record: ${formatCurrency(allTimeIncome)}`}
                 />
             </div>
             <div className="grid lg:grid-cols-2 gap-6">
@@ -183,6 +186,7 @@ export default function FinancialSummaryPage() {
     const [allPayments, setAllPayments] = useState<Payment[]>([]);
     const [currentTerm, setCurrentTerm] = useState<AcademicTerm | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [allTimeIncome, setAllTimeIncome] = useState(0);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -193,7 +197,13 @@ export default function FinancialSummaryPage() {
         
         const paymentsQuery = query(collection(db, "payments"));
         const unsubscribePayments = onSnapshot(paymentsQuery, (snapshot) => {
-            setAllPayments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment)));
+            const payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment));
+            setAllPayments(payments);
+            const total = payments.reduce((sum, p) =>
+                sum + (Array.isArray(p.items)
+                    ? p.items.reduce((t, i) => t + (i.amount || 0), 0)
+                    : (p.amount || 0)), 0);
+            setAllTimeIncome(total);
         });
 
         const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
@@ -278,6 +288,7 @@ export default function FinancialSummaryPage() {
                                     filteredPayments={termPayments} 
                                     newStudents={newStudents}
                                     continuingStudents={continuingStudents}
+                                    allTimeIncome={allTimeIncome}
                                 />
                             </CardContent>
                         </Card>
@@ -295,6 +306,7 @@ export default function FinancialSummaryPage() {
                                     filteredPayments={yearPayments} 
                                     newStudents={newStudents}
                                     continuingStudents={continuingStudents}
+                                    allTimeIncome={allTimeIncome}
                                 />
                             </CardContent>
                         </Card>
