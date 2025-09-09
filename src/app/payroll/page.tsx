@@ -163,6 +163,7 @@ export default function PayrollPage() {
                 accountNumber: values.accountNumber,
                 momoNumber: values.momoNumber,
                 deductions: values.deductions,
+                arrears: values.arrears,
             };
             const staffRef = doc(db, "staff", selectedStaff.id);
             await updateDoc(staffRef, dataToUpdate);

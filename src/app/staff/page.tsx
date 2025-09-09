@@ -102,8 +102,6 @@ export default function StaffPage() {
     const onSubmit: SubmitHandler<FormValues> = async (values) => {
         setIsSubmitting(true);
         try {
-            const currentSalaryDetails = selectedStaff ? { grossSalary: selectedStaff.grossSalary, netSalary: selectedStaff.netSalary } : null;
-
             const payrollCalculations = calculatePayrollForEmployee(values);
             const data: Partial<StaffMember> & { employmentDate?: string } = {
                 ...values,
@@ -113,15 +111,6 @@ export default function StaffPage() {
 
             if (selectedStaff) {
                 // Update
-                if (currentSalaryDetails && values.grossSalary !== currentSalaryDetails.grossSalary) {
-                    const salaryDifference = values.grossSalary - currentSalaryDetails.grossSalary;
-                     const arrears = {
-                        name: 'Salary Adjustment',
-                        amount: salaryDifference
-                    };
-                    data.arrears = [...(selectedStaff.arrears || []), arrears];
-                }
-
                 const staffDocRef = doc(db, "staff", selectedStaff.id);
                 await updateDoc(staffDocRef, data);
                 toast({ title: 'Staff Updated', description: 'The staff member details have been updated.' });
