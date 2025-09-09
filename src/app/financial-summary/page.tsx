@@ -211,7 +211,7 @@ export default function FinancialSummaryPage() {
                     <CardHeader>
                         <CardTitle>Income from Continuing Students</CardTitle>
                         <CardDescription>
-                            This table shows the total amount received for each fee category from continuing students.
+                            This table shows the total amount received for each fee category from continuing students for this term.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

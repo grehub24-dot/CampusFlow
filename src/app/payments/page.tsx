@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import React from 'react';
@@ -172,9 +171,9 @@ export default function PaymentsPage() {
   }, [students, payments, feeStructures, feeItems, currentTerm]);
 
 
-  const totalRevenue = payments.reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0);
+  const totalRevenue = payments.reduce((acc, p) => acc + p.amount, 0);
   const pendingInvoicesTotal = pendingInvoices.reduce((acc, i) => acc + i.amount, 0);
-  const revenueThisTerm = currentTerm ? payments.filter(p => p.term === currentTerm.session && p.academicYear === currentTerm.academicYear).reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0) : 0;
+  const revenueThisTerm = currentTerm ? payments.filter(p => p.term === currentTerm.session && p.academicYear === currentTerm.academicYear).reduce((acc, p) => acc + p.amount, 0) : 0;
 
   return (
     <>
