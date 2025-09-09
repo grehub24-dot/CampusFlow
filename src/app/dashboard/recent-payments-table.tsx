@@ -1,10 +1,12 @@
 
 "use client"
 
+import React from "react"
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table"
 
@@ -34,6 +36,12 @@ export function RecentPaymentsTable<TData, TValue>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+     initialState: {
+        pagination: {
+            pageSize: 5,
+        },
+    },
   })
 
   return (
@@ -91,6 +99,33 @@ export function RecentPaymentsTable<TData, TValue>({
               )}
             </TableBody>
           </Table>
+        </div>
+        <div className="flex items-center justify-end space-x-2 py-4">
+            <div className="flex-1 text-sm text-muted-foreground">
+                Total {table.getFilteredRowModel().rows.length} row(s).
+            </div>
+            <div className="flex items-center space-x-2">
+                 <p className="text-sm font-medium">
+                    Page {table.getState().pagination.pageIndex + 1} of{" "}
+                    {table.getPageCount()}
+                </p>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                >
+                    Previous
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                >
+                    Next
+                </Button>
+            </div>
         </div>
       </CardContent>
     </Card>
