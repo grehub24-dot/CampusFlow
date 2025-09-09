@@ -2,14 +2,14 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Transaction, TransactionCategory } from '@/types';
+import type { Transaction, TransactionCategory, Student, Payment, AcademicTerm } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { Loader2, PlusCircle, DollarSign, TrendingUp, TrendingDown, UserPlus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionsTable } from './transactions-table';
@@ -26,6 +26,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 export default function IncomeExpensePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [currentTerm, setCurrentTerm] = useState<AcademicTerm | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -37,7 +41,7 @@ export default function IncomeExpensePage() {
     const transactionsQuery = query(collection(db, "transactions"), orderBy("date", "desc"));
     const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
       setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
-      setIsLoading(false);
+      if(!isLoading) setIsLoading(false);
     });
     
     const categoriesQuery = query(collection(db, "transaction-categories"), orderBy("name"));
@@ -45,9 +49,33 @@ export default function IncomeExpensePage() {
         setCategories(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TransactionCategory)));
     });
 
+    const studentsQuery = query(collection(db, "students"));
+    const unsubscribeStudents = onSnapshot(studentsQuery, (snapshot) => {
+        setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student)));
+    });
+
+    const paymentsQuery = query(collection(db, "payments"));
+    const unsubscribePayments = onSnapshot(paymentsQuery, (snapshot) => {
+        setPayments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment)));
+    });
+    
+    const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
+    const unsubscribeSettings = onSnapshot(academicTermsQuery, (snapshot) => {
+        if (!snapshot.empty) {
+            const termDoc = snapshot.docs[0];
+            setCurrentTerm({ id: termDoc.id, ...termDoc.data() } as AcademicTerm);
+        } else {
+            setCurrentTerm(null);
+        }
+        setIsLoading(false);
+    });
+
     return () => {
       unsubscribeTransactions();
       unsubscribeCategories();
+      unsubscribeStudents();
+      unsubscribePayments();
+      unsubscribeSettings();
     };
   }, []);
 
@@ -109,8 +137,21 @@ export default function IncomeExpensePage() {
 
   const columns = React.useMemo(() => getTransactionColumns({ onEdit: handleEditClick, onDelete: handleDeleteClick }), []);
 
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const manualIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+
+  const newAdmissionsIncome = React.useMemo(() => {
+    if (!currentTerm) return 0;
+    const newStudentIds = students
+      .filter(s => s.admissionYear === currentTerm.academicYear && s.admissionTerm === currentTerm.session)
+      .map(s => s.id);
+    
+    return payments
+      .filter(p => newStudentIds.includes(p.studentId) && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session)
+      .reduce((sum, p) => sum + p.amount, 0);
+  }, [students, payments, currentTerm]);
+
+  const totalIncome = manualIncome + newAdmissionsIncome;
   const netBalance = totalIncome - totalExpense;
 
 
@@ -141,13 +182,20 @@ export default function IncomeExpensePage() {
         </Dialog>
       </PageHeader>
       
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3 mb-6">
-        <StatCard 
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+         <StatCard 
             title="Total Income"
             value={`GHS ${totalIncome.toLocaleString()}`}
             icon={TrendingUp}
             color="text-green-500"
             description="All recorded income"
+        />
+        <StatCard 
+            title="New Admission Income"
+            value={`GHS ${newAdmissionsIncome.toLocaleString()}`}
+            icon={UserPlus}
+            color="text-blue-500"
+            description="Automatically fetched for current term"
         />
         <StatCard 
             title="Total Expenses"
@@ -193,4 +241,3 @@ export default function IncomeExpensePage() {
     </>
   );
 }
-
