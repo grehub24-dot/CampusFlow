@@ -97,12 +97,8 @@ export default function FinancialSummaryPage() {
                 .map(s => s.id)
         );
 
-        const continuingStudentIds = new Set(
-            students.filter(s => !newStudentIds.has(s.id)).map(s => s.id)
-        );
-        
         const continuingStudentPayments = payments.filter(p => 
-            continuingStudentIds.has(p.studentId) &&
+            !newStudentIds.has(p.studentId) &&
             p.academicYear === currentTerm.academicYear &&
             p.term === currentTerm.session
         );
