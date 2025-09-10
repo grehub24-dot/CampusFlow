@@ -124,15 +124,15 @@ export function FeeItemForm({ onSubmit, defaultValues }: FeeItemFormProps) {
             render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                        <FormLabel className="text-base">Optional Fee</FormLabel>
+                        <FormLabel className="text-base">Mandatory Fee</FormLabel>
                         <FormDescription>
-                            If toggled, this fee will not be checked by default and must be manually selected during payment.
+                           If enabled, this fee will always be checked by default on the payment form.
                         </FormDescription>
                     </div>
                     <FormControl>
                         <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
+                          checked={!field.value}
+                          onCheckedChange={(checked) => field.onChange(!checked)}
                         />
                     </FormControl>
                 </FormItem>
