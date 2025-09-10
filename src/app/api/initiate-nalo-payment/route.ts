@@ -3,52 +3,17 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 
-// Hardcoded credentials for testing purposes
-const MOCK_NALO_CREDENTIALS = {
-    merchant_id: "NPS_000363",
-    username: "david_gen",
-    password_md5: crypto.createHash('md5').update("RveMxX9MN8JVM6d").digest('hex'),
-    key: "kqPS9?msJ_IbPB9",
-};
 
 export async function POST(request: Request) {
   try {
-    const { order_id, customerName, amount, item_desc, customerNumber, payby } = await request.json();
+    const naloPayload = await request.json();
 
-    if (!order_id || !customerName || !amount || !item_desc || !customerNumber || !payby) {
-        return NextResponse.json({ error: 'Missing required Nalo payment fields' }, { status: 400 });
+    // Basic validation to ensure we have a payload
+    if (!naloPayload || !naloPayload.order_id) {
+        return NextResponse.json({ error: 'Invalid payload received' }, { status: 400 });
     }
     
-    const stringToHash = `${MOCK_NALO_CREDENTIALS.username}${MOCK_NALO_CREDENTIALS.key}${MOCK_NALO_CREDENTIALS.password_md5}`;
-    const secrete = crypto.createHash('md5').update(stringToHash).digest('hex');
-
-    const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/api/nalo-callback`;
-
-    // Ensure customerNumber is a string prefixed with 233
-    let formattedNumber = String(customerNumber);
-    if (formattedNumber.startsWith('0')) {
-        formattedNumber = '233' + formattedNumber.substring(1);
-    } else if (!formattedNumber.startsWith('233')) {
-        // Fallback for numbers without a leading 0, though less common
-        formattedNumber = '233' + formattedNumber;
-    }
-
-
-    const naloPayload = {
-        merchant_id: MOCK_NALO_CREDENTIALS.merchant_id,
-        secrete,
-        key: MOCK_NALO_CREDENTIALS.key,
-        order_id,
-        customerName,
-        amount: String(amount), // Ensure amount is a string
-        item_desc,
-        customerNumber: formattedNumber,
-        payby,
-        newVodaPayment: payby === 'VODAFONE' ? true : undefined,
-        callback: callbackUrl,
-    };
-    
-    console.log('Sending to Nalo:', JSON.stringify(naloPayload, null, 2));
+    console.log('Received payload from client, forwarding to Nalo:', JSON.stringify(naloPayload, null, 2));
 
     // Configure fetch to use a proxy if the environment variable is set
     const proxyUrl = process.env.HTTPS_PROXY_URL;

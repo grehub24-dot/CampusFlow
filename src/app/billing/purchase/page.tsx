@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { v4 as uuid } from 'uuid';
 import type { Invoice, MomoProvider } from '@/types';
 import Image from 'next/image';
+import crypto from 'crypto';
 
 const momoProviders: MomoProvider[] = [
     { code: "MTN", name: "MTN Mobile Money" },
@@ -110,18 +111,39 @@ function PurchaseContent() {
         if (inv) {
             setLoading(true);
             try {
+                // Format phone number to 233...
+                let formattedNumber = String(momoNumber);
+                if (formattedNumber.startsWith('0')) {
+                    formattedNumber = '233' + formattedNumber.substring(1);
+                } else if (!formattedNumber.startsWith('233')) {
+                    formattedNumber = '233' + formattedNumber;
+                }
+
+                // Pre-compute secrete on the client
+                const passwordMd5 = crypto.createHash('md5').update("RveMxX9MN8JVM6d").digest('hex');
+                const stringToHash = `david_genkqPS9?msJ_IbPB9${passwordMd5}`;
+                const secrete = crypto.createHash('md5').update(stringToHash).digest('hex');
+                
+                const naloPayload = {
+                    merchant_id: 'NPS_000363',
+                    key: 'kqPS9?msJ_IbPB9',
+                    secrete: secrete,
+                    order_id: inv.id,
+                    customerName: "CampusFlow User",
+                    amount: inv.amount,
+                    item_desc: `${bundleCredits} SMS Credits`,
+                    customerNumber: formattedNumber,
+                    payby: selectedProvider.code,
+                    callback: `${window.location.origin}/api/nalo-callback`,
+                    newVodaPayment: selectedProvider.code === 'VODAFONE' ? true : undefined,
+                };
+                
                 const res = await fetch('/api/initiate-nalo-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        order_id: inv.id,
-                        customerName: "CampusFlow User",
-                        amount: inv.amount,
-                        item_desc: `${bundleCredits} SMS Credits`,
-                        customerNumber: momoNumber,
-                        payby: selectedProvider.code,
-                    }),
+                    body: JSON.stringify(naloPayload),
                 });
+                
                 if (!res.ok) {
                     const errorData = await res.json();
                     throw new Error(errorData.message || 'Failed to initiate payment with provider.');
