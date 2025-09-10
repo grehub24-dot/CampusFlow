@@ -30,11 +30,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ToastAction } from '@/components/ui/toast';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const messageFormSchema = z.object({
   recipientType: z.enum(['all', 'class', 'single', 'manual']),
@@ -70,6 +72,52 @@ type MessageFormValues = z.infer<typeof messageFormSchema>;
 
 const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
 const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'Kindergarten 2'];
+
+const smsBundles: Bundle[] = [
+  { name: "Starter", msgCount: 100, price: 10, validity: 30 },
+  { name: "Basic", msgCount: 500, price: 45, validity: 30 },
+  { name: "Plus", msgCount: 1000, price: 80, validity: 60 },
+  { name: "Pro", msgCount: 5000, price: 350, validity: 90 },
+  { name: "Mega", msgCount: 10000, price: 600, validity: 180 },
+];
+
+function PurchaseDialogContent() {
+    const router = useRouter();
+
+    const handleSelectBundle = async (bundle: Bundle) => {
+        router.push(`/billing/purchase?bundle=${bundle.name}&credits=${bundle.msgCount}&price=${bundle.price}`);
+    };
+    
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Buy SMS Credit Bundle</DialogTitle>
+                <DialogDescription>
+                    Choose a bundle that fits your needs. Credits do not expire.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-4">
+                {smsBundles.map((bundle) => (
+                    <Card key={bundle.name} className="flex flex-col text-center hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                            <CardTitle>{bundle.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-grow flex flex-col justify-between">
+                            <div>
+                                <p className="text-2xl font-bold">{bundle.msgCount.toLocaleString()}</p>
+                                <p className="text-muted-foreground">SMS credits</p>
+                                <p className="text-lg font-semibold my-2">GHS {bundle.price}</p>
+                            </div>
+                            <Button className="w-full mt-4" onClick={() => handleSelectBundle(bundle)}>
+                                Buy Now
+                            </Button>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </DialogContent>
+    )
+}
 
 export default function CommunicationsPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -290,12 +338,15 @@ export default function CommunicationsPage() {
         title="Communications"
         description="Send SMS and email notifications to students and guardians."
       >
-        <Link href="/billing">
-          <Button>
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            Buy SMS Credit
-          </Button>
-        </Link>
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button>
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Buy SMS Credit
+                </Button>
+            </DialogTrigger>
+            <PurchaseDialogContent />
+        </Dialog>
       </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
@@ -546,13 +597,3 @@ export default function CommunicationsPage() {
     </>
   );
 }
- 
-    
-
-    
-
-    
-
-
-
-
