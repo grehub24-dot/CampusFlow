@@ -193,15 +193,21 @@ export default function Dashboard() {
     return students.map(student => {
       const structure = feeStructures.find(fs => fs.classId === student.classId && fs.academicTermId === currentTerm.id);
       if (!structure || !Array.isArray(structure.items)) return null;
-      
+
+      const studentPaymentsForTerm = payments.filter(p => p.studentId === student.id && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session);
+      const totalPaid = studentPaymentsForTerm.reduce((sum, p) => sum + p.amount, 0);
+
       const isNew = student.admissionTerm === currentTerm.session && student.admissionYear === currentTerm.academicYear;
       const termNumber = parseInt(currentTerm.session.split(' ')[0], 10);
+      
+      const paidItemNames = new Set(studentPaymentsForTerm.flatMap(p => p.items?.map(i => i.name) || []));
 
       const applicableFeeItems = structure.items.map(item => {
           const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
           if (!feeItemInfo) return null;
           
           let isApplicable = false;
+          // Mandatory items are always applicable based on student status
           if (!feeItemInfo.isOptional) {
               if (isNew) {
                   if (feeItemInfo.appliesTo.includes('new')) isApplicable = true;
@@ -210,16 +216,16 @@ export default function Dashboard() {
                   if (termNumber > 1 && feeItemInfo.appliesTo.includes('term2_3')) isApplicable = true;
               }
           }
+          // Optional items are applicable if they've been paid for
+          if (feeItemInfo.isOptional && paidItemNames.has(feeItemInfo.name)) {
+              isApplicable = true;
+          }
 
           return isApplicable ? { name: feeItemInfo.name, amount: item.amount } : null;
       }).filter(Boolean) as { name: string, amount: number }[];
 
 
       const totalAmountDue = applicableFeeItems.reduce((total, item) => total + item.amount, 0);
-
-      const totalPaid = payments
-        .filter(p => p.studentId === student.id && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session)
-        .reduce((sum, p) => sum + p.amount, 0);
 
       const balance = totalAmountDue - totalPaid;
       
@@ -247,7 +253,7 @@ export default function Dashboard() {
     totalStudents: students.length,
     maleStudents: students.filter(s => s.gender === 'Male').length,
     femaleStudents: students.filter(s => s.gender === 'Female').length,
-    totalRevenue: payments.reduce((acc, p) => acc + (p.status === 'Paid' ? p.amount : 0), 0),
+    totalRevenue: payments.reduce((acc, p) => acc + (p.amount), 0),
     pendingInvoices: pendingInvoices.reduce((acc, i) => acc + i.amount, 0),
   };
 
