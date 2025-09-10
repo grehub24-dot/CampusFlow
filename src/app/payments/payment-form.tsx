@@ -289,7 +289,7 @@ export default function PaymentForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedStudent || payingAmount <= 0 || totalAmountDue <= 0) return;
+    if (!selectedStudent || payingAmount <= 0 || totalAmountDue <= 0 || !receiptNo) return;
     setIsSubmitting(true);
     
     const allocatedItems: PaymentFeeItem[] = [];
@@ -457,6 +457,7 @@ export default function PaymentForm({
             value={receiptNo}
             onChange={(e) => setReceiptNo(e.target.value)}
             placeholder="e.g. 12345"
+            required
           />
         </div>
       </div>
@@ -578,7 +579,7 @@ export default function PaymentForm({
       <div className="flex justify-end">
         <Button
           type="submit"
-          disabled={!selectedStudent || payingAmount <= 0 || isSubmitting}
+          disabled={!selectedStudent || payingAmount <= 0 || !receiptNo || isSubmitting}
         >
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Record Payment
