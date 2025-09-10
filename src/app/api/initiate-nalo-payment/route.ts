@@ -9,7 +9,7 @@ const MOCK_NALO_CREDENTIALS = {
     username: "david_gen",
     password_md5: crypto.createHash('md5').update("RveMxX9MN8JVM6d").digest('hex'),
     // Use the static key provided by the user
-    key: "kqPS9?msJ_lbPB9" 
+    key: "kqPS9?msJ_IbPB9" 
 };
 
 export async function POST(request: Request) {
