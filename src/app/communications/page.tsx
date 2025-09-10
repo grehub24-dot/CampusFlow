@@ -74,7 +74,7 @@ const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
 const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'Kindergarten 2'];
 
 const smsBundles: Bundle[] = [
-  { name: "Starter", msgCount: 100, price: 10, validity: 30 },
+  { name: "Starter", msgCount: 100, price: 30, validity: 30 },
   { name: "Basic", msgCount: 500, price: 45, validity: 30 },
   { name: "Plus", msgCount: 1000, price: 80, validity: 60 },
   { name: "Pro", msgCount: 5000, price: 350, validity: 90 },
