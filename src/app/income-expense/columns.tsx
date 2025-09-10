@@ -85,6 +85,10 @@ export const getTransactionColumns = ({ onEdit, onDelete }: ColumnsProps): Colum
     id: "actions",
     cell: ({ row }) => {
       const transaction = row.original;
+      // Disable actions for transactions derived from payments
+      if (transaction.isFromPayment) {
+        return null;
+      }
       return (
         <div className="text-right">
             <DropdownMenu>

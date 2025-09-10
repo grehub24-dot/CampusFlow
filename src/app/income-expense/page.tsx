@@ -24,7 +24,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 
 export default function IncomeExpensePage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [manualTransactions, setManualTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
@@ -39,7 +39,7 @@ export default function IncomeExpensePage() {
   useEffect(() => {
     const transactionsQuery = query(collection(db, "transactions"), orderBy("date", "desc"));
     const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
-      setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
+      setManualTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
       if(!isLoading) setIsLoading(false);
     });
     
@@ -57,7 +57,7 @@ export default function IncomeExpensePage() {
     const unsubscribeSettings = onSnapshot(academicTermsQuery, (snapshot) => {
         if (!snapshot.empty) {
             const termDoc = snapshot.docs[0];
-            setCurrentTerm({ id: termDoc.id, ...termDoc.data() } as AcademicTerm);
+            setCurrentTerm({ id: termDoc.id, ...doc.data() } as AcademicTerm);
         } else {
             setCurrentTerm(null);
         }
@@ -72,6 +72,26 @@ export default function IncomeExpensePage() {
       unsubscribeSettings();
     };
   }, []);
+
+  const allTransactions = React.useMemo(() => {
+    const paymentTransactions: Transaction[] = payments.flatMap(payment =>
+      payment.items?.map((item, index) => ({
+        id: `${payment.id}-${index}`, // Create a unique-ish ID
+        date: payment.date,
+        type: 'income' as const,
+        amount: item.amount,
+        categoryId: item.name, // Use name as a pseudo-ID
+        categoryName: item.name,
+        description: `Fee payment from ${payment.studentName}`,
+        isFromPayment: true, // Flag to identify payment-derived transactions
+      })) || []
+    );
+
+    const combined = [...manualTransactions, ...paymentTransactions];
+    combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return combined;
+  }, [manualTransactions, payments]);
+
 
   const handleAddClick = () => {
     setSelectedTransaction(null);
@@ -88,7 +108,7 @@ export default function IncomeExpensePage() {
   }
 
   const handleConfirmDelete = async () => {
-    if (!transactionToDelete) return;
+    if (!transactionToDelete || transactionToDelete.isFromPayment) return;
     setIsSubmitting(true);
     try {
         await deleteDoc(doc(db, "transactions", transactionToDelete.id));
@@ -131,16 +151,8 @@ export default function IncomeExpensePage() {
 
   const columns = React.useMemo(() => getTransactionColumns({ onEdit: handleEditClick, onDelete: handleDeleteClick }), []);
 
-  const manualIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-
-  const schoolFeesIncome = currentTerm
-    ? payments
-        .filter(p => p.academicYear === currentTerm.academicYear && p.term === currentTerm.session)
-        .reduce((sum, p) => sum + p.amount, 0)
-    : 0;
-
-  const totalIncome = manualIncome + schoolFeesIncome;
+  const totalIncome = allTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpense = allTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const netBalance = totalIncome - totalExpense;
 
 
@@ -201,7 +213,7 @@ export default function IncomeExpensePage() {
               <TabsTrigger value="categories">Manage Categories</TabsTrigger>
           </TabsList>
           <TabsContent value="transactions" className="space-y-4">
-            <TransactionsTable columns={columns} data={transactions} />
+            <TransactionsTable columns={columns} data={allTransactions} />
           </TabsContent>
           <TabsContent value="categories" className="space-y-4">
             <CategoryManagement categories={categories} />

@@ -14,6 +14,7 @@
 
 
 
+
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -262,6 +263,7 @@ export type Transaction = {
     categoryId: string;
     categoryName: string;
     description: string;
+    isFromPayment?: boolean; // Flag to identify transactions from student payments
 }
 
 export type FinancialSummaryItem = {
