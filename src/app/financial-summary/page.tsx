@@ -6,6 +6,8 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { Student, Payment, AcademicTerm, FinancialSummaryItem } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { isToday, isThisWeek, isThisMonth } from 'date-fns';
+
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -199,10 +201,7 @@ export default function FinancialSummaryPage() {
         const unsubscribePayments = onSnapshot(paymentsQuery, (snapshot) => {
             const payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment));
             setAllPayments(payments);
-            const total = payments.reduce((sum, p) =>
-                sum + (Array.isArray(p.items)
-                    ? p.items.reduce((t, i) => t + (i.amount || 0), 0)
-                    : (p.amount || 0)), 0);
+            const total = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
             setAllTimeIncome(total);
         });
 
@@ -242,15 +241,27 @@ export default function FinancialSummaryPage() {
         return { newStudents: newStudentList, continuingStudents: continuingStudentList };
     }, [allStudents, currentTerm]);
 
-    const termPayments = React.useMemo(() => {
+    const getFilteredPayments = (filter: 'today' | 'week' | 'month' | 'term' | 'year') => {
         if (!currentTerm) return [];
-        return allPayments.filter(p => p.academicYear === currentTerm.academicYear && p.term === currentTerm.session);
-    }, [allPayments, currentTerm]);
-    
-    const yearPayments = React.useMemo(() => {
-        if (!currentTerm) return [];
-        return allPayments.filter(p => p.academicYear === currentTerm.academicYear);
-    }, [allPayments, currentTerm]);
+        
+        return allPayments.filter(p => {
+            const paymentDate = new Date(p.date);
+            switch(filter) {
+                case 'today':
+                    return isToday(paymentDate);
+                case 'week':
+                    return isThisWeek(paymentDate, { weekStartsOn: 1 });
+                case 'month':
+                    return isThisMonth(paymentDate);
+                case 'term':
+                    return p.academicYear === currentTerm.academicYear && p.term === currentTerm.session;
+                case 'year':
+                    return p.academicYear === currentTerm.academicYear;
+                default:
+                    return true;
+            }
+        });
+    }
 
     return (
         <>
@@ -271,48 +282,49 @@ export default function FinancialSummaryPage() {
                 </Card>
             ) : (
                 <Tabs defaultValue="term">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="term">Current Term Summary</TabsTrigger>
-                        <TabsTrigger value="year">Full Academic Year Summary</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-5">
+                        <TabsTrigger value="today">Today</TabsTrigger>
+                        <TabsTrigger value="week">This Week</TabsTrigger>
+                        <TabsTrigger value="month">This Month</TabsTrigger>
+                        <TabsTrigger value="term">Current Term</TabsTrigger>
+                        <TabsTrigger value="year">Full Year</TabsTrigger>
                     </TabsList>
+                     <TabsContent value="today">
+                        <SummaryCard title="Today's Summary" description={`Financial breakdown for today.`} payments={getFilteredPayments('today')} newStudents={newStudents} continuingStudents={continuingStudents} allTimeIncome={allTimeIncome} />
+                    </TabsContent>
+                    <TabsContent value="week">
+                        <SummaryCard title="This Week's Summary" description={`Financial breakdown for this week.`} payments={getFilteredPayments('week')} newStudents={newStudents} continuingStudents={continuingStudents} allTimeIncome={allTimeIncome} />
+                    </TabsContent>
+                    <TabsContent value="month">
+                        <SummaryCard title="This Month's Summary" description={`Financial breakdown for this month.`} payments={getFilteredPayments('month')} newStudents={newStudents} continuingStudents={continuingStudents} allTimeIncome={allTimeIncome} />
+                    </TabsContent>
                     <TabsContent value="term">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Current Term Summary</CardTitle>
-                                <CardDescription>
-                                    Financial breakdown for {currentTerm.session} of the {currentTerm.academicYear} academic year.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <SummaryDisplay 
-                                    filteredPayments={termPayments} 
-                                    newStudents={newStudents}
-                                    continuingStudents={continuingStudents}
-                                    allTimeIncome={allTimeIncome}
-                                />
-                            </CardContent>
-                        </Card>
+                        <SummaryCard title="Current Term Summary" description={`Financial breakdown for ${currentTerm.session} of the ${currentTerm.academicYear} academic year.`} payments={getFilteredPayments('term')} newStudents={newStudents} continuingStudents={continuingStudents} allTimeIncome={allTimeIncome} />
                     </TabsContent>
                     <TabsContent value="year">
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Full Year Summary</CardTitle>
-                                <CardDescription>
-                                    Financial breakdown for the entire {currentTerm.academicYear} academic year.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                               <SummaryDisplay 
-                                    filteredPayments={yearPayments} 
-                                    newStudents={newStudents}
-                                    continuingStudents={continuingStudents}
-                                    allTimeIncome={allTimeIncome}
-                                />
-                            </CardContent>
-                        </Card>
+                        <SummaryCard title="Full Year Summary" description={`Financial breakdown for the entire ${currentTerm.academicYear} academic year.`} payments={getFilteredPayments('year')} newStudents={newStudents} continuingStudents={continuingStudents} allTimeIncome={allTimeIncome} />
                     </TabsContent>
                 </Tabs>
             )}
         </>
     );
+}
+
+function SummaryCard({ title, description, payments, newStudents, continuingStudents, allTimeIncome }: { title: string, description: string, payments: Payment[], newStudents: Student[], continuingStudents: Student[], allTimeIncome: number }) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <SummaryDisplay 
+                    filteredPayments={payments} 
+                    newStudents={newStudents}
+                    continuingStudents={continuingStudents}
+                    allTimeIncome={allTimeIncome}
+                />
+            </CardContent>
+        </Card>
+    )
 }
