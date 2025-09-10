@@ -30,7 +30,9 @@ import { DataTableFacetedFilter } from "../students/data-table-faceted-filter"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  data: TData[],
+  timeFilter: 'all' | 'today' | 'week' | 'month';
+  onTimeFilterChange: (filter: 'all' | 'today' | 'week' | 'month') => void;
 }
 
 const typeOptions = [
@@ -41,6 +43,8 @@ const typeOptions = [
 export function TransactionsTable<TData, TValue>({
   columns,
   data,
+  timeFilter,
+  onTimeFilterChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -77,6 +81,12 @@ export function TransactionsTable<TData, TValue>({
                 title="Type"
                 options={typeOptions}
             />
+             <div className="flex items-center gap-1 ml-auto">
+                <Button variant={timeFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => onTimeFilterChange('all')}>All</Button>
+                <Button variant={timeFilter === 'today' ? 'default' : 'outline'} size="sm" onClick={() => onTimeFilterChange('today')}>Today</Button>
+                <Button variant={timeFilter === 'week' ? 'default' : 'outline'} size="sm" onClick={() => onTimeFilterChange('week')}>This Week</Button>
+                <Button variant={timeFilter === 'month' ? 'default' : 'outline'} size="sm" onClick={() => onTimeFilterChange('month')}>This Month</Button>
+            </div>
         </div>
         <div className="rounded-md border">
           <Table>

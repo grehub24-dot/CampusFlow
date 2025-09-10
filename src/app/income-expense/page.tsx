@@ -6,6 +6,7 @@ import { collection, onSnapshot, query, orderBy, where } from "firebase/firestor
 import { db } from '@/lib/firebase';
 import type { Transaction, TransactionCategory, Student, Payment, AcademicTerm } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { isToday, isThisWeek, isThisMonth } from 'date-fns';
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ export default function IncomeExpensePage() {
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
+  const [timeFilter, setTimeFilter] = React.useState<'all' | 'today' | 'week' | 'month'>('all');
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,9 +90,18 @@ export default function IncomeExpensePage() {
     );
 
     const combined = [...manualTransactions, ...paymentTransactions];
-    combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return combined;
-  }, [manualTransactions, payments]);
+    
+    const filteredByTime = combined.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      if (timeFilter === 'today') return isToday(transactionDate);
+      if (timeFilter === 'week') return isThisWeek(transactionDate, { weekStartsOn: 1 });
+      if (timeFilter === 'month') return isThisMonth(transactionDate);
+      return true; // 'all'
+    });
+    
+    filteredByTime.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return filteredByTime;
+  }, [manualTransactions, payments, timeFilter]);
 
 
   const handleAddClick = () => {
@@ -127,7 +138,7 @@ export default function IncomeExpensePage() {
     setIsSubmitting(true);
     try {
       const categoryName = categories.find(c => c.id === values.categoryId)?.name || 'Uncategorized';
-      const data = { ...values, categoryName };
+      const data = { ...values, categoryName, date: values.date.toISOString() };
 
       if (selectedTransaction) {
         // Update
@@ -213,7 +224,12 @@ export default function IncomeExpensePage() {
               <TabsTrigger value="categories">Manage Categories</TabsTrigger>
           </TabsList>
           <TabsContent value="transactions" className="space-y-4">
-            <TransactionsTable columns={columns} data={allTransactions} />
+            <TransactionsTable 
+                columns={columns} 
+                data={allTransactions} 
+                timeFilter={timeFilter}
+                onTimeFilterChange={setTimeFilter}
+            />
           </TabsContent>
           <TabsContent value="categories" className="space-y-4">
             <CategoryManagement categories={categories} />
