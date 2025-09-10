@@ -1,31 +1,13 @@
 
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { doc, getDoc } from "firebase/firestore";
-import { db } from '@/lib/firebase';
-import type { IntegrationSettings } from '@/types';
 
-// This function can be moved to a shared lib if needed elsewhere
-async function getNaloCredentials(): Promise<{ merchant_id: string, username: string, password_md5: string } | null> {
-    const settingsDocRef = doc(db, "settings", "integrations");
-    const docSnap = await getDoc(settingsDocRef);
-
-    if (docSnap.exists()) {
-        const settings = docSnap.data() as IntegrationSettings;
-        if (!settings.naloMerchantId || !settings.naloUsername || !settings.naloPassword) {
-            console.error("Nalo payment settings are incomplete.");
-            return null;
-        }
-        return {
-            merchant_id: settings.naloMerchantId,
-            username: settings.naloUsername,
-            password_md5: crypto.createHash('md5').update(settings.naloPassword).digest('hex'),
-        };
-    }
-    console.error("Nalo integration settings are not configured.");
-    return null;
-}
-
+// Hardcoded credentials for testing purposes
+const MOCK_NALO_CREDENTIALS = {
+    merchant_id: "NPS_000363",
+    username: "david_gen",
+    password_md5: crypto.createHash('md5').update("RveMxX9MN8JVM6d").digest('hex')
+};
 
 export async function POST(request: Request) {
   try {
@@ -35,19 +17,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Missing required Nalo payment fields' }, { status: 400 });
     }
 
-    const credentials = await getNaloCredentials();
-    if (!credentials) {
-        return NextResponse.json({ error: 'Nalo payment gateway not configured on server.' }, { status: 500 });
-    }
-
     const key = Math.floor(1000 + Math.random() * 9000).toString(); // Random 4-digit key
-    const stringToHash = `${credentials.username}${key}${credentials.password_md5}`;
+    const stringToHash = `${MOCK_NALO_CREDENTIALS.username}${key}${MOCK_NALO_CREDENTIALS.password_md5}`;
     const secrete = crypto.createHash('md5').update(stringToHash).digest('hex');
 
     const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/api/nalo-callback`;
 
     const naloPayload = {
-        merchant_id: credentials.merchant_id,
+        merchant_id: MOCK_NALO_CREDENTIALS.merchant_id,
         secrete,
         key,
         order_id,
@@ -56,9 +33,11 @@ export async function POST(request: Request) {
         item_desc,
         customerNumber,
         payby,
-        newVodaPayment: payby === 'VODAFONE' ? true : undefined, // Use the modern Vodafone flow
+        newVodaPayment: payby === 'VODAFONE' ? true : undefined,
         callback: callbackUrl,
     };
+    
+    console.log('Sending to Nalo:', JSON.stringify(naloPayload, null, 2));
 
     const naloResponse = await fetch('https://api.nalosolutions.com/payplus/api/', {
         method: 'POST',
@@ -67,9 +46,9 @@ export async function POST(request: Request) {
     });
 
     const naloData = await naloResponse.json();
+    console.log('Received from Nalo:', naloData);
 
     if (!naloResponse.ok || naloData.Status !== 'Accepted') {
-      console.error('Nalo API Error:', naloData);
       return NextResponse.json({ message: naloData.Description || 'Failed to initiate payment with Nalo' }, { status: naloResponse.status });
     }
 

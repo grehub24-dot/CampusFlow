@@ -29,14 +29,6 @@ export async function POST(request: Request) {
     await setDoc(invoiceRef, mockInvoice);
     console.log(`Created invoice ${invoiceId} with status PENDING.`);
     
-    // Simulate a successful GhanaPay payment after a delay for testing
-    // setTimeout(async () => {
-    //   const invRef = doc(db, "invoices", invoiceId);
-    //   await setDoc(invRef, { status: 'PAID' }, { merge: true });
-    //   console.log(`Mock invoice ${invoiceId} status changed to PAID.`);
-    // }, 20000);
-
-
     return NextResponse.json({ id: invoiceId, ...mockInvoice }, { status: 200 });
 
   } catch (error) {
