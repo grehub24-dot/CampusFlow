@@ -111,14 +111,6 @@ function PurchaseContent() {
         if (inv) {
             setLoading(true);
             try {
-                // As per your instruction, the full payload is constructed here in the browser.
-                const merchant_id = 'NPS_000363';
-                const key = 'kqPS9?msJ_IbPB9'; // This is not 4 digits, but using as instructed.
-                const password = 'kqPS9?msJ_IbPB9'; // Assuming the key is also the password for hashing
-                const username = 'cflows'; // This should be configured securely.
-                const passwordMd5 = crypto.createHash('md5').update(password).digest('hex');
-                const stringToHash = `${username}${key}${passwordMd5}`;
-                const secrete = crypto.createHash('md5').update(stringToHash).digest('hex');
                 
                 let formattedNumber = String(momoNumber);
                 if (formattedNumber.startsWith('0')) {
@@ -127,23 +119,19 @@ function PurchaseContent() {
                     formattedNumber = '233' + formattedNumber;
                 }
 
-                const naloPayload = {
-                    merchant_id: merchant_id,
-                    key: key,
-                    secrete: secrete,
+                const clientPayload = {
                     order_id: inv.id,
                     customerName: "CampusFlow User",
                     amount: inv.amount,
                     item_desc: `${bundleCredits} SMS Credits`,
                     customerNumber: formattedNumber,
                     payby: selectedProvider.code,
-                    callback: `${window.location.origin}/api/nalo-callback`
                 };
                 
                 const res = await fetch('/api/initiate-nalo-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(naloPayload),
+                    body: JSON.stringify(clientPayload),
                 });
                 
                 if (!res.ok) {
