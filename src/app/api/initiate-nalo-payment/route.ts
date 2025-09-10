@@ -2,32 +2,91 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { IntegrationSettings } from '@/types';
 
+
+async function getNaloCredentials(): Promise<{ merchantId: string, username: string, passwordMd5: string } | null> {
+    const settingsDocRef = doc(db, "settings", "integrations");
+    const docSnap = await getDoc(settingsDocRef);
+
+    if (docSnap.exists()) {
+        const settings = docSnap.data() as IntegrationSettings;
+        const { naloMerchantId, naloUsername, naloPassword } = settings;
+        if (!naloMerchantId || !naloUsername || !naloPassword) {
+            console.error("Nalo API credentials are not fully configured in settings.");
+            return null;
+        }
+        return {
+            merchantId: naloMerchantId,
+            username: naloUsername,
+            passwordMd5: crypto.createHash('md5').update(naloPassword).digest('hex')
+        };
+    }
+
+    console.error("Nalo integration settings are not configured.");
+    return null;
+}
 
 export async function POST(request: Request) {
   try {
-    const naloPayload = await request.json();
+    const clientPayload = await request.json();
 
-    // Basic validation to ensure we have a payload
-    if (!naloPayload || !naloPayload.order_id) {
-        return NextResponse.json({ error: 'Invalid payload received' }, { status: 400 });
+    const { order_id, amount, item_desc, customerNumber, payby, customerName } = clientPayload;
+
+    if (!order_id || !amount || !item_desc || !customerNumber || !payby) {
+        return NextResponse.json({ error: 'Invalid payload received from client' }, { status: 400 });
     }
     
-    console.log('Received payload from client, forwarding to Nalo:', JSON.stringify(naloPayload, null, 2));
+    const credentials = await getNaloCredentials();
+    if (!credentials) {
+        return NextResponse.json({ error: 'Nalo API credentials not configured on server.' }, { status: 500 });
+    }
+    
+    const { merchantId, username, passwordMd5 } = credentials;
 
-    // Configure fetch to use a proxy if the environment variable is set
+    // Generate a random 4-digit key for each transaction
+    const key = Math.floor(1000 + Math.random() * 9000).toString();
+
+    // Generate the secrete on the server
+    const stringToHash = `${username}${key}${passwordMd5}`;
+    const secrete = crypto.createHash('md5').update(stringToHash).digest('hex');
+    
+    // Format phone number to 233...
+    let formattedNumber = String(customerNumber);
+    if (formattedNumber.startsWith('0')) {
+        formattedNumber = '233' + formattedNumber.substring(1);
+    } else if (!formattedNumber.startsWith('233')) {
+        formattedNumber = '233' + formattedNumber;
+    }
+    
+    const finalNaloPayload = {
+      merchant_id: merchantId,
+      key: key,
+      secrete: secrete,
+      order_id: order_id,
+      customerName: customerName,
+      amount: amount,
+      item_desc: item_desc,
+      customerNumber: formattedNumber,
+      payby: payby,
+      callback: `${new URL(request.url).origin}/api/nalo-callback`,
+      newVodaPayment: payby === 'VODAFONE' ? true : undefined,
+    };
+    
+    console.log('Sending final payload to Nalo:', JSON.stringify(finalNaloPayload, null, 2));
+
     const proxyUrl = process.env.HTTPS_PROXY_URL;
     const fetchOptions: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(naloPayload),
+        body: JSON.stringify(finalNaloPayload),
     };
 
     if (proxyUrl) {
       console.log(`Using proxy: ${proxyUrl}`);
       const agent = new HttpsProxyAgent(proxyUrl);
-      // The type for `dispatcher` is not perfectly aligned in Next.js/node-fetch,
-      // so we cast to `any` to avoid TypeScript errors.
       (fetchOptions as any).dispatcher = agent;
     }
 
