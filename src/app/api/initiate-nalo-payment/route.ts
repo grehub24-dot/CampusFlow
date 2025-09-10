@@ -7,7 +7,9 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 const MOCK_NALO_CREDENTIALS = {
     merchant_id: "NPS_000363",
     username: "david_gen",
-    password_md5: crypto.createHash('md5').update("RveMxX9MN8JVM6d").digest('hex')
+    password_md5: crypto.createHash('md5').update("RveMxX9MN8JVM6d").digest('hex'),
+    // Use the static key provided by the user
+    key: "kqPS9?msJ_lbPB9" 
 };
 
 export async function POST(request: Request) {
@@ -17,8 +19,9 @@ export async function POST(request: Request) {
     if (!order_id || !customerName || !amount || !item_desc || !customerNumber || !payby) {
         return NextResponse.json({ error: 'Missing required Nalo payment fields' }, { status: 400 });
     }
-
-    const key = Math.floor(1000 + Math.random() * 9000).toString(); // Random 4-digit key
+    
+    // The key is now static and part of the credentials object
+    const key = MOCK_NALO_CREDENTIALS.key;
     const stringToHash = `${MOCK_NALO_CREDENTIALS.username}${key}${MOCK_NALO_CREDENTIALS.password_md5}`;
     const secrete = crypto.createHash('md5').update(stringToHash).digest('hex');
 
@@ -82,3 +85,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
