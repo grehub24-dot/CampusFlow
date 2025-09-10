@@ -57,7 +57,7 @@ export default function IncomeExpensePage() {
     const unsubscribeSettings = onSnapshot(academicTermsQuery, (snapshot) => {
         if (!snapshot.empty) {
             const termDoc = snapshot.docs[0];
-            setCurrentTerm({ id: termDoc.id, ...doc.data() } as AcademicTerm);
+            setCurrentTerm({ id: termDoc.id, ...termDoc.data() } as AcademicTerm);
         } else {
             setCurrentTerm(null);
         }
