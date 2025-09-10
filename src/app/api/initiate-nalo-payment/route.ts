@@ -23,15 +23,25 @@ export async function POST(request: Request) {
 
     const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/api/nalo-callback`;
 
+    // Ensure customerNumber is a string prefixed with 233
+    let formattedNumber = String(customerNumber);
+    if (formattedNumber.startsWith('0')) {
+        formattedNumber = '233' + formattedNumber.substring(1);
+    } else if (!formattedNumber.startsWith('233')) {
+        // Fallback for numbers without a leading 0, though less common
+        formattedNumber = '233' + formattedNumber;
+    }
+
+
     const naloPayload = {
         merchant_id: MOCK_NALO_CREDENTIALS.merchant_id,
         secrete,
         key,
         order_id,
         customerName,
-        amount: String(amount),
+        amount: String(amount), // Ensure amount is a string
         item_desc,
-        customerNumber,
+        customerNumber: formattedNumber,
         payby,
         newVodaPayment: payby === 'VODAFONE' ? true : undefined,
         callback: callbackUrl,
