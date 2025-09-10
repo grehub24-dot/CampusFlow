@@ -131,22 +131,27 @@ export default function StudentsPage() {
       const studentPaymentsForTerm = payments.filter(p => p.studentId === student.id && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session);
       const paidItemNames = new Set(studentPaymentsForTerm.flatMap(p => p.items?.map(i => i.name) || []));
 
-      const totalDue = structure.items
-        .map(item => {
+      const totalDue = structure.items.map(item => {
           const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
           if (!feeItemInfo) return 0;
           
           let isApplicable = false;
-          // Mandatory items are always applicable based on student status
           if (!feeItemInfo.isOptional) {
+              const appliesToNew = feeItemInfo.appliesTo.includes('new');
+              const appliesToTerm1 = feeItemInfo.appliesTo.includes('term1');
+              const appliesToTerm23 = feeItemInfo.appliesTo.includes('term2_3');
+
               if (isNew) {
-                  if (feeItemInfo.appliesTo.includes('new')) isApplicable = true;
+                  if (appliesToNew || (termNumber === 1 && appliesToTerm1) || (termNumber > 1 && appliesToTerm23)) {
+                      isApplicable = true;
+                  }
               } else {
-                  if (termNumber === 1 && feeItemInfo.appliesTo.includes('term1')) isApplicable = true;
-                  if (termNumber > 1 && feeItemInfo.appliesTo.includes('term2_3')) isApplicable = true;
+                  if ((termNumber === 1 && appliesToTerm1) || (termNumber > 1 && appliesToTerm23)) {
+                      isApplicable = true;
+                  }
               }
           }
-          // Optional items are applicable if they've been paid for
+          
           if (feeItemInfo.isOptional && paidItemNames.has(feeItemInfo.name)) {
               isApplicable = true;
           }

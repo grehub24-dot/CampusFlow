@@ -156,16 +156,22 @@ export default function InvoicesPage() {
           if (!feeItemInfo) return null;
           
           let isApplicable = false;
-          // Mandatory items are always applicable based on student status
           if (!feeItemInfo.isOptional) {
+              const appliesToNew = feeItemInfo.appliesTo.includes('new');
+              const appliesToTerm1 = feeItemInfo.appliesTo.includes('term1');
+              const appliesToTerm23 = feeItemInfo.appliesTo.includes('term2_3');
+
               if (isNew) {
-                  if (feeItemInfo.appliesTo.includes('new')) isApplicable = true;
+                  if (appliesToNew || (termNumber === 1 && appliesToTerm1) || (termNumber > 1 && appliesToTerm23)) {
+                      isApplicable = true;
+                  }
               } else {
-                  if (termNumber === 1 && feeItemInfo.appliesTo.includes('term1')) isApplicable = true;
-                  if (termNumber > 1 && feeItemInfo.appliesTo.includes('term2_3')) isApplicable = true;
+                  if ((termNumber === 1 && appliesToTerm1) || (termNumber > 1 && appliesToTerm23)) {
+                      isApplicable = true;
+                  }
               }
           }
-          // Optional items are applicable if they've been paid for
+          
           if (feeItemInfo.isOptional && paidItemNames.has(feeItemInfo.name)) {
               isApplicable = true;
           }
