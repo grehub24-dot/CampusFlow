@@ -159,9 +159,7 @@ export default function StudentsPage() {
         return { ...student, paymentStatus: 'Paid' as const };
       }
 
-      const totalPaid = payments
-        .filter(p => p.studentId === student.id && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session)
-        .reduce((sum, p) => sum + p.amount, 0);
+      const totalPaid = studentPaymentsForTerm.reduce((sum, p) => sum + p.amount, 0);
 
       let status: 'Paid' | 'Part-Payment' | 'Unpaid';
       if (totalPaid >= totalDue) {
