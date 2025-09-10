@@ -6,6 +6,7 @@ import { collection, onSnapshot, doc, setDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { SubmitHandler } from 'react-hook-form';
+import Link from 'next/link';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -68,9 +69,11 @@ export function BillingSettings() {
                     <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
                             <p className="font-semibold">Current Plan: <span className="text-primary">Pro Tier</span></p>
-                            <p className="text-sm text-muted-foreground">Renews on: December 31, 2024</p>
+                            <p className="text-sm text-muted-foreground">Connected to: Nexora Cloud (studio-773059025)</p>
                         </div>
-                        <Button>Manage Subscription</Button>
+                        <Link href="/billing" passHref>
+                            <Button>Manage Subscription</Button>
+                        </Link>
                     </div>
                 </CardContent>
             </Card>
@@ -97,4 +100,3 @@ export function BillingSettings() {
         </div>
     );
 }
-
