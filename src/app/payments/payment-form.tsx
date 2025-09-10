@@ -41,7 +41,7 @@ interface Props {
 }
 
 // Define which fees should be prioritized for payment.
-const CORE_FEE_PRIORITY = ['Admission fees', 'School Fees', 'Books', 'Uniforms'];
+const CORE_FEE_PRIORITY = ['Admission fees', 'Uniforms', 'Books', 'School Fees'];
 
 
 export default function PaymentForm({
