@@ -71,7 +71,7 @@ export function BillingSettings() {
                             <p className="font-semibold">Current Plan: <span className="text-primary">Pro Tier</span></p>
                             <p className="text-sm text-muted-foreground">Connected to: Nexora Cloud (studio-773059025)</p>
                         </div>
-                        <Link href="/billing" passHref>
+                        <Link href="https://6000-firebase-studio-1757358934144.cluster-cbeiita7rbe7iuwhvjs5zww2i4.cloudworkstations.dev/cloud" passHref target="_blank" rel="noopener noreferrer">
                             <Button>Manage Subscription</Button>
                         </Link>
                     </div>
