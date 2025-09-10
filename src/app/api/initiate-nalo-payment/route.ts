@@ -13,7 +13,7 @@ async function getNaloCredentials(): Promise<{ merchantId: string, username: str
 
     if (docSnap.exists()) {
         const settings = docSnap.data() as IntegrationSettings;
-        // The password to use is the static key provided.
+        // The password to use is the static key provided for generating the secrete.
         const password = "kqPS9?msJ_IbPB9";
         const { naloMerchantId, naloUsername } = settings;
 
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     
     const { merchantId, username, passwordMd5 } = credentials;
 
-    // Generate a random 4-digit key for each transaction
+    // Generate a random 4-digit key for each transaction as per documentation
     const key = Math.floor(1000 + Math.random() * 9000).toString();
 
     // Generate the secrete on the server
