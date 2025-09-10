@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const naloPayload = {
         merchant_id: MOCK_NALO_CREDENTIALS.merchant_id,
         secrete,
-        key,
+        key, // Ensure the key is part of the payload
         order_id,
         customerName,
         amount: String(amount), // Ensure amount is a string
@@ -85,3 +85,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
