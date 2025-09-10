@@ -9,21 +9,31 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Smartphone, CreditCard, ShoppingCart, CheckCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Smartphone, CreditCard, ShoppingCart, CheckCircle, QrCode } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice as InvoiceType, MomoProvider, Bundle } from '@/types';
 import Image from 'next/image';
-import { doc, onSnapshot, getDoc, setDoc } from "firebase/firestore";
+import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { generateVerificationCode, verifyOtp } from '@/lib/frog-api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const communicationBundles: Bundle[] = [
     { name: 'Basic Bundle', msgCount: 175, price: 30, validity: 30 },
@@ -34,8 +44,8 @@ const communicationBundles: Bundle[] = [
 
 const MOMO_PROVIDERS = [
   { code: "MTN",   name: "MTN Mobile Money" },
-  { code: "VOD",   name: "Vodafone Cash" },
-  { code: "TIGO",  name: "AirtelTigo Money" },
+  { code: "VODAFONE",   name: "Vodafone Cash" },
+  { code: "AIRTELTIGO",  name: "AirtelTigo Money" },
 ] as const;
 
 
@@ -75,8 +85,8 @@ function CheckoutModal({
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState<'details' | 'qr-payment'>('details');
-  const [invoice, setInvoice] = useState<{ id: string; qrPayload: string } | null>(null);
+  const [checkoutStep, setCheckoutStep] = useState<'details' | 'payment-method' | 'qr-payment' | 'nalo-wait'>('details');
+  const [invoice, setInvoice] = useState<{ id: string; qrPayload?: string, naloInvoiceNo?: string } | null>(null);
   const router = useRouter();
 
   const { toast } = useToast();
@@ -92,6 +102,33 @@ function CheckoutModal({
         setInvoice(null);
     }
   }, [bundle, open]);
+
+  // Polling for Nalo payment status
+  useEffect(() => {
+    if (checkoutStep !== 'nalo-wait' || !invoice?.id) return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/invoice-status?id=${invoice.id}`);
+        if(res.ok) {
+          const { status } = await res.json();
+          if (status === 'PAID') {
+            clearInterval(interval);
+            handlePaymentComplete();
+          } else if (status === 'FAILED') {
+            clearInterval(interval);
+            toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed.' });
+            setCheckoutStep('payment-method');
+          }
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [checkoutStep, invoice?.id]);
+
 
   async function handleSendOtp() {
     setLoading(true);
@@ -127,12 +164,11 @@ function CheckoutModal({
     }
   }
   
-  async function handleProceedToPayment() {
+  async function handleProceedToPaymentSelection() {
     if (!bundle) return;
     setLoading(true);
     
     try {
-      // 1. Create Invoice
       const invRes = await fetch("/api/create-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -145,21 +181,8 @@ function CheckoutModal({
 
       if (!invRes.ok) throw new Error("Invoice creation failed");
       const createdInvoice: InvoiceType = await invRes.json();
-      
-      // 2. Generate Gh-QR Payload
-      const qrRes = await fetch("/api/generate-gh-qr", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-              amount: bundle.price,
-              referenceId: createdInvoice.id,
-          })
-      });
-      if (!qrRes.ok) throw new Error("Failed to generate QR Code data.");
-      const { qrPayload } = await qrRes.json();
-      
-      setInvoice({ id: createdInvoice.id, qrPayload });
-      setCheckoutStep('qr-payment');
+      setInvoice({ id: createdInvoice.id });
+      setCheckoutStep('payment-method');
 
     } catch (e: any) {
        toast({ variant: "destructive", title: "Payment Error", description: e.message });
@@ -167,6 +190,52 @@ function CheckoutModal({
       setLoading(false);
     }
   }
+
+  async function handleSelectPaymentMethod(method: 'ghanaPay' | 'nalo') {
+    if (!invoice || !bundle) return;
+    setLoading(true);
+    
+    try {
+        if (method === 'ghanaPay') {
+            const qrRes = await fetch("/api/generate-gh-qr", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    amount: bundle.price,
+                    referenceId: invoice.id,
+                })
+            });
+            if (!qrRes.ok) throw new Error("Failed to generate QR Code data.");
+            const { qrPayload } = await qrRes.json();
+            setInvoice(prev => prev ? ({ ...prev, qrPayload }) : null);
+            setCheckoutStep('qr-payment');
+        } else { // Nalo Pay
+            const naloRes = await fetch('/api/initiate-nalo-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                order_id: invoice.id,
+                customerName: "CampusFlow User",
+                amount: bundle.price,
+                item_desc: `${bundle.msgCount} SMS Credit Bundle`,
+                customerNumber: mobileNumber,
+                payby: provider,
+              })
+            });
+            const naloData = await naloRes.json();
+            if (!naloRes.ok || naloData.Status !== 'Accepted') {
+              throw new Error(naloData.message || 'Failed to initiate Nalo payment.');
+            }
+            setInvoice(prev => prev ? ({ ...prev, naloInvoiceNo: naloData.InvoiceNo }) : null);
+            setCheckoutStep('nalo-wait');
+        }
+    } catch(e: any) {
+        toast({ variant: "destructive", title: "Payment Error", description: e.message });
+    } finally {
+        setLoading(false);
+    }
+  }
+
 
   function handlePaymentComplete() {
     if (!invoice || !bundle) return;
@@ -179,19 +248,11 @@ function CheckoutModal({
   }
   
   if (!bundle) return null;
-
-  return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-4xl p-0" onInteractOutside={(e) => e.preventDefault()}>
-         <DialogHeader className="sr-only">
-          <DialogTitle>Complete Your Purchase</DialogTitle>
-          <DialogDescription>
-            Enter your payment details to buy SMS credits.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-[1fr,400px]">
-          {/* Left side: Form */}
-           {checkoutStep === 'details' ? (
+  
+  const renderStep = () => {
+    switch(checkoutStep) {
+        case 'details':
+            return (
               <div className="p-8">
                 <button onClick={onClose} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
                   <ArrowLeft className="h-4 w-4" />
@@ -247,7 +308,7 @@ function CheckoutModal({
                       </div>
                   )}
                 </div>
-                <Button className="w-full mt-8" size="lg" onClick={handleProceedToPayment} disabled={loading || !isVerified}>
+                <Button className="w-full mt-8" size="lg" onClick={handleProceedToPaymentSelection} disabled={loading || !isVerified}>
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'PROCEED'}
                 </Button>
 
@@ -255,7 +316,27 @@ function CheckoutModal({
                     Powered by <span className="font-bold">CompusFlow</span> | Privacy | Terms
                 </div>
               </div>
-           ) : (
+           );
+        case 'payment-method':
+            return (
+                <div className="p-8 flex flex-col justify-center text-center">
+                    <h2 className="text-2xl font-bold mb-2">Choose Payment Method</h2>
+                    <p className="text-muted-foreground mb-6">How would you like to pay for your bundle?</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => handleSelectPaymentMethod('ghanaPay')} disabled={loading}>
+                           <QrCode className="h-8 w-8" />
+                           <span className="font-semibold">GhanaPay (QR Code)</span>
+                        </Button>
+                        <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => handleSelectPaymentMethod('nalo')} disabled={loading}>
+                           <Smartphone className="h-8 w-8" />
+                           <span className="font-semibold">Nalo Momo Pay (Direct)</span>
+                        </Button>
+                    </div>
+                     {loading && <Loader2 className="mx-auto mt-4 h-6 w-6 animate-spin"/>}
+                </div>
+            );
+        case 'qr-payment':
+            return (
              <div className="p-8 flex flex-col items-center justify-center text-center">
                  <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
                  <h2 className="text-2xl font-bold mb-2">Scan to Pay</h2>
@@ -280,7 +361,35 @@ function CheckoutModal({
                     I have completed the payment
                  </Button>
              </div>
-           )}
+           );
+        case 'nalo-wait':
+            return (
+                 <div className="p-8 flex flex-col items-center justify-center text-center">
+                    <Smartphone className="h-16 w-16 text-primary mb-4" />
+                    <h2 className="text-2xl font-bold mb-2">Check Your Phone</h2>
+                    <p className="text-muted-foreground mb-4">A payment prompt has been sent to your phone. Please authorize the transaction to complete your purchase.</p>
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <p className="text-sm mt-4">Waiting for confirmation...</p>
+                 </div>
+            )
+        default:
+            return null;
+    }
+  }
+
+
+  return (
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="max-w-4xl p-0" onInteractOutside={(e) => e.preventDefault()}>
+         <DialogHeader className="sr-only">
+          <DialogTitle>Complete Your Purchase</DialogTitle>
+          <DialogDescription>
+            Enter your payment details to buy SMS credits.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr,400px]">
+          {/* Left side: Form */}
+           {renderStep()}
           
           {/* Right side: Invoice Details */}
           <div className="bg-[#EBF3FF] p-8 space-y-6">
@@ -354,3 +463,5 @@ export default function BillingPage() {
         </>
     )
 }
+
+    

@@ -1,20 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -77,11 +61,12 @@ export type Invoice = {
   items?: { name: string, amount: number }[];
   totalAmount: number; // total bill for the term
   amountPaid: number; // total paid so far for the term
-  // For MoMo checkout
-  payToken?: string;      // Redde payToken / Hubtel token, etc.
-  description?: string;
-  dialCode?: string;     // e.g. *800*0*6491#
-  expiresAt?: string;     // ISO date
+  // For checkout
+  status?: 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED';
+  createdAt?: string;
+  reference?: string;
+  naloInvoiceNo?: string;
+  naloStatusTimestamp?: string;
 };
 
 export type User = {
@@ -148,6 +133,9 @@ export type IntegrationSettings = {
     frogApiKey?: string;
     frogSenderId?: string;
     frogUsername?: string;
+    naloMerchantId?: string;
+    naloUsername?: string;
+    naloPassword?: string;
     smsOnAdmission?: boolean;
     smsOnPayment?: boolean;
     smsOnFeeReminder?: boolean;
@@ -169,7 +157,7 @@ export type SchoolInformation = {
 }
 
 export type MomoProvider = {
-    code: "MTN" | "VOD" | "TIGO";
+    code: "MTN" | "VODAFONE" | "AIRTELTIGO";
     name: string;
 }
 
@@ -270,3 +258,5 @@ export type FinancialSummaryItem = {
     category: string;
     total: number;
 }
+
+    

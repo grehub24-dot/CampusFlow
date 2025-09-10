@@ -1,6 +1,7 @@
 
 import { NextResponse } from 'next/server';
-import { mockInvoiceStore } from '../create-invoice/route';
+import { doc, getDoc } from "firebase/firestore";
+import { db } from '@/lib/firebase';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -10,15 +11,23 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Invoice ID is required' }, { status: 400 });
   }
 
-  // MOCK: Fetch status from our in-memory store
-  const invoice = mockInvoiceStore.get(id);
+  try {
+    const invoiceRef = doc(db, "invoices", id);
+    const docSnap = await getDoc(invoiceRef);
 
-  if (!invoice) {
-    return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    if (!docSnap.exists()) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    }
+    
+    const invoiceData = docSnap.data();
+    console.log(`Polling status for invoice ${id}: ${invoiceData.status}`);
+
+    return NextResponse.json({ status: invoiceData.status }, { status: 200 });
+
+  } catch (error) {
+    console.error('Error fetching invoice status:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-  
-  console.log(`Polling status for invoice ${id}: ${invoice.status}`);
-
-  // Return the current status
-  return NextResponse.json({ status: invoice.status }, { status: 200 });
 }
+
+    
