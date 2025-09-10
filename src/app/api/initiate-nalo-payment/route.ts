@@ -1,6 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 // Hardcoded credentials for testing purposes
 const MOCK_NALO_CREDENTIALS = {
@@ -49,11 +50,23 @@ export async function POST(request: Request) {
     
     console.log('Sending to Nalo:', JSON.stringify(naloPayload, null, 2));
 
-    const naloResponse = await fetch('https://api.nalosolutions.com/payplus/api/', {
+    // Configure fetch to use a proxy if the environment variable is set
+    const proxyUrl = process.env.HTTPS_PROXY_URL;
+    const fetchOptions: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(naloPayload),
-    });
+    };
+
+    if (proxyUrl) {
+      console.log(`Using proxy: ${proxyUrl}`);
+      const agent = new HttpsProxyAgent(proxyUrl);
+      // The type for `dispatcher` is not perfectly aligned in Next.js/node-fetch,
+      // so we cast to `any` to avoid TypeScript errors.
+      (fetchOptions as any).dispatcher = agent;
+    }
+
+    const naloResponse = await fetch('https://api.nalosolutions.com/payplus/api/', fetchOptions);
 
     const naloData = await naloResponse.json();
     console.log('Received from Nalo:', naloData);
