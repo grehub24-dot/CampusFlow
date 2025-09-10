@@ -41,7 +41,10 @@ export async function POST(request: Request) {
     }
 
     const key = Math.floor(1000 + Math.random() * 9000).toString(); // Random 4-digit key
-    const secrete = crypto.createHash('md5').update(`${credentials.username}${key}${credentials.password_md5}`).digest('hex');
+    const stringToHash = `${credentials.username}${key}${credentials.password_md5}`;
+    const secrete = crypto.createHash('md5').update(stringToHash).digest('hex');
+
+    const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/api/nalo-callback`;
 
     const naloPayload = {
         merchant_id: credentials.merchant_id,
@@ -54,7 +57,7 @@ export async function POST(request: Request) {
         customerNumber,
         payby,
         newVodaPayment: payby === 'VODAFONE' ? true : undefined, // Use the modern Vodafone flow
-        callback: `${process.env.NEXT_PUBLIC_BASE_URL}/api/nalo-callback`,
+        callback: callbackUrl,
     };
 
     const naloResponse = await fetch('https://api.nalosolutions.com/payplus/api/', {
@@ -67,7 +70,7 @@ export async function POST(request: Request) {
 
     if (!naloResponse.ok || naloData.Status !== 'Accepted') {
       console.error('Nalo API Error:', naloData);
-      return NextResponse.json({ message: naloData.Description || 'Failed to initiate payment with Nalo' }, { status: 500 });
+      return NextResponse.json({ message: naloData.Description || 'Failed to initiate payment with Nalo' }, { status: naloResponse.status });
     }
 
     return NextResponse.json(naloData, { status: 200 });
@@ -77,6 +80,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-
-
-    
