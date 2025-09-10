@@ -120,7 +120,6 @@ function PurchaseContent() {
                         item_desc: `${bundleCredits} SMS Credits`,
                         customerNumber: momoNumber,
                         payby: selectedProvider.code,
-                        key: 'kqPS9?msJ_IbPB9'
                     }),
                 });
                 if (!res.ok) {
@@ -310,5 +309,3 @@ export default function PurchasePage() {
         </Suspense>
     )
 }
-
-    

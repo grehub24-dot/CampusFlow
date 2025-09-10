@@ -8,17 +8,18 @@ const MOCK_NALO_CREDENTIALS = {
     merchant_id: "NPS_000363",
     username: "david_gen",
     password_md5: crypto.createHash('md5').update("RveMxX9MN8JVM6d").digest('hex'),
+    key: "kqPS9?msJ_IbPB9",
 };
 
 export async function POST(request: Request) {
   try {
-    const { order_id, customerName, amount, item_desc, customerNumber, payby, key } = await request.json();
+    const { order_id, customerName, amount, item_desc, customerNumber, payby } = await request.json();
 
-    if (!order_id || !customerName || !amount || !item_desc || !customerNumber || !payby || !key) {
+    if (!order_id || !customerName || !amount || !item_desc || !customerNumber || !payby) {
         return NextResponse.json({ error: 'Missing required Nalo payment fields' }, { status: 400 });
     }
     
-    const stringToHash = `${MOCK_NALO_CREDENTIALS.username}${key}${MOCK_NALO_CREDENTIALS.password_md5}`;
+    const stringToHash = `${MOCK_NALO_CREDENTIALS.username}${MOCK_NALO_CREDENTIALS.key}${MOCK_NALO_CREDENTIALS.password_md5}`;
     const secrete = crypto.createHash('md5').update(stringToHash).digest('hex');
 
     const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/api/nalo-callback`;
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
     const naloPayload = {
         merchant_id: MOCK_NALO_CREDENTIALS.merchant_id,
         secrete,
-        key,
+        key: MOCK_NALO_CREDENTIALS.key,
         order_id,
         customerName,
         amount: String(amount), // Ensure amount is a string
@@ -81,5 +82,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-
-    
