@@ -13,15 +13,18 @@ async function getNaloCredentials(): Promise<{ merchantId: string, username: str
 
     if (docSnap.exists()) {
         const settings = docSnap.data() as IntegrationSettings;
-        const { naloMerchantId, naloUsername, naloPassword } = settings;
-        if (!naloMerchantId || !naloUsername || !naloPassword) {
-            console.error("Nalo API credentials are not fully configured in settings.");
+        // The password to use is the static key provided.
+        const password = "kqPS9?msJ_IbPB9";
+        const { naloMerchantId, naloUsername } = settings;
+
+        if (!naloMerchantId || !naloUsername || !password) {
+            console.error("Nalo API credentials are not fully configured in settings or password missing.");
             return null;
         }
         return {
             merchantId: naloMerchantId,
             username: naloUsername,
-            passwordMd5: crypto.createHash('md5').update(naloPassword).digest('hex')
+            passwordMd5: crypto.createHash('md5').update(password).digest('hex')
         };
     }
 
