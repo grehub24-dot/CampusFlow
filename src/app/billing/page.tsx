@@ -79,11 +79,11 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
        <CardFooter>
          <Button 
           className="w-full" 
-          disabled={isCurrent || isProcessing}
-          variant={isCurrent ? 'default' : plan.buttonVariant}
-          onClick={() => onSelect(plan)}
+          disabled={isProcessing && !isCurrent}
+          variant={isCurrent ? 'outline' : plan.buttonVariant}
+          onClick={() => onSelect(plan, isCurrent)}
         >
-          {isCurrent ? 'Current Plan' : plan.buttonText}
+          {isCurrent ? 'Manage Subscription' : plan.buttonText}
         </Button>
       </CardFooter>
     </Card>
@@ -192,8 +192,12 @@ export default function BillingPage() {
       }
     ];
 
-    const handleSelectPlan = (plan: any) => {
-        if (plan.priceGHS > 0) {
+    const handleSelectPlan = (plan: any, isCurrent: boolean) => {
+        if (isCurrent) {
+            // For a real application, this would link to a customer portal like Stripe or Paddle.
+            // For now, we can just show a dialog.
+            setSelectedPlan({ ...plan, name: "Manage " + plan.name });
+        } else if (plan.priceGHS > 0) {
             router.push(`/billing/purchase?bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
         } else {
             setSelectedPlan(plan);

@@ -1,27 +1,82 @@
-/* 1. 4-digit key (doc: STRING(4)) -------------------- */
-const key = Math.floor(1000 + Math.random() * 9000).toString(); // → "0626" style
+import { NextResponse } from "next/server";
+import crypto from "crypto";
 
-/* 2. secrete (doc: md5(username . key . md5(password))) */
-const passwordMd5 = crypto.createHash('md5').update("RveMxX9MN8JVM6d").digest('hex');
-const secrete = crypto
-  .createHash('md5')
-  .update(`${MOCK_NALO_CREDENTIALS.username}${key}${passwordMd5}`)
-  .digest('hex'); // → 32-char lower-case hex
-
-/* 3. exact doc shape (same order, same types) --------- */
-const payload: Record<string, string> = {
-  merchant_id: MOCK_NALO_CREDENTIALS.merchant_id, // "NPS_000363"
-  secrete,
-  key,
-  order_id,
-  customerName,
-  amount: Number(amount).toFixed(2), // "2.00"
-  item_desc,
-  customerNumber: customerNumber.replace(/^0/, '233'), // 12 digits
-  payby,
-  callback: `${process.env.NEXT_PUBLIC_BASE_URL}/api/nalo-callback`.trim(),
+const NALO_CREDENTIALS = {
+  username: process.env.NALO_USERNAME!,
+  merchant_id: process.env.NALO_MERCHANT_ID!,
+  password: process.env.NALO_PASSWORD!,
 };
 
-/* 4. stringify → matches sample byte-for-byte --------- */
-const body = JSON.stringify(payload); // only 9 keys, no extras
-console.log('Exact Nalo body:', body);
+function buildNaloPayload({
+  order_id,
+  customerName,
+  amount,
+  item_desc,
+  customerNumber,
+  payby,
+}: {
+  order_id: string;
+  customerName: string;
+  amount: number;
+  item_desc: string;
+  customerNumber: string;
+  payby: string;
+}) {
+  const key = Math.floor(1000 + Math.random() * 9000).toString();
+
+  const passwordMd5 = crypto
+    .createHash("md5")
+    .update(NALO_CREDENTIALS.password)
+    .digest("hex");
+
+  const secrete = crypto
+    .createHash("md5")
+    .update(`${NALO_CREDENTIALS.username}${key}${passwordMd5}`)
+    .digest("hex");
+
+  const normalizedNumber = customerNumber.startsWith("233")
+    ? customerNumber
+    : customerNumber.replace(/^0/, "233");
+
+  return {
+    merchant_id: NALO_CREDENTIALS.merchant_id,
+    secrete,
+    key,
+    order_id,
+    customerName,
+    amount: Number(amount).toFixed(2), // ✅ "2.00"
+    item_desc,
+    customerNumber: normalizedNumber,
+    payby,
+    callback: `${process.env.NEXT_PUBLIC_BASE_URL}/api/nalo-callback`,
+  };
+}
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const payload = buildNaloPayload(body);
+
+    console.log("Sending to NALO:", payload);
+
+    const naloRes = await fetch("https://api.nalosolutions.com/payplus/api/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const text = await naloRes.text();
+    console.log("NALO response:", text);
+
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = { raw: text };
+    }
+
+    return NextResponse.json(parsed);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
