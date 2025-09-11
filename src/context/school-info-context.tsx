@@ -68,7 +68,12 @@ export const SchoolInfoProvider: React.FC<{ children: React.ReactNode }> = ({
       new Promise(res => onSnapshot(schoolInfoDocRef, doc => { schoolData = doc.data() || {}; res(null) })),
       new Promise(res => onSnapshot(billingDocRef, doc => { billingData = doc.data() || {}; res(null) }))
     ]).finally(() => {
-        updateState();
+        // Set a default plan if not found in db
+        const mergedInfo = { ...schoolData, ...billingData };
+        if (!mergedInfo.currentPlan) {
+          mergedInfo.currentPlan = 'pro';
+        }
+        setSchoolInfo(mergedInfo as SchoolInformation);
         setLoading(false)
     });
 
