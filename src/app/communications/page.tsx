@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { collection, onSnapshot, query, where, orderBy, doc, setDoc, getDoc, writeBatch } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider, CommunicationTemplate, Bundle } from '@/types';
+import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider, CommunicationTemplate, Bundle, IntegrationSettings } from '@/types';
 import { sendSms, generateVerificationCode, verifyOtp } from '@/lib/frog-api';
 
 import { PageHeader } from "@/components/page-header";
@@ -39,6 +39,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSchoolInfo } from '@/context/school-info-context';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const messageFormSchema = z.object({
   recipientType: z.enum(['all', 'class', 'single', 'manual']),
@@ -131,6 +132,7 @@ export default function CommunicationsPage() {
   const [balance, setBalance] = useState<number>(0); 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { schoolInfo } = useSchoolInfo();
+  const [integrationSettings, setIntegrationSettings] = useState<IntegrationSettings | null>(null);
 
   const { toast } = useToast();
 
@@ -229,6 +231,11 @@ export default function CommunicationsPage() {
       }
     });
 
+    const integrationsSettingsRef = doc(db, "settings", "integrations");
+    const unsubscribeIntegrations = onSnapshot(integrationsSettingsRef, (doc) => {
+        setIntegrationSettings(doc.data() as IntegrationSettings);
+    });
+
 
     return () => {
       unsubscribeStudents();
@@ -237,6 +244,7 @@ export default function CommunicationsPage() {
       unsubscribeSmsTemplates();
       unsubscribeEmailTemplates();
       unsubscribeBilling();
+      unsubscribeIntegrations();
     };
   }, []);
 
@@ -363,7 +371,10 @@ export default function CommunicationsPage() {
   const currentTemplates = messageType === 'sms' ? smsTemplates : emailTemplates;
   const emailDisabled = schoolInfo?.currentPlan === 'free';
   const smsDisabled = schoolInfo?.currentPlan === 'starter';
-  const whatsAppDisabled = schoolInfo?.currentPlan !== 'pro' && schoolInfo?.currentPlan !== 'enterprise';
+  
+  const whatsAppPlanDisabled = schoolInfo?.currentPlan !== 'pro' && schoolInfo?.currentPlan !== 'enterprise';
+  const whatsAppConfigured = !!(integrationSettings?.whatsappAccessToken && integrationSettings?.whatsappPhoneNumberId);
+  const whatsAppSendDisabled = isSubmitting || whatsAppPlanDisabled || !whatsAppConfigured;
 
 
   return (
@@ -393,11 +404,11 @@ export default function CommunicationsPage() {
         />
         <StatCard
             title="WhatsApp Messaging"
-            value={whatsAppDisabled ? 'Disabled' : 'Enabled'}
+            value={whatsAppPlanDisabled ? 'Disabled' : 'Enabled'}
             icon={MessageSquare}
-            color={whatsAppDisabled ? 'text-muted-foreground' : 'text-green-500'}
+            color={whatsAppPlanDisabled ? 'text-muted-foreground' : 'text-green-500'}
             description={
-              whatsAppDisabled ? (
+              whatsAppPlanDisabled ? (
                 <Button variant="link" asChild className="p-0 h-auto text-xs"><Link href="/billing">Upgrade to Pro</Link></Button>
               ) : 'Available'
             }
@@ -555,7 +566,7 @@ export default function CommunicationsPage() {
                               <SelectContent>
                                 <SelectItem value="sms" disabled={smsDisabled}>SMS</SelectItem>
                                 <SelectItem value="email" disabled={emailDisabled}>Email</SelectItem>
-                                <SelectItem value="whatsapp" disabled={whatsAppDisabled}>WhatsApp</SelectItem>
+                                <SelectItem value="whatsapp" disabled={whatsAppPlanDisabled}>WhatsApp</SelectItem>
                               </SelectContent>
                             </Select>
                           </FormItem>
@@ -629,14 +640,27 @@ export default function CommunicationsPage() {
                   </div>
 
                   <div className="flex justify-end">
-                    <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="mr-2 h-4 w-4" />
-                      )}
-                      Send Message
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                           <div className="inline-block"> 
+                            <Button type="submit" disabled={isSubmitting || (messageType === 'whatsapp' && !whatsAppConfigured)}>
+                              {isSubmitting ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Send className="mr-2 h-4 w-4" />
+                              )}
+                              Send Message
+                            </Button>
+                           </div>
+                        </TooltipTrigger>
+                        {messageType === 'whatsapp' && !whatsAppConfigured && (
+                           <TooltipContent>
+                                <p>WhatsApp API credentials not configured in settings.</p>
+                            </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </form>
               </Form>
