@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -168,7 +169,7 @@ export default function BillingPage() {
           { text: 'Up to 5 user accounts', included: true },
         ],
         idealFor: 'Great for schools with multiple departments.',
-        buttonText: 'Current Plan',
+        buttonText: 'Manage Subscription',
         buttonVariant: 'default' as const,
       },
       {
@@ -193,8 +194,12 @@ export default function BillingPage() {
     ];
 
     const handleSelectPlan = (plan: any, isCurrent: boolean) => {
-        if ((isCurrent || plan.priceGHS > 0) && plan.id !== 'enterprise') {
+        if (isCurrent || plan.priceGHS > 0) {
              router.push(`/billing/purchase?bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
+        } else if (plan.id === 'enterprise') {
+            const subject = encodeURIComponent("Request for Enterprise Demo & Pricing Details");
+            const body = encodeURIComponent(`Dear CampusFlow Team,\n\nWe are reaching out to express interest in your Enterprise package for large institutions. The features such as unlimited students, real-time cloud backup, advanced email & WhatsApp integration, and full API/system integration align closely with our requirements.\n\nWe would like to:\n- Understand your pricing and contract options\n- Explore the infrastructure setup\n- Schedule a demo session to evaluate suitability for our institution\n\nKindly share the next steps and available demo dates.\n\nThank you, and we look forward to your response.\n\nBest regards,\n[Your Name]\n[Your Institution]\n[Your Phone Number] | [Your Email Address]`);
+            window.location.href = `mailto:sales@campusflow.com?subject=${subject}&body=${body}`;
         } else {
             setSelectedPlan(plan);
         }
