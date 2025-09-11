@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, writeBatch, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { IntegrationSettings } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -108,7 +108,7 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
           variant={isCurrent ? 'default' : plan.buttonVariant}
           onClick={() => onSelect(plan)}
         >
-          {isCurrent ? 'Current Plan' : plan.buttonText}
+          {isCurrent ? 'Manage Subscription' : plan.buttonText}
         </Button>
       </CardFooter>
     </Card>
@@ -231,14 +231,25 @@ export default function BillingPage() {
     };
     
     const handleContact = async (method: 'sms' | 'email') => {
-        if (method === 'email') {
-            const subject = encodeURIComponent("Request for Enterprise Demo & Pricing Details");
-            const body = encodeURIComponent(enterpriseEmailBody);
-            window.location.href = `mailto:sales@campusflow.com?subject=${subject}&body=${body}`;
-            setIsContactDialogOpen(false);
-        } else { // SMS
-            setIsProcessing(true);
-            try {
+        setIsProcessing(true);
+        try {
+            if (method === 'email') {
+                const batch = writeBatch(db);
+                const mailRef = doc(collection(db, "mail"));
+                batch.set(mailRef, {
+                    to: ['nexorasystems25@gmail.com'],
+                    message: {
+                        subject: "Request for Enterprise Demo & Pricing Details",
+                        html: enterpriseEmailBody.replace(/\n/g, '<br>'),
+                    },
+                });
+                await batch.commit();
+                toast({
+                    title: "Email Request Sent",
+                    description: "Your inquiry has been sent. We will contact you shortly."
+                });
+
+            } else { // SMS
                 const result = await sendSms(['0536282694'], enterpriseSmsBody);
                 if (result.success) {
                     toast({
@@ -248,16 +259,16 @@ export default function BillingPage() {
                 } else {
                     throw new Error(result.error || "Failed to send SMS.");
                 }
-            } catch (error: any) {
-                toast({
-                    variant: "destructive",
-                    title: "SMS Failed",
-                    description: error.message
-                });
-            } finally {
-                setIsProcessing(false);
-                setIsContactDialogOpen(false);
             }
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Request Failed",
+                description: error.message
+            });
+        } finally {
+            setIsProcessing(false);
+            setIsContactDialogOpen(false);
         }
     }
 
@@ -329,7 +340,10 @@ export default function BillingPage() {
                             </CardHeader>
                             <CardContent>
                                 <Textarea readOnly value={enterpriseEmailBody} className="h-48 text-xs" />
-                                <Button className="w-full mt-4" onClick={() => handleContact('email')}>Send via Email</Button>
+                                <Button className="w-full mt-4" onClick={() => handleContact('email')} disabled={isProcessing}>
+                                     {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Send via Email
+                                </Button>
                             </CardContent>
                         </Card>
                         <Card>
@@ -366,3 +380,5 @@ export default function BillingPage() {
 }
 
     
+
+      
