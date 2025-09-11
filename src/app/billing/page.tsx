@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Check, ShieldCheck, DatabaseZap, Mail, Scaling, MessageCircle, X, MessageSquareText, MailOpen } from 'lucide-react';
+import { Check, ShieldCheck, DatabaseZap, Mail, Scaling, MessageCircle, X, MessageSquareText, MailOpen, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -21,6 +21,8 @@ import type { IntegrationSettings } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { sendSms } from '@/lib/frog-api';
 
 
 const whyNexoraFeatures = [
@@ -102,11 +104,11 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
        <CardFooter>
          <Button 
           className="w-full" 
-          disabled={isProcessing && !isCurrent}
+          disabled={isCurrent || (isProcessing && !isCurrent)}
           variant={isCurrent ? 'default' : plan.buttonVariant}
           onClick={() => onSelect(plan)}
         >
-          {plan.buttonText}
+          {isCurrent ? 'Current Plan' : plan.buttonText}
         </Button>
       </CardFooter>
     </Card>
@@ -119,6 +121,8 @@ export default function BillingPage() {
     const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
     const [currentPlan, setCurrentPlan] = useState('pro'); // Default to pro for demo
     const [isLoading, setIsLoading] = useState(true);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const { toast } = useToast();
     const router = useRouter();
 
 
@@ -226,16 +230,35 @@ export default function BillingPage() {
         }
     };
     
-    const handleContact = (method: 'sms' | 'email') => {
+    const handleContact = async (method: 'sms' | 'email') => {
         if (method === 'email') {
             const subject = encodeURIComponent("Request for Enterprise Demo & Pricing Details");
             const body = encodeURIComponent(enterpriseEmailBody);
             window.location.href = `mailto:sales@campusflow.com?subject=${subject}&body=${body}`;
+            setIsContactDialogOpen(false);
         } else { // SMS
-            const body = encodeURIComponent(enterpriseSmsBody);
-            window.location.href = `sms:?body=${body}`;
+            setIsProcessing(true);
+            try {
+                const result = await sendSms(['0536282694'], enterpriseSmsBody);
+                if (result.success) {
+                    toast({
+                        title: "Request Sent",
+                        description: "Your request has been sent via SMS. We will contact you shortly."
+                    });
+                } else {
+                    throw new Error(result.error || "Failed to send SMS.");
+                }
+            } catch (error: any) {
+                toast({
+                    variant: "destructive",
+                    title: "SMS Failed",
+                    description: error.message
+                });
+            } finally {
+                setIsProcessing(false);
+                setIsContactDialogOpen(false);
+            }
         }
-        setIsContactDialogOpen(false);
     }
 
 
@@ -315,7 +338,10 @@ export default function BillingPage() {
                             </CardHeader>
                             <CardContent>
                                 <Textarea readOnly value={enterpriseSmsBody} className="h-48 text-xs" />
-                                <Button className="w-full mt-4" onClick={() => handleContact('sms')}>Send via SMS</Button>
+                                <Button className="w-full mt-4" onClick={() => handleContact('sms')} disabled={isProcessing}>
+                                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Send via SMS
+                                </Button>
                             </CardContent>
                         </Card>
                     </div>
