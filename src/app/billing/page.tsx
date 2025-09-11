@@ -45,7 +45,7 @@ const whyNexoraFeatures = [
     }
 ]
 
-function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: any, onSelect: (plan: any, isCurrent: boolean) => void, isCurrent: boolean, isProcessing: boolean }) {
+function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: any, onSelect: (plan: any) => void, isCurrent: boolean, isProcessing: boolean }) {
   return (
     <Card className={cn(
       "flex flex-col", 
@@ -82,7 +82,7 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
           className="w-full" 
           disabled={isProcessing && !isCurrent}
           variant={isCurrent ? 'outline' : plan.buttonVariant}
-          onClick={() => onSelect(plan, isCurrent)}
+          onClick={() => onSelect(plan)}
         >
           {isCurrent ? 'Manage Subscription' : plan.buttonText}
         </Button>
@@ -193,8 +193,8 @@ export default function BillingPage() {
       }
     ];
 
-    const handleSelectPlan = (plan: any, isCurrent: boolean) => {
-        if (isCurrent || plan.priceGHS > 0) {
+    const handleSelectPlan = (plan: any) => {
+        if (plan.priceGHS > 0 || currentPlan === plan.id) {
              router.push(`/billing/purchase?bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
         } else if (plan.id === 'enterprise') {
             const subject = encodeURIComponent("Request for Enterprise Demo & Pricing Details");
