@@ -18,6 +18,8 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { IntegrationSettings } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
+
 
 const whyNexoraFeatures = [
     {
@@ -42,7 +44,7 @@ const whyNexoraFeatures = [
     }
 ]
 
-function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: any, onSelect: (planName: string) => void, isCurrent: boolean, isProcessing: boolean }) {
+function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: any, onSelect: (plan: any) => void, isCurrent: boolean, isProcessing: boolean }) {
   return (
     <Card className={cn(
       "flex flex-col", 
@@ -79,7 +81,7 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
           className="w-full" 
           disabled={isCurrent || isProcessing}
           variant={isCurrent ? 'default' : plan.buttonVariant}
-          onClick={() => onSelect(plan.name)}
+          onClick={() => onSelect(plan)}
         >
           {isCurrent ? 'Current Plan' : plan.buttonText}
         </Button>
@@ -90,9 +92,11 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
 
 
 export default function BillingPage() {
-    const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+    const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
     const [currentPlan, setCurrentPlan] = useState('pro'); // Default to pro for demo
     const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
+
 
     useEffect(() => {
         const billingSettingsRef = doc(db, "settings", "billing");
@@ -109,6 +113,7 @@ export default function BillingPage() {
       {
         id: 'free',
         name: 'Free Tier',
+        priceGHS: 0,
         price: 'GHS 0',
         frequency: '/month',
         description: 'Get started and explore the Nexora platform.',
@@ -129,6 +134,7 @@ export default function BillingPage() {
       {
         id: 'starter',
         name: 'Starter Tier',
+        priceGHS: 200,
         price: 'GHS 200',
         frequency: '/month',
         description: 'For growing schools that need more control.',
@@ -149,6 +155,7 @@ export default function BillingPage() {
       {
         id: 'pro',
         name: 'Pro Tier',
+        priceGHS: 400,
         price: 'GHS 400',
         frequency: '/month',
         description: 'For schools ready to scale operations.',
@@ -167,6 +174,7 @@ export default function BillingPage() {
       {
         id: 'enterprise',
         name: 'Enterprise',
+        priceGHS: 0,
         price: 'Contact Us',
         frequency: '',
         description: 'Custom infrastructure for large institutions.',
@@ -183,6 +191,15 @@ export default function BillingPage() {
         buttonVariant: 'outline' as const,
       }
     ];
+
+    const handleSelectPlan = (plan: any) => {
+        if (plan.priceGHS > 0) {
+            router.push(`/billing/purchase?bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
+        } else {
+            setSelectedPlan(plan);
+        }
+    };
+
 
     if (isLoading) {
         return (
@@ -212,7 +229,7 @@ export default function BillingPage() {
                 <SubscriptionCard 
                     key={plan.id} 
                     plan={plan} 
-                    onSelect={setSelectedPlan}
+                    onSelect={handleSelectPlan}
                     isCurrent={currentPlan === plan.id}
                     isProcessing={isLoading}
                 />
@@ -241,7 +258,7 @@ export default function BillingPage() {
                     <DialogHeader>
                         <DialogTitle>Confirm Your Choice</DialogTitle>
                         <DialogDescription>
-                            You are about to choose the <strong>{selectedPlan}</strong> plan. A member of our team will contact you shortly to complete the process.
+                            You are about to choose the <strong>{selectedPlan?.name}</strong> plan. A member of our team will contact you shortly to complete the process.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex justify-end pt-4">
