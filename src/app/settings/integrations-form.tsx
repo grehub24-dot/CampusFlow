@@ -30,6 +30,8 @@ const formSchema = z.object({
   smsOnPayment: z.boolean().default(false),
   smsOnFeeReminder: z.boolean().default(false),
   whatsAppEnabled: z.boolean().default(false),
+  whatsappAccessToken: z.string().optional(),
+  whatsappPhoneNumberId: z.string().optional(),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -56,6 +58,8 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
       smsOnPayment: defaultValues?.smsOnPayment || false,
       smsOnFeeReminder: defaultValues?.smsOnFeeReminder || false,
       whatsAppEnabled: defaultValues?.whatsAppEnabled || false,
+      whatsappAccessToken: defaultValues?.whatsappAccessToken || '',
+      whatsappPhoneNumberId: defaultValues?.whatsappPhoneNumberId || '',
     }
   });
 
@@ -71,12 +75,14 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
       smsOnPayment: defaultValues?.smsOnPayment || false,
       smsOnFeeReminder: defaultValues?.smsOnFeeReminder || false,
       whatsAppEnabled: defaultValues?.whatsAppEnabled || false,
+      whatsappAccessToken: defaultValues?.whatsappAccessToken || '',
+      whatsappPhoneNumberId: defaultValues?.whatsappPhoneNumberId || '',
     })
   }, [defaultValues, form]);
 
   const currentPlan = schoolInfo?.currentPlan || 'free';
   const smsEnabled = currentPlan === 'free' || currentPlan === 'pro' || currentPlan === 'enterprise';
-  const whatsAppEnabled = currentPlan === 'pro' || currentPlan === 'enterprise';
+  const whatsAppEnabledByPlan = currentPlan === 'pro' || currentPlan === 'enterprise';
 
   return (
     <Form {...form}>
@@ -97,6 +103,14 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
                 <FormField control={form.control} name="naloMerchantId" render={({ field }) => (<FormItem><FormLabel>Merchant ID</FormLabel><FormControl><Input placeholder="e.g., NPS_000001" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="naloUsername" render={({ field }) => (<FormItem><FormLabel>Username</FormLabel><FormControl><Input placeholder="Enter your Nalo Username" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="naloPassword" render={({ field }) => (<FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" placeholder="Enter your Nalo Password" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </CardContent>
+        </Card>
+        
+        <Card className="border-2 border-dashed shadow-none">
+            <CardHeader><CardTitle>WhatsApp Business API</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+                <FormField control={form.control} name="whatsappAccessToken" render={({ field }) => (<FormItem><FormLabel>Access Token</FormLabel><FormControl><Input type="password" placeholder="Enter your WhatsApp Access Token" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="whatsappPhoneNumberId" render={({ field }) => (<FormItem><FormLabel>Phone Number ID</FormLabel><FormControl><Input placeholder="Enter your WhatsApp Phone Number ID" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </CardContent>
         </Card>
 
@@ -121,7 +135,7 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
                     <FormLabel className="text-base">WhatsApp Integration</FormLabel>
                     <FormDescription>
                       Enable WhatsApp messaging features. 
-                      {!whatsAppEnabled && (
+                      {!whatsAppEnabledByPlan && (
                         <span className="text-primary font-medium ml-1">
                             (Available on Pro plan and above. <Link href="/billing" className="underline">Upgrade now</Link>)
                         </span>
@@ -130,7 +144,7 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
                   </div>
                   <FormControl>
                     <Switch
-                      disabled={!whatsAppEnabled}
+                      disabled={!whatsAppEnabledByPlan}
                       checked={field.value}
                       onCheckedChange={field.onChange}
                     />

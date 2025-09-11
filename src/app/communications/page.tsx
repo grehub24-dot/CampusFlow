@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, Wallet, ShoppingCart, ArrowLeft, Smartphone, CreditCard, CheckCircle, Mail } from 'lucide-react';
+import { Loader2, Send, Wallet, ShoppingCart, ArrowLeft, Smartphone, CreditCard, CheckCircle, Mail, MessageSquare } from 'lucide-react';
 import StatCard from '@/components/dashboard/stat-card';
 import { Input } from '@/components/ui/input';
 import { MessageHistory } from './message-history';
@@ -328,11 +328,22 @@ export default function CommunicationsPage() {
           description: `Emails for ${uniqueRecipients.length} recipients have been queued for sending.`,
         });
       } else if (values.messageType === 'whatsapp') {
-        // Placeholder for WhatsApp logic
+        const res = await fetch('/api/send-whatsapp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recipients: uniqueRecipients, message: values.message }),
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'Failed to send WhatsApp messages.');
+        }
+
+        const resultData = await res.json();
         toast({
-          title: 'WhatsApp Message Queued',
-          description: `WhatsApp messages for ${uniqueRecipients.length} recipients have been queued.`
-        })
+          title: 'WhatsApp Messages Sent',
+          description: resultData.message || `Messages queued for ${uniqueRecipients.length} recipients.`,
+        });
       }
 
       form.reset();
@@ -380,13 +391,23 @@ export default function CommunicationsPage() {
             color={smsDisabled ? "text-muted-foreground" : "text-green-500"}
             description={smsDisabled ? "Not available on Starter plan" : "Remaining SMS units"}
         />
-        {(emailDisabled || whatsAppDisabled) && (
-          <Alert className="md:col-span-3">
+        <StatCard
+            title="WhatsApp Messaging"
+            value={whatsAppDisabled ? 'Disabled' : 'Enabled'}
+            icon={MessageSquare}
+            color={whatsAppDisabled ? 'text-muted-foreground' : 'text-green-500'}
+            description={
+              whatsAppDisabled ? (
+                <Button variant="link" asChild className="p-0 h-auto text-xs"><Link href="/billing">Upgrade to Pro</Link></Button>
+              ) : 'Available'
+            }
+        />
+        {(emailDisabled) && (
+          <Alert className="md:col-span-2">
               <Mail className="h-4 w-4" />
               <AlertTitle>Upgrade to Unlock More Features</AlertTitle>
               <AlertDescription>
                 {emailDisabled && 'Email notifications are not included in the Free plan. '}
-                {whatsAppDisabled && 'WhatsApp messaging is only available on Pro plans and above. '}
                 <Button variant="link" asChild className="p-0 h-auto ml-1"><Link href="/billing">Upgrade Plan</Link></Button>
               </AlertDescription>
           </Alert>

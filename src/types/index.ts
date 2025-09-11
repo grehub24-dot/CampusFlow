@@ -141,6 +141,8 @@ export type IntegrationSettings = {
     smsOnPayment?: boolean;
     smsOnFeeReminder?: boolean;
     whatsAppEnabled?: boolean;
+    whatsappAccessToken?: string;
+    whatsappPhoneNumberId?: string;
 }
 
 export type AdmissionSettings = {
