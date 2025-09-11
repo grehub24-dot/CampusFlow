@@ -19,18 +19,33 @@ const SchoolInfoContext = createContext<SchoolInfoContextType | undefined>(
 export const SchoolInfoProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [schoolInfo, setSchoolInfo] = useState<SchoolInformation | null>(null);
+  const [schoolInfo, setSchoolInfo] = useState<SchoolInformation | null>({
+    schoolName: 'CampusFlow',
+    currentPlan: 'pro',
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const schoolInfoDocRef = doc(db, 'settings', 'school-info');
     const billingDocRef = doc(db, 'settings', 'billing');
 
+    let schoolData: Partial<SchoolInformation> | null = null;
+    let billingData: Partial<SchoolInformation> | null = null;
+    
+    const updateState = () => {
+        if (schoolData !== null && billingData !== null) {
+            setSchoolInfo({
+                ...schoolData,
+                ...billingData
+            } as SchoolInformation)
+        }
+    }
+
     const unsubscribeSchoolInfo = onSnapshot(
       schoolInfoDocRef,
       (doc) => {
-        const schoolData = doc.data() as SchoolInformation;
-        setSchoolInfo((prev) => ({ ...(prev || {}), ...schoolData } as SchoolInformation));
+        schoolData = doc.data() as SchoolInformation;
+        updateState();
       },
       (error) => {
         console.error('Error fetching school info:', error);
@@ -40,8 +55,8 @@ export const SchoolInfoProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubscribeBilling = onSnapshot(
       billingDocRef,
       (doc) => {
-        const billingData = doc.data() as SchoolInformation;
-         setSchoolInfo((prev) => ({ ...(prev || {}), ...billingData } as SchoolInformation));
+        billingData = doc.data() as SchoolInformation;
+        updateState();
       },
       (error) => {
         console.error('Error fetching billing info:', error);
@@ -50,9 +65,12 @@ export const SchoolInfoProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Initial load check
     Promise.all([
-      new Promise(res => onSnapshot(schoolInfoDocRef, res)),
-      new Promise(res => onSnapshot(billingDocRef, res))
-    ]).finally(() => setLoading(false));
+      new Promise(res => onSnapshot(schoolInfoDocRef, doc => { schoolData = doc.data() || {}; res(null) })),
+      new Promise(res => onSnapshot(billingDocRef, doc => { billingData = doc.data() || {}; res(null) }))
+    ]).finally(() => {
+        updateState();
+        setLoading(false)
+    });
 
 
     return () => {

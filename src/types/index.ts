@@ -1,4 +1,5 @@
 
+
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -154,6 +155,7 @@ export type SchoolInformation = {
     invoiceFooter?: string;
     paymentTerms?: string;
     paymentMethods?: string;
+    currentPlan: 'free' | 'starter' | 'pro' | 'enterprise';
 }
 
 export type MomoProvider = {
@@ -258,5 +260,3 @@ export type FinancialSummaryItem = {
     category: string;
     total: number;
 }
-
-    

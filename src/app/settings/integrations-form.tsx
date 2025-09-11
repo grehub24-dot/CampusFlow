@@ -14,6 +14,9 @@ import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { useSchoolInfo } from '@/context/school-info-context';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 const formSchema = z.object({
   frogApiKey: z.string().optional(),
@@ -36,6 +39,8 @@ type IntegrationsFormProps = {
 }
 
 export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: IntegrationsFormProps) {
+  const { schoolInfo, loading } = useSchoolInfo();
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -65,6 +70,9 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
     })
   }, [defaultValues, form]);
 
+  const currentPlan = schoolInfo?.currentPlan || 'free';
+  const smsEnabled = currentPlan !== 'starter';
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -90,12 +98,20 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
         <Card className="border shadow-sm">
           <CardHeader>
             <CardTitle>Automated SMS Notifications</CardTitle>
-            <CardDescription>Enable or disable automated SMS messages for key events. This requires the Frog SMS API to be configured above.</CardDescription>
+            <CardDescription>
+              Enable or disable automated SMS messages. 
+              {!smsEnabled && (
+                <span className="block mt-2">
+                    <Badge variant="destructive">Your current plan does not support SMS notifications.</Badge>
+                     <Button variant="link" asChild><Link href="/billing">Upgrade your plan.</Link></Button>
+                </span>
+              )}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-             <FormField control={form.control} name="smsOnAdmission" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">New Student Admission</FormLabel><FormDescription>Send a welcome SMS to the guardian when a new student is admitted.</FormDescription></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
-             <FormField control={form.control} name="smsOnPayment" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">Payment Confirmation</FormLabel><FormDescription>Send an SMS receipt to the guardian after a payment is recorded.</FormDescription></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
-             <FormField control={form.control} name="smsOnFeeReminder" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">Fee Reminders</FormLabel><FormDescription>Allow sending of SMS reminders for outstanding fee balances.</FormDescription></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
+             <FormField control={form.control} name="smsOnAdmission" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">New Student Admission</FormLabel><FormDescription>Send a welcome SMS to the guardian when a new student is admitted.</FormDescription></div><FormControl><Switch disabled={!smsEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
+             <FormField control={form.control} name="smsOnPayment" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">Payment Confirmation</FormLabel><FormDescription>Send an SMS receipt to the guardian after a payment is recorded.</FormDescription></div><FormControl><Switch disabled={!smsEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
+             <FormField control={form.control} name="smsOnFeeReminder" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">Fee Reminders</FormLabel><FormDescription>Allow sending of SMS reminders for outstanding fee balances.</FormDescription></div><FormControl><Switch disabled={!smsEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
           </CardContent>
         </Card>
         
@@ -109,5 +125,3 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
     </Form>
   )
 }
-
-    

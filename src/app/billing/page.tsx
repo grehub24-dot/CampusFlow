@@ -1,11 +1,11 @@
 
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Check, ShieldCheck, DatabaseZap, Mail, Scaling, MessageCircle } from 'lucide-react';
+import { Check, ShieldCheck, DatabaseZap, Mail, Scaling, MessageCircle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -14,126 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-const subscriptionPlans = [
-  {
-    name: 'Free Tier',
-    price: 'GHS 0',
-    frequency: '/month',
-    description: 'Get started and explore the Nexora platform.',
-    features: [
-      'Supports up to 50 students',
-      'Basic SMS notifications (limited to 50/month)',
-      'Community support',
-      '1 user account',
-    ],
-    idealFor: 'Ideal for small schools testing the platform.',
-    isCurrent: false,
-    buttonText: 'Choose Plan',
-    buttonVariant: 'outline' as const,
-  },
-  {
-    name: 'Starter Tier',
-    price: 'GHS 200',
-    frequency: '/month',
-    description: 'Built for growing basic schools that need more control and reliability.',
-    features: [
-      'Supports up to 200 students',
-      'Automatic cloud backup (app + database) — once per week',
-      'Basic Email notifications (limited to 50/month)',
-      'Email-based support (48h response)',
-      'Up to 2 user accounts',
-    ],
-    idealFor: 'Best value for mid-sized schools managing termly data and communication.',
-    isCurrent: false,
-    buttonText: 'Upgrade Now',
-    buttonVariant: 'default' as const,
-    recommended: true,
-  },
-  {
-    name: 'Pro Tier',
-    price: 'GHS 400',
-    frequency: '/month',
-    description: 'For schools ready to scale operations and data management.',
-    features: [
-      'Supports up to 500 students',
-      'Daily cloud backup (app + database, encrypted & secure)',
-      'Full email integration (alerts, reports — up to 1,000/month)',
-      'Full WhatsApp integration',
-      'Priority support (Email + WhatsApp, 24–48h SLA)',
-      'Up to 5 user accounts',
-    ],
-    idealFor: 'Great for schools with multiple departments or campuses.',
-    isCurrent: true,
-    buttonText: 'Current Plan',
-    buttonVariant: 'default' as const,
-  },
-  {
-    name: 'Enterprise',
-    price: 'Contact Us',
-    frequency: '',
-    description: 'Custom infrastructure for large institutions, school groups, or districts.',
-    features: [
-      'Unlimited students',
-      'Real-time cloud backup (app + database, secure offsite storage)',
-      'Advanced email integration (parent-teacher comms, automated alerts — up to 10,000/month)',
-      'Full WhatsApp integration',
-      'Dedicated account manager + 24/7 support',
-      'Unlimited user accounts',
-      'Full API & system integration',
-    ],
-    idealFor: 'Tailored to your institution’s IT, compliance, and data security needs.',
-    isCurrent: false,
-    buttonText: 'Request a Demo',
-    buttonVariant: 'outline' as const,
-  }
-];
-
-function SubscriptionCard({ plan, onSelect }: { plan: typeof subscriptionPlans[0], onSelect: (planName: string) => void }) {
-  return (
-    <Card className={cn(
-      "flex flex-col", 
-      plan.isCurrent && "border-primary border-2 shadow-lg",
-      plan.recommended && "border-amber-500 border-2"
-      )}>
-      <CardHeader className={cn(plan.isCurrent && "bg-primary/10", plan.recommended && "bg-amber-500/10")}>
-        <div className="flex justify-between items-start">
-            <div>
-                <CardTitle className="text-xl font-bold">{plan.name}</CardTitle>
-                <CardDescription className="pt-1">{plan.description}</CardDescription>
-            </div>
-            {plan.isCurrent && <ShieldCheck className="h-6 w-6 text-primary" />}
-            {plan.recommended && !plan.isCurrent && <span className="text-xs font-semibold bg-amber-500 text-white px-2 py-1 rounded-full">Recommended</span>}
-        </div>
-      </CardHeader>
-      <CardContent className="flex-grow flex flex-col pt-6">
-        <div className="mb-6">
-          <span className="text-4xl font-bold">{plan.price}</span>
-          <span className="text-muted-foreground">{plan.frequency}</span>
-        </div>
-        <ul className="space-y-3 mb-8 flex-grow">
-          {plan.features.map((feature) => (
-            <li key={feature} className="flex items-start gap-3">
-              <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-              <span className="text-sm">{feature}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="text-xs text-muted-foreground italic mt-auto pt-4">{plan.idealFor}</p>
-      </CardContent>
-       <CardFooter>
-         <Button 
-          className="w-full" 
-          disabled={plan.isCurrent}
-          variant={plan.buttonVariant}
-          onClick={() => onSelect(plan.name)}
-        >
-          {plan.buttonText}
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { IntegrationSettings } from '@/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const whyNexoraFeatures = [
     {
@@ -144,12 +28,12 @@ const whyNexoraFeatures = [
     {
         icon: Mail,
         title: "Flexible Communication",
-        description: "Built-in email and optional SMS tools to keep parents informed."
+        description: "Built-in email tools (SMS optional) to keep parents informed."
     },
     {
         icon: Scaling,
         title: "Scale With Confidence",
-        description: "Our platform grows with you, from 50 to 50,000 students."
+        description: "From 50 to 50,000 students, our platform grows with you."
     },
     {
         icon: MessageCircle,
@@ -158,9 +42,164 @@ const whyNexoraFeatures = [
     }
 ]
 
+function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: any, onSelect: (planName: string) => void, isCurrent: boolean, isProcessing: boolean }) {
+  return (
+    <Card className={cn(
+      "flex flex-col", 
+      isCurrent && "border-primary border-2 shadow-lg",
+      plan.recommended && "border-amber-500 border-2"
+      )}>
+      <CardHeader className={cn(isCurrent && "bg-primary/10", plan.recommended && "bg-amber-500/10")}>
+        <div className="flex justify-between items-start">
+            <div>
+                <CardTitle className="text-xl font-bold">{plan.name}</CardTitle>
+                <CardDescription className="pt-1">{plan.description}</CardDescription>
+            </div>
+            {isCurrent && <ShieldCheck className="h-6 w-6 text-primary" />}
+            {plan.recommended && !isCurrent && <span className="text-xs font-semibold bg-amber-500 text-white px-2 py-1 rounded-full">Recommended</span>}
+        </div>
+      </CardHeader>
+      <CardContent className="flex-grow flex flex-col pt-6">
+        <div className="mb-6">
+          <span className="text-4xl font-bold">{plan.price}</span>
+          <span className="text-muted-foreground">{plan.frequency}</span>
+        </div>
+        <ul className="space-y-3 mb-8 flex-grow">
+          {plan.features.map((feature: any) => (
+            <li key={feature.text} className="flex items-start gap-3">
+              {feature.included ? <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /> : <X className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />}
+              <span className={cn("text-sm", !feature.included && "text-muted-foreground line-through")}>{feature.text}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-muted-foreground italic mt-auto pt-4">{plan.idealFor}</p>
+      </CardContent>
+       <CardFooter>
+         <Button 
+          className="w-full" 
+          disabled={isCurrent || isProcessing}
+          variant={isCurrent ? 'default' : plan.buttonVariant}
+          onClick={() => onSelect(plan.name)}
+        >
+          {isCurrent ? 'Current Plan' : plan.buttonText}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
 
 export default function BillingPage() {
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+    const [currentPlan, setCurrentPlan] = useState('pro'); // Default to pro for demo
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const billingSettingsRef = doc(db, "settings", "billing");
+        const unsubscribe = onSnapshot(billingSettingsRef, (doc) => {
+            if (doc.exists() && doc.data().currentPlan) {
+                setCurrentPlan(doc.data().currentPlan);
+            }
+            setIsLoading(false);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const subscriptionPlans = [
+      {
+        id: 'free',
+        name: 'Free Tier',
+        price: 'GHS 0',
+        frequency: '/month',
+        description: 'Get started and explore the Nexora platform.',
+        features: [
+          { text: 'Supports up to 50 students', included: true },
+          { text: 'Basic SMS notifications (limited to 50/month)', included: true },
+          { text: 'Community support', included: true },
+          { text: '1 user account', included: true },
+          { text: 'Automatic cloud backup', included: false },
+          { text: 'Email notifications', included: false },
+          { text: 'WhatsApp integration', included: false },
+          { text: 'Priority support', included: false },
+        ],
+        idealFor: 'Ideal for small schools testing the platform.',
+        buttonText: 'Choose Plan',
+        buttonVariant: 'outline' as const,
+      },
+      {
+        id: 'starter',
+        name: 'Starter Tier',
+        price: 'GHS 200',
+        frequency: '/month',
+        description: 'For growing schools that need more control.',
+        features: [
+          { text: 'Supports up to 200 students', included: true },
+          { text: 'Weekly cloud backup (app + database)', included: true },
+          { text: 'Basic Email notifications (50/month)', included: true },
+          { text: 'Email-based support (48h response)', included: true },
+          { text: 'Up to 2 user accounts', included: true },
+          { text: 'WhatsApp integration', included: false },
+          { text: 'Priority support', included: false },
+        ],
+        idealFor: 'Best value for mid-sized schools managing termly data.',
+        buttonText: 'Upgrade Now',
+        buttonVariant: 'default' as const,
+        recommended: true,
+      },
+      {
+        id: 'pro',
+        name: 'Pro Tier',
+        price: 'GHS 400',
+        frequency: '/month',
+        description: 'For schools ready to scale operations.',
+        features: [
+          { text: 'Supports up to 500 students', included: true },
+          { text: 'Daily cloud backup (app + database)', included: true },
+          { text: 'Full email integration (1,000/month)', included: true },
+          { text: 'Full WhatsApp integration', included: true },
+          { text: 'Priority support (Email + WhatsApp)', included: true },
+          { text: 'Up to 5 user accounts', included: true },
+        ],
+        idealFor: 'Great for schools with multiple departments.',
+        buttonText: 'Current Plan',
+        buttonVariant: 'default' as const,
+      },
+      {
+        id: 'enterprise',
+        name: 'Enterprise',
+        price: 'Contact Us',
+        frequency: '',
+        description: 'Custom infrastructure for large institutions.',
+        features: [
+          { text: 'Unlimited students', included: true },
+          { text: 'Real-time cloud backup', included: true },
+          { text: 'Advanced email & WhatsApp integration', included: true },
+          { text: 'Dedicated account manager', included: true },
+          { text: 'Unlimited user accounts', included: true },
+          { text: 'Full API & system integration', included: true },
+        ],
+        idealFor: 'Tailored to your institution’s specific needs.',
+        buttonText: 'Request a Demo',
+        buttonVariant: 'outline' as const,
+      }
+    ];
+
+    if (isLoading) {
+        return (
+            <div className="space-y-6">
+                <PageHeader
+                    title="🚀 Nexora Cloud Subscriptions"
+                    description="Reliable, secure, and scalable cloud services for schools of all sizes."
+                />
+                <div className="grid md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+                    <Skeleton className="h-[400px] w-full" />
+                    <Skeleton className="h-[400px] w-full" />
+                    <Skeleton className="h-[400px] w-full" />
+                    <Skeleton className="h-[400px] w-full" />
+                </div>
+            </div>
+        )
+    }
 
     return (
         <>
@@ -170,7 +209,13 @@ export default function BillingPage() {
             />
             <div className="grid md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
               {subscriptionPlans.map((plan) => (
-                <SubscriptionCard key={plan.name} plan={plan} onSelect={setSelectedPlan} />
+                <SubscriptionCard 
+                    key={plan.id} 
+                    plan={plan} 
+                    onSelect={setSelectedPlan}
+                    isCurrent={currentPlan === plan.id}
+                    isProcessing={isLoading}
+                />
               ))}
             </div>
 
