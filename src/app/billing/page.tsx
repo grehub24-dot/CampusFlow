@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Check, ShieldCheck, DatabaseZap, Mail, Scaling, MessageCircle, X } from 'lucide-react';
+import { Check, ShieldCheck, DatabaseZap, Mail, Scaling, MessageCircle, X, MessageSquareText, MailOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -20,6 +20,7 @@ import { db } from '@/lib/firebase';
 import type { IntegrationSettings } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const whyNexoraFeatures = [
@@ -44,6 +45,27 @@ const whyNexoraFeatures = [
         description: "We understand the unique needs and challenges of Ghanaian schools."
     }
 ]
+
+const enterpriseEmailBody = `Dear CampusFlow Team,
+
+We are reaching out to express interest in your Enterprise package for large institutions. The features such as unlimited students, real-time cloud backup, advanced email & WhatsApp integration, and full API/system integration align closely with our requirements.
+
+We would like to:
+- Understand your pricing and contract options
+- Explore the infrastructure setup
+- Schedule a demo session to evaluate suitability for our institution
+
+Kindly share the next steps and available demo dates.
+
+Thank you, and we look forward to your response.
+
+Best regards,
+[Your Name]
+[Your Institution]
+[Your Phone Number] | [Your Email Address]`;
+
+const enterpriseSmsBody = `Hello CampusFlow Team, We’re interested in your Enterprise plan for our institution. Could you kindly share details on pricing, setup, and demo availability?`;
+
 
 function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: any, onSelect: (plan: any) => void, isCurrent: boolean, isProcessing: boolean }) {
   return (
@@ -81,10 +103,10 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
          <Button 
           className="w-full" 
           disabled={isProcessing && !isCurrent}
-          variant={isCurrent ? 'outline' : plan.buttonVariant}
+          variant={isCurrent ? 'default' : plan.buttonVariant}
           onClick={() => onSelect(plan)}
         >
-          {isCurrent ? 'Manage Subscription' : plan.buttonText}
+          {plan.buttonText}
         </Button>
       </CardFooter>
     </Card>
@@ -94,6 +116,7 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
 
 export default function BillingPage() {
     const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
+    const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
     const [currentPlan, setCurrentPlan] = useState('pro'); // Default to pro for demo
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
@@ -194,16 +217,26 @@ export default function BillingPage() {
     ];
 
     const handleSelectPlan = (plan: any) => {
-        if (plan.priceGHS > 0 || currentPlan === plan.id) {
+        if (plan.id === 'enterprise') {
+            setIsContactDialogOpen(true);
+        } else if (plan.priceGHS > 0) {
              router.push(`/billing/purchase?bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
-        } else if (plan.id === 'enterprise') {
-            const subject = encodeURIComponent("Request for Enterprise Demo & Pricing Details");
-            const body = encodeURIComponent(`Dear CampusFlow Team,\n\nWe are reaching out to express interest in your Enterprise package for large institutions. The features such as unlimited students, real-time cloud backup, advanced email & WhatsApp integration, and full API/system integration align closely with our requirements.\n\nWe would like to:\n- Understand your pricing and contract options\n- Explore the infrastructure setup\n- Schedule a demo session to evaluate suitability for our institution\n\nKindly share the next steps and available demo dates.\n\nThank you, and we look forward to your response.\n\nBest regards,\n[Your Name]\n[Your Institution]\n[Your Phone Number] | [Your Email Address]`);
-            window.location.href = `mailto:sales@campusflow.com?subject=${subject}&body=${body}`;
         } else {
             setSelectedPlan(plan);
         }
     };
+    
+    const handleContact = (method: 'sms' | 'email') => {
+        if (method === 'email') {
+            const subject = encodeURIComponent("Request for Enterprise Demo & Pricing Details");
+            const body = encodeURIComponent(enterpriseEmailBody);
+            window.location.href = `mailto:sales@campusflow.com?subject=${subject}&body=${body}`;
+        } else { // SMS
+            const body = encodeURIComponent(enterpriseSmsBody);
+            window.location.href = `sms:?body=${body}`;
+        }
+        setIsContactDialogOpen(false);
+    }
 
 
     if (isLoading) {
@@ -257,8 +290,39 @@ export default function BillingPage() {
                     ))}
                 </CardContent>
             </Card>
+            
+            <Dialog open={isContactDialogOpen} onOpenChange={setIsContactDialogOpen}>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                        <DialogTitle>Contact Us for Enterprise Plan</DialogTitle>
+                        <DialogDescription>
+                            Choose your preferred method to contact our sales team. We will respond shortly.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><MailOpen className="h-5 w-5" /> Email</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Textarea readOnly value={enterpriseEmailBody} className="h-48 text-xs" />
+                                <Button className="w-full mt-4" onClick={() => handleContact('email')}>Send via Email</Button>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><MessageSquareText className="h-5 w-5" /> SMS</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Textarea readOnly value={enterpriseSmsBody} className="h-48 text-xs" />
+                                <Button className="w-full mt-4" onClick={() => handleContact('sms')}>Send via SMS</Button>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
-            <Dialog open={!!selectedPlan} onOpenChange={(isOpen) => !isOpen && setSelectedPlan(null)}>
+            <Dialog open={!!selectedPlan && !isContactDialogOpen} onOpenChange={(isOpen) => !isOpen && setSelectedPlan(null)}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Confirm Your Choice</DialogTitle>
@@ -274,3 +338,5 @@ export default function BillingPage() {
         </>
     )
 }
+
+    
