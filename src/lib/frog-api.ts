@@ -99,7 +99,7 @@ export async function generateVerificationCode(phoneNumber: string): Promise<Otp
     if (!credentials) {
       throw new Error("Frog API credentials are not configured.");
     }
-    const { apiKey, senderId, username } = credentials;
+    const { apiKey, username } = credentials;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -114,7 +114,7 @@ export async function generateVerificationCode(phoneNumber: string): Promise<Otp
         length: 6,
         messagetemplate: 'Your verification code for CompusFlow is: %OTPCODE%. It expires in %EXPIRY% minutes.',
         type: 'NUMERIC',
-        senderid: senderId,
+        senderid: 'CFlow OTP',
       }),
     });
 
@@ -137,7 +137,7 @@ export async function generateActivationCode(phoneNumber: string): Promise<OtpRe
     if (!credentials) {
       throw new Error("Frog API credentials are not configured.");
     }
-    const { apiKey, senderId, username } = credentials;
+    const { apiKey, username } = credentials;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -152,7 +152,7 @@ export async function generateActivationCode(phoneNumber: string): Promise<OtpRe
         length: 8,
         messagetemplate: 'Your activation code for CompusFlow is: %OTPCODE%. It expires in %EXPIRY% minutes.',
         type: 'NUMERIC',
-        senderid: senderId,
+        senderid: 'CFlow Pay',
       }),
     });
 

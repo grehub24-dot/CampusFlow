@@ -15,6 +15,7 @@ import type { Invoice, MomoProvider } from '@/types';
 import Image from 'next/image';
 import crypto from 'crypto';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { generateVerificationCode } from '@/lib/frog-api';
 
 const momoProviders: MomoProvider[] = [
     { code: "MTN", name: "MTN Mobile Money" },
@@ -33,6 +34,10 @@ function PurchaseContent() {
     const [invoice, setInvoice] = useState<Invoice | null>(null);
     const [qrPayload, setQrPayload] = useState<string | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<'qr' | 'momo' | null>(null);
+    const [selectedProvider, setSelectedProvider] = useState<MomoProvider['code'] | ''>('');
+    const [phoneNumber, setPhoneNumber] = useState('0536282694');
+    const [otp, setOtp] = useState('');
+
 
     const bundleName = searchParams.get('bundle');
     const bundleCredits = searchParams.get('credits');
@@ -102,15 +107,50 @@ function PurchaseContent() {
             setStep(2);
         }
     }
+    
+    const handleProceedToPayment = async () => {
+        if (!selectedProvider || !phoneNumber || !invoice) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select a provider and enter a phone number.' });
+            return;
+        }
+        setLoading(true);
+        try {
+            const otpRes = await generateVerificationCode(phoneNumber);
+            if (otpRes.status !== 'SUCCESS') {
+                throw new Error(otpRes.message || "Failed to send OTP.");
+            }
 
-    const handleConfirmMomoSent = () => {
-        if (invoice) {
+            toast({ title: "OTP Sent", description: `A verification code has been sent to ${phoneNumber}.` });
+
+            // Now, initiate payment with Nalo
+            const naloRes = await fetch('/api/initiate-nalo-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    order_id: invoice.id,
+                    customerName: "CampusFlow User",
+                    amount: bundlePrice,
+                    item_desc: `${bundleCredits} SMS Credits`,
+                    customerNumber: phoneNumber,
+                    payby: selectedProvider,
+                }),
+            });
+            const naloData = await naloRes.json();
+            
+            if (!naloRes.ok || naloData.response !== "OK") {
+                throw new Error(naloData.message || naloData.raw || "Payment provider failed to initialize.");
+            }
+            
+            toast({ title: "Check Your Phone", description: "A payment prompt has been sent to your phone. Please approve it." });
             setStep(3);
             startPolling(invoice.id);
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: 'Invoice not found. Please try again.' });
+
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Payment Initiation Failed', description: e.message });
+        } finally {
+            setLoading(false);
         }
-    };
+    }
 
     const startPolling = (invoiceId: string) => {
         setPolling(true);
@@ -193,36 +233,27 @@ function PurchaseContent() {
                     </CardContent>
                 ) : (
                      <CardContent className="space-y-6">
-                        <Alert>
-                            <Smartphone className="h-4 w-4" />
-                            <AlertTitle>Manual Payment Instructions</AlertTitle>
-                            <AlertDescription>
-                                Please follow the steps below to complete your payment.
-                            </AlertDescription>
-                        </Alert>
-
-                         <div className="space-y-4 text-sm">
-                            <div className="p-4 bg-muted rounded-md">
-                                <p className="font-semibold">Transfer to this number:</p>
-                                <p className="text-2xl font-bold tracking-wider text-primary">0546282694</p>
-                                <p className="text-xs text-muted-foreground">(Nexora Systems)</p>
+                        <div className="space-y-2">
+                            <Label>Select your Mobile Money provider</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {momoProviders.map(p => (
+                                    <Button 
+                                        key={p.code} 
+                                        variant={selectedProvider === p.code ? 'default' : 'outline'}
+                                        onClick={() => setSelectedProvider(p.code)}
+                                    >
+                                        {p.name}
+                                    </Button>
+                                ))}
                             </div>
-                            <div>
-                                <p className="font-semibold mb-1">Steps to pay with MTN (*170#):</p>
-                                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                                    <li>Dial <strong>*170#</strong> on your phone.</li>
-                                    <li>Select option <strong>1</strong> (Transfer Money).</li>
-                                    <li>Select option <strong>1</strong> (MoMo User).</li>
-                                    <li>Enter the number: <strong>0546282694</strong>.</li>
-                                    <li>Confirm the number.</li>
-                                    <li>Enter the amount: <strong>GHS {bundlePrice}</strong>.</li>
-                                    <li>For Reference, enter: <strong>{invoice?.reference}</strong></li>
-                                    <li>Enter your PIN to confirm.</li>
-                                </ol>
-                            </div>
-                         </div>
-                          <Button className="w-full" onClick={handleConfirmMomoSent}>
-                            I have sent the money
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="phone">Phone Number</Label>
+                            <Input id="phone" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} />
+                        </div>
+                        <Button className="w-full" onClick={handleProceedToPayment} disabled={loading || !selectedProvider || !phoneNumber}>
+                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Proceed to Payment
                         </Button>
                     </CardContent>
                 );
@@ -273,7 +304,7 @@ function PurchaseContent() {
                             Step {step}: {
                                 step === 1 ? 'Choose Payment Method' :
                                 step === 2 && paymentMethod === 'qr' ? 'Scan QR Code' :
-                                step === 2 && paymentMethod === 'momo' ? 'Send Mobile Money' :
+                                step === 2 && paymentMethod === 'momo' ? 'Enter Details' :
                                 step === 3 ? 'Confirming Payment' :
                                 'Payment Successful'
                             }
