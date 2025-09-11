@@ -44,7 +44,7 @@ const whyNexoraFeatures = [
     }
 ]
 
-function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: any, onSelect: (plan: any) => void, isCurrent: boolean, isProcessing: boolean }) {
+function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: any, onSelect: (plan: any, isCurrent: boolean) => void, isCurrent: boolean, isProcessing: boolean }) {
   return (
     <Card className={cn(
       "flex flex-col", 
@@ -193,12 +193,8 @@ export default function BillingPage() {
     ];
 
     const handleSelectPlan = (plan: any, isCurrent: boolean) => {
-        if (isCurrent) {
-            // For a real application, this would link to a customer portal like Stripe or Paddle.
-            // For now, we can just show a dialog.
-            setSelectedPlan({ ...plan, name: "Manage " + plan.name });
-        } else if (plan.priceGHS > 0) {
-            router.push(`/billing/purchase?bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
+        if ((isCurrent || plan.priceGHS > 0) && plan.id !== 'enterprise') {
+             router.push(`/billing/purchase?bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
         } else {
             setSelectedPlan(plan);
         }
