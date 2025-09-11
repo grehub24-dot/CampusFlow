@@ -14,6 +14,7 @@ import { v4 as uuid } from 'uuid';
 import type { Invoice, MomoProvider } from '@/types';
 import Image from 'next/image';
 import crypto from 'crypto';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const momoProviders: MomoProvider[] = [
     { code: "MTN", name: "MTN Mobile Money" },
@@ -31,8 +32,6 @@ function PurchaseContent() {
     const [polling, setPolling] = useState(false);
     const [invoice, setInvoice] = useState<Invoice | null>(null);
     const [qrPayload, setQrPayload] = useState<string | null>(null);
-    const [momoNumber, setMomoNumber] = useState('');
-    const [selectedProvider, setSelectedProvider] = useState<MomoProvider | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<'qr' | 'momo' | null>(null);
 
     const bundleName = searchParams.get('bundle');
@@ -98,53 +97,18 @@ function PurchaseContent() {
     
     const handleMomoPayment = async () => {
         setPaymentMethod('momo');
-        setStep(2);
+        const inv = await createInvoice();
+        if(inv) {
+            setStep(2);
+        }
     }
 
-    const initiateNaloPayment = async () => {
-        if (!momoNumber || !selectedProvider || !bundlePrice || !bundleName || !bundleCredits) {
-             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please enter a valid phone number and select a provider.' });
-            return;
-        }
-
-        const inv = await createInvoice();
-        if (inv) {
-            setLoading(true);
-            try {
-                
-                let formattedNumber = String(momoNumber);
-                if (formattedNumber.startsWith('0')) {
-                    formattedNumber = '233' + formattedNumber.substring(1);
-                } else if (!formattedNumber.startsWith('233')) {
-                    formattedNumber = '233' + formattedNumber;
-                }
-
-                const clientPayload = {
-                    order_id: inv.id,
-                    customerName: "CampusFlow User",
-                    amount: inv.amount,
-                    item_desc: `${bundleCredits} SMS Credits`,
-                    customerNumber: formattedNumber,
-                    payby: selectedProvider.code,
-                };
-                
-                const res = await fetch('/api/initiate-nalo-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(clientPayload),
-                });
-                
-                if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(errorData.message || 'Failed to initiate payment with provider.');
-                }
-                setStep(3); // Move to waiting for prompt step
-                startPolling(inv.id);
-            } catch (e: any) {
-                toast({ variant: 'destructive', title: 'Payment Error', description: e.message });
-            } finally {
-                setLoading(false);
-            }
+    const handleConfirmMomoSent = () => {
+        if (invoice) {
+            setStep(3);
+            startPolling(invoice.id);
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: 'Invoice not found. Please try again.' });
         }
     };
 
@@ -228,24 +192,37 @@ function PurchaseContent() {
                          {polling && <Loader2 className="mx-auto mt-2 h-6 w-6 animate-spin text-muted-foreground" />}
                     </CardContent>
                 ) : (
-                     <CardContent className="space-y-4">
-                         <div className="space-y-2">
-                             <Label>Select your Mobile Money provider</Label>
-                             <div className="grid grid-cols-3 gap-2">
-                                 {momoProviders.map(p => (
-                                     <Button key={p.code} variant={selectedProvider?.code === p.code ? 'default' : 'outline'} onClick={() => setSelectedProvider(p)}>
-                                         {p.name}
-                                     </Button>
-                                 ))}
-                             </div>
+                     <CardContent className="space-y-6">
+                        <Alert>
+                            <Smartphone className="h-4 w-4" />
+                            <AlertTitle>Manual Payment Instructions</AlertTitle>
+                            <AlertDescription>
+                                Please follow the steps below to complete your payment.
+                            </AlertDescription>
+                        </Alert>
+
+                         <div className="space-y-4 text-sm">
+                            <div className="p-4 bg-muted rounded-md">
+                                <p className="font-semibold">Transfer to this number:</p>
+                                <p className="text-2xl font-bold tracking-wider text-primary">0546282694</p>
+                                <p className="text-xs text-muted-foreground">(Nexora Systems)</p>
+                            </div>
+                            <div>
+                                <p className="font-semibold mb-1">Steps to pay with MTN (*170#):</p>
+                                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                                    <li>Dial <strong>*170#</strong> on your phone.</li>
+                                    <li>Select option <strong>1</strong> (Transfer Money).</li>
+                                    <li>Select option <strong>1</strong> (MoMo User).</li>
+                                    <li>Enter the number: <strong>0546282694</strong>.</li>
+                                    <li>Confirm the number.</li>
+                                    <li>Enter the amount: <strong>GHS {bundlePrice}</strong>.</li>
+                                    <li>For Reference, enter: <strong>{invoice?.reference}</strong></li>
+                                    <li>Enter your PIN to confirm.</li>
+                                </ol>
+                            </div>
                          </div>
-                         <div className="space-y-2">
-                             <Label htmlFor="momo-number">Phone Number</Label>
-                             <Input id="momo-number" placeholder="0241234567" value={momoNumber} onChange={(e) => setMomoNumber(e.target.value)} />
-                         </div>
-                          <Button className="w-full" onClick={initiateNaloPayment} disabled={loading || !momoNumber || !selectedProvider}>
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Proceed to Payment
+                          <Button className="w-full" onClick={handleConfirmMomoSent}>
+                            I have sent the money
                         </Button>
                     </CardContent>
                 );
@@ -253,9 +230,9 @@ function PurchaseContent() {
                 return (
                     <CardContent className="text-center space-y-4">
                         <Smartphone className="mx-auto h-16 w-16 text-primary" />
-                        <h3 className="text-lg font-semibold">Awaiting Your Approval</h3>
+                        <h3 className="text-lg font-semibold">Confirming Your Payment</h3>
                         <p className="text-muted-foreground">
-                            A payment prompt has been sent to your phone. Please enter your PIN to approve the transaction.
+                            We are now checking for your payment. This may take a moment. Please do not close this page.
                         </p>
                         <Loader2 className="mx-auto mt-2 h-8 w-8 animate-spin text-muted-foreground" />
                     </CardContent>
@@ -287,7 +264,7 @@ function PurchaseContent() {
             <div className="max-w-lg mx-auto">
                  <Card>
                     <CardHeader className="relative">
-                        {step > 1 && (
+                        {step > 1 && paymentMethod !== 'qr' && (
                             <Button variant="ghost" size="icon" className="absolute left-2 top-2" onClick={() => setStep(step - 1)}>
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
@@ -296,8 +273,8 @@ function PurchaseContent() {
                             Step {step}: {
                                 step === 1 ? 'Choose Payment Method' :
                                 step === 2 && paymentMethod === 'qr' ? 'Scan QR Code' :
-                                step === 2 && paymentMethod === 'momo' ? 'Enter Details' :
-                                step === 3 ? 'Confirm on Your Phone' :
+                                step === 2 && paymentMethod === 'momo' ? 'Send Mobile Money' :
+                                step === 3 ? 'Confirming Payment' :
                                 'Payment Successful'
                             }
                         </CardTitle>
