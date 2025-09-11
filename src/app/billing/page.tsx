@@ -108,7 +108,7 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
           variant={plan.buttonVariant || 'default'}
           onClick={() => onSelect(plan)}
         >
-          {isCurrent ? 'Manage Subscription' : plan.buttonText}
+          {isCurrent ? (plan.id === 'pro' ? 'Manage Subscription' : 'Current Plan') : plan.buttonText}
         </Button>
       </CardFooter>
     </Card>
@@ -226,6 +226,7 @@ export default function BillingPage() {
         } else if (plan.priceGHS > 0) {
              router.push(`/billing/purchase?bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
         } else {
+            // For free plan or other non-purchase actions
             setSelectedPlan(plan);
         }
     };
@@ -381,3 +382,4 @@ export default function BillingPage() {
       
 
     
+
