@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React from 'react';
@@ -111,7 +112,32 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
              <FormField control={form.control} name="smsOnPayment" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">SMS on Payment</FormLabel><FormDescription>Send an SMS receipt to the guardian after a payment is recorded.</FormDescription></div><FormControl><Switch disabled={!smsEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
              <FormField control={form.control} name="smsOnFeeReminder" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">Enable SMS Fee Reminders</FormLabel><FormDescription>Allow sending of SMS reminders for outstanding fee balances.</FormDescription></div><FormControl><Switch disabled={!smsEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
             <Separator />
-            <FormField control={form.control} name="whatsAppEnabled" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">WhatsApp Integration</FormLabel><FormDescription>Enable WhatsApp messaging features (Pro plan and above).</FormDescription></div><FormControl><Switch disabled={!whatsAppEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
+            <FormField
+              control={form.control}
+              name="whatsAppEnabled"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">WhatsApp Integration</FormLabel>
+                    <FormDescription>
+                      Enable WhatsApp messaging features. 
+                      {!whatsAppEnabled && (
+                        <span className="text-primary font-medium ml-1">
+                            (Available on Pro plan and above. <Link href="/billing" className="underline">Upgrade now</Link>)
+                        </span>
+                      )}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      disabled={!whatsAppEnabled}
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
         

@@ -45,12 +45,12 @@ const messageFormSchema = z.object({
   classId: z.string().optional(),
   studentId: z.string().optional(),
   manualPhone: z.string().optional(),
-  messageType: z.enum(['sms', 'email']),
+  messageType: z.enum(['sms', 'email', 'whatsapp']),
   templateId: z.string().optional(),
   subject: z.string().optional(), // For email
   message: z.string().min(10, 'Message must be at least 10 characters.'),
 }).refine(data => {
-    if (data.recipientType === 'manual' && data.messageType === 'sms') {
+    if (data.recipientType === 'manual' && (data.messageType === 'sms' || data.messageType === 'whatsapp')) {
         return !!data.manualPhone && data.manualPhone.length > 0;
     }
     if (data.recipientType === 'manual' && data.messageType === 'email') {
@@ -244,7 +244,7 @@ export default function CommunicationsPage() {
     setIsSubmitting(true);
     try {
       let recipients: string[] = [];
-      if (values.messageType === 'sms') {
+      if (values.messageType === 'sms' || values.messageType === 'whatsapp') {
         if (values.recipientType === 'all') {
             recipients = students.map(s => s.guardianPhone).filter(Boolean);
         } else if (values.recipientType === 'class' && values.classId) {
@@ -298,7 +298,7 @@ export default function CommunicationsPage() {
           title: 'Messages Sent',
           description: `SMS dispatched to ${uniqueRecipients.length} recipients.`,
         });
-      } else { // Email logic
+      } else if (values.messageType === 'email') {
         if (schoolInfo?.currentPlan === 'free') {
             toast({
                 variant: 'destructive',
@@ -327,6 +327,12 @@ export default function CommunicationsPage() {
           title: 'Emails Queued',
           description: `Emails for ${uniqueRecipients.length} recipients have been queued for sending.`,
         });
+      } else if (values.messageType === 'whatsapp') {
+        // Placeholder for WhatsApp logic
+        toast({
+          title: 'WhatsApp Message Queued',
+          description: `WhatsApp messages for ${uniqueRecipients.length} recipients have been queued.`
+        })
       }
 
       form.reset();
@@ -346,6 +352,7 @@ export default function CommunicationsPage() {
   const currentTemplates = messageType === 'sms' ? smsTemplates : emailTemplates;
   const emailDisabled = schoolInfo?.currentPlan === 'free';
   const smsDisabled = schoolInfo?.currentPlan === 'starter';
+  const whatsAppDisabled = schoolInfo?.currentPlan !== 'pro' && schoolInfo?.currentPlan !== 'enterprise';
 
 
   return (
@@ -373,12 +380,13 @@ export default function CommunicationsPage() {
             color={smsDisabled ? "text-muted-foreground" : "text-green-500"}
             description={smsDisabled ? "Not available on Starter plan" : "Remaining SMS units"}
         />
-        {emailDisabled && (
+        {(emailDisabled || whatsAppDisabled) && (
           <Alert className="md:col-span-3">
               <Mail className="h-4 w-4" />
-              <AlertTitle>Email Notifications Disabled</AlertTitle>
+              <AlertTitle>Upgrade to Unlock More Features</AlertTitle>
               <AlertDescription>
-                Email features are not included in the Free plan. Please upgrade to enable email notifications.
+                {emailDisabled && 'Email notifications are not included in the Free plan. '}
+                {whatsAppDisabled && 'WhatsApp messaging is only available on Pro plans and above. '}
                 <Button variant="link" asChild className="p-0 h-auto ml-1"><Link href="/billing">Upgrade Plan</Link></Button>
               </AlertDescription>
           </Alert>
@@ -494,9 +502,9 @@ export default function CommunicationsPage() {
                           name="manualPhone"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>{messageType === 'sms' ? 'Phone Number' : 'Email Address'}</FormLabel>
+                              <FormLabel>{messageType === 'sms' || messageType === 'whatsapp' ? 'Phone Number' : 'Email Address'}</FormLabel>
                               <FormControl>
-                                <Input placeholder={messageType === 'sms' ? 'Enter phone number' : 'Enter email address'} {...field} />
+                                <Input placeholder={messageType === 'sms' || messageType === 'whatsapp' ? 'Enter phone number' : 'Enter email address'} {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -525,9 +533,8 @@ export default function CommunicationsPage() {
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="sms" disabled={smsDisabled}>SMS</SelectItem>
-                                <SelectItem value="email" disabled={emailDisabled}>
-                                  Email
-                                </SelectItem>
+                                <SelectItem value="email" disabled={emailDisabled}>Email</SelectItem>
+                                <SelectItem value="whatsapp" disabled={whatsAppDisabled}>WhatsApp</SelectItem>
                               </SelectContent>
                             </Select>
                           </FormItem>
