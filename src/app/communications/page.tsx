@@ -51,11 +51,13 @@ const messageFormSchema = z.object({
   subject: z.string().optional(), // For email
   message: z.string().min(10, 'Message must be at least 10 characters.'),
 }).refine(data => {
-    if (data.recipientType === 'manual' && (data.messageType === 'sms' || data.messageType === 'whatsapp')) {
-        return !!data.manualPhone && data.manualPhone.length > 0;
-    }
-    if (data.recipientType === 'manual' && data.messageType === 'email') {
-        return !!data.manualPhone && data.manualPhone.includes('@');
+    if (data.recipientType === 'manual') {
+        if (data.messageType === 'sms' || data.messageType === 'whatsapp') {
+            return !!data.manualPhone && data.manualPhone.length > 0;
+        }
+        if (data.messageType === 'email') {
+            return !!data.manualPhone && data.manualPhone.includes('@');
+        }
     }
     return true;
 }, {
