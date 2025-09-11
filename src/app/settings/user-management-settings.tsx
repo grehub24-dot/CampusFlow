@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
 import { userColumns } from "./user-columns"
 import { UserTable } from "./user-table"
-import { ToastAction } from "../ui/toast";
+import { ToastAction } from "@/components/ui/toast";
 
 
 const PLAN_LIMITS = {
