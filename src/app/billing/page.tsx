@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -222,7 +223,7 @@ export default function BillingPage() {
     const handleSelectPlan = (plan: any) => {
         if (plan.id === 'enterprise') {
             setIsContactDialogOpen(true);
-        } else if (plan.id === currentPlan || plan.priceGHS > 0) {
+        } else if (plan.priceGHS > 0) {
              router.push(`/billing/purchase?bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
         } else {
             setSelectedPlan(plan);
