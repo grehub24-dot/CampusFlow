@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { doc, onSnapshot, writeBatch, collection } from 'firebase/firestore';
+import { doc, onSnapshot, addDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { IntegrationSettings } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -104,7 +104,7 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
          <Button 
           className="w-full" 
           disabled={isProcessing && !isCurrent}
-          variant={isCurrent ? 'default' : plan.buttonVariant}
+          variant={plan.buttonVariant || 'default'}
           onClick={() => onSelect(plan)}
         >
           {isCurrent ? 'Manage Subscription' : plan.buttonText}
@@ -222,7 +222,7 @@ export default function BillingPage() {
     const handleSelectPlan = (plan: any) => {
         if (plan.id === 'enterprise') {
             setIsContactDialogOpen(true);
-        } else if (plan.priceGHS > 0) {
+        } else if (plan.id === currentPlan || plan.priceGHS > 0) {
              router.push(`/billing/purchase?bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
         } else {
             setSelectedPlan(plan);
@@ -233,16 +233,13 @@ export default function BillingPage() {
         setIsProcessing(true);
         try {
             if (method === 'email') {
-                const batch = writeBatch(db);
-                const mailRef = doc(collection(db, "mail"));
-                batch.set(mailRef, {
+                await addDoc(collection(db, "mail"), {
                     to: ['nexorasystems25@gmail.com'],
                     message: {
                         subject: "Request for Enterprise Demo & Pricing Details",
                         html: enterpriseEmailBody.replace(/\n/g, '<br>'),
                     },
                 });
-                await batch.commit();
                 toast({
                     title: "Email Request Sent",
                     description: "Your inquiry has been sent. We will contact you shortly."
