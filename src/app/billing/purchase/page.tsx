@@ -15,7 +15,7 @@ import type { Invoice, MomoProvider } from '@/types';
 import Image from 'next/image';
 import crypto from 'crypto';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { generateVerificationCode } from '@/lib/frog-api';
+import { generateVerificationCode, verifyOtp } from '@/lib/frog-api';
 
 const momoProviders: MomoProvider[] = [
     { code: "MTN", name: "MTN Mobile Money" },
@@ -37,6 +37,9 @@ function PurchaseContent() {
     const [selectedProvider, setSelectedProvider] = useState<MomoProvider['code'] | ''>('');
     const [phoneNumber, setPhoneNumber] = useState('0536282694');
     const [otp, setOtp] = useState('');
+    const [isOtpSent, setIsOtpSent] = useState(false);
+
+    const merchantNumber = '0546282694';
 
 
     const bundleName = searchParams.get('bundle');
@@ -108,8 +111,8 @@ function PurchaseContent() {
         }
     }
     
-    const handleProceedToPayment = async () => {
-        if (!selectedProvider || !phoneNumber || !invoice) {
+    const handleSendOtp = async () => {
+        if (!selectedProvider || !phoneNumber) {
             toast({ variant: 'destructive', title: 'Error', description: 'Please select a provider and enter a phone number.' });
             return;
         }
@@ -119,36 +122,37 @@ function PurchaseContent() {
             if (otpRes.status !== 'SUCCESS') {
                 throw new Error(otpRes.message || "Failed to send OTP.");
             }
-
             toast({ title: "OTP Sent", description: `A verification code has been sent to ${phoneNumber}.` });
-
-            // Now, initiate payment with Nalo
-            const naloRes = await fetch('/api/initiate-nalo-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    order_id: invoice.id,
-                    customerName: "CampusFlow User",
-                    amount: bundlePrice,
-                    item_desc: `${bundleCredits} SMS Credits`,
-                    customerNumber: phoneNumber,
-                    payby: selectedProvider,
-                }),
-            });
-            const naloData = await naloRes.json();
-            
-            if (!naloRes.ok || naloData.response !== "OK") {
-                throw new Error(naloData.message || naloData.raw || "Payment provider failed to initialize.");
-            }
-            
-            toast({ title: "Check Your Phone", description: "A payment prompt has been sent to your phone. Please approve it." });
-            setStep(3);
-            startPolling(invoice.id);
+            setIsOtpSent(true);
 
         } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Payment Initiation Failed', description: e.message });
+            toast({ variant: 'destructive', title: 'OTP Failed', description: e.message });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!otp) return;
+        setLoading(true);
+        try {
+            const verificationRes = await verifyOtp(phoneNumber, otp);
+            if (verificationRes.status !== 'SUCCESS') {
+                throw new Error('Invalid OTP. Please try again.');
+            }
+            toast({ title: "Verification Successful" });
+            setStep(3); // Move to manual instructions
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Verification Failed', description: e.message });
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const handleStartPolling = () => {
+        if (invoice) {
+            setStep(4);
+            startPolling(invoice.id);
         }
     }
 
@@ -162,7 +166,7 @@ function PurchaseContent() {
                     if (status === 'PAID') {
                         clearInterval(interval);
                         setPolling(false);
-                        setStep(4); // Success step
+                        setStep(5); // Success step
                     } else if (status === 'FAILED' || status === 'EXPIRED') {
                         clearInterval(interval);
                         setPolling(false);
@@ -175,16 +179,16 @@ function PurchaseContent() {
                 clearInterval(interval);
                 setPolling(false);
             }
-        }, 3000);
+        }, 5000);
 
-        // Stop polling after 3 minutes
+        // Stop polling after 5 minutes
         setTimeout(() => {
             clearInterval(interval);
             if (polling) {
                 setPolling(false);
                 toast({ variant: 'destructive', title: 'Payment Timed Out', description: 'Did not receive payment confirmation in time.' });
             }
-        }, 180000);
+        }, 300000);
     };
 
     const handleFinalConfirmation = () => {
@@ -214,50 +218,79 @@ function PurchaseContent() {
                         </Button>
                     </CardContent>
                 );
-            case 2:
-                return paymentMethod === 'qr' ? (
-                     <CardContent className="text-center">
-                        <h3 className="text-lg font-semibold">Scan to Pay</h3>
-                        <p className="text-muted-foreground mb-4">Use any banking or payment app that supports GhanaPay.</p>
-                        {qrPayload ? (
-                            <Image
-                                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrPayload)}`}
-                                alt="GhanaPay QR Code"
-                                width={250}
-                                height={250}
-                                className="mx-auto border-4 border-primary p-2 rounded-lg"
-                            />
-                        ) : <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />}
-                         <p className="mt-4 text-sm font-medium">Waiting for payment confirmation...</p>
-                         {polling && <Loader2 className="mx-auto mt-2 h-6 w-6 animate-spin text-muted-foreground" />}
-                    </CardContent>
-                ) : (
+            case 2: // User Verification
+                return (
                      <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                            <Label>Select your Mobile Money provider</Label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {momoProviders.map(p => (
-                                    <Button 
-                                        key={p.code} 
-                                        variant={selectedProvider === p.code ? 'default' : 'outline'}
-                                        onClick={() => setSelectedProvider(p.code)}
-                                    >
-                                        {p.name}
-                                    </Button>
-                                ))}
-                            </div>
+                        {!isOtpSent ? (
+                            <>
+                                <div className="space-y-2">
+                                    <Label>Select your Mobile Money provider</Label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {momoProviders.map(p => (
+                                            <Button 
+                                                key={p.code} 
+                                                variant={selectedProvider === p.code ? 'default' : 'outline'}
+                                                onClick={() => setSelectedProvider(p.code)}
+                                            >
+                                                {p.name}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="phone">Phone Number</Label>
+                                    <Input id="phone" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} />
+                                </div>
+                                <Button className="w-full" onClick={handleSendOtp} disabled={loading || !selectedProvider || !phoneNumber}>
+                                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Proceed to Payment
+                                </Button>
+                            </>
+                        ) : (
+                             <>
+                                <div className="space-y-2">
+                                    <Label htmlFor="otp">Enter OTP</Label>
+                                    <Input id="otp" value={otp} onChange={e => setOtp(e.target.value)} placeholder="Enter 6-digit code" maxLength={6}/>
+                                </div>
+                                <Button className="w-full" onClick={handleVerifyOtp} disabled={loading || otp.length < 6}>
+                                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Verify Code
+                                </Button>
+                            </>
+                        )}
+                    </CardContent>
+                );
+            case 3: // Manual Instructions
+                 return (
+                    <CardContent className="space-y-4">
+                        <Alert>
+                            <AlertTitle>Action Required: Send Payment</AlertTitle>
+                            <AlertDescription>
+                                Please send **GHS {bundlePrice}** to the number below.
+                            </AlertDescription>
+                        </Alert>
+                        <div className="text-center p-4 border rounded-lg">
+                            <p className="text-sm text-muted-foreground">Merchant Number</p>
+                            <p className="text-2xl font-bold tracking-widest">{merchantNumber}</p>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input id="phone" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} />
-                        </div>
-                        <Button className="w-full" onClick={handleProceedToPayment} disabled={loading || !selectedProvider || !phoneNumber}>
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Proceed to Payment
+                        <Card>
+                            <CardHeader><CardTitle className="text-base">Instructions (MTN *170#)</CardTitle></CardHeader>
+                            <CardContent className="text-sm space-y-2">
+                                <p>1. Dial **\*170#** on your phone.</p>
+                                <p>2. Select **1** for "Transfer Money".</p>
+                                <p>3. Select **1** for "MoMo User".</p>
+                                <p>4. Enter the merchant number: **{merchantNumber}**</p>
+                                <p>5. Enter the amount: **{bundlePrice}**</p>
+                                <p>6. Use reference: **{invoice?.reference || 'SMS Bundle'}**</p>
+                                <p>7. Enter your PIN to confirm.</p>
+                            </CardContent>
+                        </Card>
+                        <Button className="w-full" onClick={handleStartPolling}>
+                           I Have Sent The Money
                         </Button>
                     </CardContent>
                 );
-            case 3:
+            case 4: // Polling
                 return (
                     <CardContent className="text-center space-y-4">
                         <Smartphone className="mx-auto h-16 w-16 text-primary" />
@@ -268,7 +301,7 @@ function PurchaseContent() {
                         <Loader2 className="mx-auto mt-2 h-8 w-8 animate-spin text-muted-foreground" />
                     </CardContent>
                 );
-            case 4:
+            case 5: // Success and move to final confirmation
                 return (
                      <CardContent className="text-center space-y-4">
                         <ShieldCheck className="mx-auto h-16 w-16 text-green-500" />
@@ -295,7 +328,7 @@ function PurchaseContent() {
             <div className="max-w-lg mx-auto">
                  <Card>
                     <CardHeader className="relative">
-                        {step > 1 && paymentMethod !== 'qr' && (
+                        {step > 1 && (
                             <Button variant="ghost" size="icon" className="absolute left-2 top-2" onClick={() => setStep(step - 1)}>
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
@@ -303,9 +336,9 @@ function PurchaseContent() {
                         <CardTitle className="text-center">
                             Step {step}: {
                                 step === 1 ? 'Choose Payment Method' :
-                                step === 2 && paymentMethod === 'qr' ? 'Scan QR Code' :
-                                step === 2 && paymentMethod === 'momo' ? 'Enter Details' :
-                                step === 3 ? 'Confirming Payment' :
+                                step === 2 ? 'Enter Details' :
+                                step === 3 ? 'Send Payment Manually' :
+                                step === 4 ? 'Confirming Payment' :
                                 'Payment Successful'
                             }
                         </CardTitle>

@@ -22,7 +22,7 @@ function ConfirmPurchaseContent() {
   const [otp, setOtp] = useState('');
 
   const invoiceId = searchParams.get('invoiceId');
-  const bundleCredits = searchParams.get('bundleCredits');
+  const bundleCredits = searchParams.get('credits');
   const confirmationPhone = '0536282694'; // Hardcoded number for the final OTP
 
   useEffect(() => {

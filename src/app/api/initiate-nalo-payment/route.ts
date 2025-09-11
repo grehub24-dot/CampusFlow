@@ -53,6 +53,8 @@ function buildNaloPayload({
   };
 }
 
+// NOTE: This route is currently not used in the manual payment flow,
+// but is kept for potential future use with automated payment prompts.
 export async function POST(req: Request) {
   try {
     const body = await req.json();
