@@ -302,6 +302,13 @@ function AdmissionForm({ onFormSubmit, classes }: { onFormSubmit: SubmitHandler<
 const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
 const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'Kindergarten 2'];
 
+const PLAN_LIMITS = {
+  free: 50,
+  starter: 200,
+  pro: 500,
+  enterprise: Infinity,
+}
+
 export default function AdmissionsPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTableLoading, setIsTableLoading] = React.useState(true);
@@ -310,6 +317,7 @@ export default function AdmissionsPage() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
   const [admittedStudents, setAdmittedStudents] = React.useState<Student[]>([]);
+  const [allStudentsCount, setAllStudentsCount] = React.useState(0);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const [classes, setClasses] = React.useState<SchoolClass[]>([]);
   const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
@@ -322,6 +330,12 @@ export default function AdmissionsPage() {
   const { schoolInfo } = useSchoolInfo();
 
   React.useEffect(() => {
+    // Listener for all students to get the total count
+    const allStudentsQuery = query(collection(db, "students"));
+    const unsubscribeAllStudents = onSnapshot(allStudentsQuery, (snapshot) => {
+        setAllStudentsCount(snapshot.size);
+    });
+
     const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
     const unsubscribeSettings = onSnapshot(academicTermsQuery, (snapshot) => {
         if (!snapshot.empty) {
@@ -391,6 +405,7 @@ export default function AdmissionsPage() {
     });
 
     return () => {
+      unsubscribeAllStudents();
       unsubscribeSettings();
       unsubscribeClasses();
       unsubscribeFeeStructures();
@@ -634,6 +649,20 @@ export default function AdmissionsPage() {
     }
     setIsPaymentDialogOpen(true);
   }
+  
+  const handleAddNewStudentClick = () => {
+    const limit = PLAN_LIMITS[schoolInfo?.currentPlan || 'free'];
+    if (allStudentsCount >= limit) {
+        toast({
+            variant: "destructive",
+            title: "Student Limit Reached",
+            description: `You have reached the ${limit} student limit for the ${schoolInfo?.currentPlan} plan.`,
+            action: <ToastAction altText="Upgrade" asChild><Button variant="link" onClick={() => router.push('/billing')}>Upgrade Plan</Button></ToastAction>
+        });
+    } else {
+        setIsAdmissionDialogOpen(true);
+    }
+  }
 
   const admissionStats = {
     totalPayments: studentsWithStatus.filter(s => s.paymentStatus === 'Paid' || s.paymentStatus === 'Part-Payment').reduce((acc, student) => {
@@ -650,7 +679,7 @@ export default function AdmissionsPage() {
       >
         <Dialog open={isAdmissionDialogOpen} onOpenChange={setIsAdmissionDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={handleAddNewStudentClick}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add New Student
             </Button>

@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, Wallet, ShoppingCart, ArrowLeft, Smartphone, CreditCard, CheckCircle } from 'lucide-react';
+import { Loader2, Send, Wallet, ShoppingCart, ArrowLeft, Smartphone, CreditCard, CheckCircle, Mail } from 'lucide-react';
 import StatCard from '@/components/dashboard/stat-card';
 import { Input } from '@/components/ui/input';
 import { MessageHistory } from './message-history';
@@ -37,6 +37,8 @@ import { ToastAction } from '@/components/ui/toast';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useSchoolInfo } from '@/context/school-info-context';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const messageFormSchema = z.object({
   recipientType: z.enum(['all', 'class', 'single', 'manual']),
@@ -128,6 +130,7 @@ export default function CommunicationsPage() {
   const [emailTemplates, setEmailTemplates] = useState<Record<string, CommunicationTemplate>>({});
   const [balance, setBalance] = useState<number>(0); 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { schoolInfo } = useSchoolInfo();
 
   const { toast } = useToast();
 
@@ -295,7 +298,17 @@ export default function CommunicationsPage() {
           title: 'Messages Sent',
           description: `SMS dispatched to ${uniqueRecipients.length} recipients.`,
         });
-      } else {
+      } else { // Email logic
+        if (schoolInfo?.currentPlan === 'free') {
+            toast({
+                variant: 'destructive',
+                title: 'Feature Not Available',
+                description: 'Email notifications are not available on the Free plan.',
+                action: <ToastAction altText="Upgrade" asChild><Link href="/billing">Upgrade Plan</Link></ToastAction>
+            });
+            setIsSubmitting(false);
+            return;
+        }
         // Email logic using Firebase Extensions
         const batch = writeBatch(db);
         uniqueRecipients.forEach(email => {
@@ -331,6 +344,8 @@ export default function CommunicationsPage() {
   };
   
   const currentTemplates = messageType === 'sms' ? smsTemplates : emailTemplates;
+  const emailDisabled = schoolInfo?.currentPlan === 'free';
+  const smsDisabled = schoolInfo?.currentPlan === 'starter';
 
 
   return (
@@ -341,7 +356,7 @@ export default function CommunicationsPage() {
       >
         <Dialog>
             <DialogTrigger asChild>
-                <Button>
+                <Button disabled={smsDisabled}>
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Buy SMS Credit
                 </Button>
@@ -353,11 +368,21 @@ export default function CommunicationsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
          <StatCard 
             title="SMS Credit Balance"
-            value={balance.toLocaleString()}
+            value={smsDisabled ? 'N/A' : balance.toLocaleString()}
             icon={Wallet}
-            color="text-green-500"
-            description="Remaining SMS units"
+            color={smsDisabled ? "text-muted-foreground" : "text-green-500"}
+            description={smsDisabled ? "Not available on Starter plan" : "Remaining SMS units"}
         />
+        {emailDisabled && (
+          <Alert className="md:col-span-3">
+              <Mail className="h-4 w-4" />
+              <AlertTitle>Email Notifications Disabled</AlertTitle>
+              <AlertDescription>
+                Email features are not included in the Free plan. Please upgrade to enable email notifications.
+                <Button variant="link" asChild className="p-0 h-auto ml-1"><Link href="/billing">Upgrade Plan</Link></Button>
+              </AlertDescription>
+          </Alert>
+        )}
       </div>
 
       <Tabs defaultValue="send-message">
@@ -499,8 +524,8 @@ export default function CommunicationsPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="sms">SMS</SelectItem>
-                                <SelectItem value="email">
+                                <SelectItem value="sms" disabled={smsDisabled}>SMS</SelectItem>
+                                <SelectItem value="email" disabled={emailDisabled}>
                                   Email
                                 </SelectItem>
                               </SelectContent>

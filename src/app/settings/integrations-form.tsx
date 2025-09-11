@@ -28,6 +28,7 @@ const formSchema = z.object({
   smsOnAdmission: z.boolean().default(false),
   smsOnPayment: z.boolean().default(false),
   smsOnFeeReminder: z.boolean().default(false),
+  whatsAppEnabled: z.boolean().default(false),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -53,6 +54,7 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
       smsOnAdmission: defaultValues?.smsOnAdmission || false,
       smsOnPayment: defaultValues?.smsOnPayment || false,
       smsOnFeeReminder: defaultValues?.smsOnFeeReminder || false,
+      whatsAppEnabled: defaultValues?.whatsAppEnabled || false,
     }
   });
 
@@ -67,11 +69,13 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
       smsOnAdmission: defaultValues?.smsOnAdmission || false,
       smsOnPayment: defaultValues?.smsOnPayment || false,
       smsOnFeeReminder: defaultValues?.smsOnFeeReminder || false,
+      whatsAppEnabled: defaultValues?.whatsAppEnabled || false,
     })
   }, [defaultValues, form]);
 
   const currentPlan = schoolInfo?.currentPlan || 'free';
-  const smsEnabled = currentPlan !== 'starter';
+  const smsEnabled = currentPlan === 'free' || currentPlan === 'pro' || currentPlan === 'enterprise';
+  const whatsAppEnabled = currentPlan === 'pro' || currentPlan === 'enterprise';
 
   return (
     <Form {...form}>
@@ -97,21 +101,17 @@ export function IntegrationsForm({ onSubmit, defaultValues, isSubmitting }: Inte
 
         <Card className="border shadow-sm">
           <CardHeader>
-            <CardTitle>Automated SMS Notifications</CardTitle>
+            <CardTitle>Automated Notifications</CardTitle>
             <CardDescription>
-              Enable or disable automated SMS messages. 
-              {!smsEnabled && (
-                <span className="block mt-2">
-                    <Badge variant="destructive">Your current plan does not support SMS notifications.</Badge>
-                     <Button variant="link" asChild><Link href="/billing">Upgrade your plan.</Link></Button>
-                </span>
-              )}
+              Enable or disable automated messages for key events.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-             <FormField control={form.control} name="smsOnAdmission" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">New Student Admission</FormLabel><FormDescription>Send a welcome SMS to the guardian when a new student is admitted.</FormDescription></div><FormControl><Switch disabled={!smsEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
-             <FormField control={form.control} name="smsOnPayment" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">Payment Confirmation</FormLabel><FormDescription>Send an SMS receipt to the guardian after a payment is recorded.</FormDescription></div><FormControl><Switch disabled={!smsEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
-             <FormField control={form.control} name="smsOnFeeReminder" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">Fee Reminders</FormLabel><FormDescription>Allow sending of SMS reminders for outstanding fee balances.</FormDescription></div><FormControl><Switch disabled={!smsEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
+             <FormField control={form.control} name="smsOnAdmission" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">SMS on New Admission</FormLabel><FormDescription>Send a welcome SMS to the guardian when a new student is admitted.</FormDescription></div><FormControl><Switch disabled={!smsEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
+             <FormField control={form.control} name="smsOnPayment" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">SMS on Payment</FormLabel><FormDescription>Send an SMS receipt to the guardian after a payment is recorded.</FormDescription></div><FormControl><Switch disabled={!smsEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
+             <FormField control={form.control} name="smsOnFeeReminder" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">Enable SMS Fee Reminders</FormLabel><FormDescription>Allow sending of SMS reminders for outstanding fee balances.</FormDescription></div><FormControl><Switch disabled={!smsEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
+            <Separator />
+            <FormField control={form.control} name="whatsAppEnabled" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4"><div className="space-y-0.5"><FormLabel className="text-base">WhatsApp Integration</FormLabel><FormDescription>Enable WhatsApp messaging features (Pro plan and above).</FormDescription></div><FormControl><Switch disabled={!whatsAppEnabled} checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
           </CardContent>
         </Card>
         

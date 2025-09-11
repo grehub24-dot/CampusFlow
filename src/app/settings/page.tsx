@@ -3,16 +3,14 @@
 'use client'
 
 import React from 'react';
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 import { PageHeader } from "@/components/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserTable } from "./user-table";
-import { userColumns } from "./user-columns";
+import { UserManagementSettings } from "./user-management-settings";
 import { AcademicSettings } from './academic-settings';
 import { ClassSettings } from './class-settings';
 import { FeeStructureSettings } from './fee-structure-settings';
@@ -29,7 +27,7 @@ export default function SettingsPage() {
   React.useEffect(() => {
     // Note: Assuming a 'users' collection exists.
     // You will need to create this and add data for users to appear.
-    const usersQuery = collection(db, "users");
+    const usersQuery = query(collection(db, "users"));
     const unsubscribeUsers = onSnapshot(usersQuery, (querySnapshot) => {
       const usersData: User[] = [];
       querySnapshot.forEach((doc) => {
@@ -84,7 +82,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="users">
-            <UserTable columns={userColumns} data={users} />
+            <UserManagementSettings users={users} />
         </TabsContent>
 
         <TabsContent value="integrations">

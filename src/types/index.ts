@@ -140,6 +140,7 @@ export type IntegrationSettings = {
     smsOnAdmission?: boolean;
     smsOnPayment?: boolean;
     smsOnFeeReminder?: boolean;
+    whatsAppEnabled?: boolean;
 }
 
 export type AdmissionSettings = {
