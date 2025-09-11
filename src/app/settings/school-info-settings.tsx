@@ -47,9 +47,9 @@ export function SchoolInfoSettings() {
   React.useEffect(() => {
     if (schoolInfo) {
       form.reset({ 
-          schoolName: schoolInfo.schoolName,
-          address: schoolInfo.address,
-          phone: schoolInfo.phone,
+          schoolName: schoolInfo.schoolName || 'CampusFlow Academy',
+          address: schoolInfo.address || '',
+          phone: schoolInfo.phone || '',
       });
       setLogoPreview(schoolInfo.logoUrl || null);
     }
@@ -81,7 +81,7 @@ export function SchoolInfoSettings() {
         await setDoc(settingsDocRef, newInfo, { merge: true });
 
         // Update context immediately for a responsive UI
-        setSchoolInfo(newInfo);
+        setSchoolInfo({ ...schoolInfo, ...newInfo } as any);
         
         toast({
             title: "Settings Saved",
