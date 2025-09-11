@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -104,7 +103,7 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
        <CardFooter>
          <Button 
           className="w-full" 
-          disabled={isCurrent || (isProcessing && !isCurrent)}
+          disabled={isProcessing && !isCurrent}
           variant={isCurrent ? 'default' : plan.buttonVariant}
           onClick={() => onSelect(plan)}
         >
@@ -382,3 +381,5 @@ export default function BillingPage() {
     
 
       
+
+    
