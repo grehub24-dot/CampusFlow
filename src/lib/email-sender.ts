@@ -36,7 +36,8 @@ export async function processEmailQueue() {
     const emailPromises = querySnapshot.docs.map(async (docSnap) => {
         const emailData = docSnap.data();
         const mailOptions = {
-            from: '"CampusFlow" <nsxorasystems@gmail.com>',
+            from: '"CampusFlow" <campusflow@system.com>', // Use a valid from address
+            replyTo: 'nsxorasystems@gmail.com', // Ensure replies go to the correct address
             to: emailData.to,
             subject: emailData.subject,
             html: emailData.html,
