@@ -194,7 +194,7 @@ function PurchaseContent() {
     };
 
     const handleFinalConfirmation = () => {
-        router.push(`/billing/confirm-purchase?invoiceId=${invoice?.id}&bundleCredits=${bundleCredits}`);
+        router.push(`/billing/confirm-purchase?invoiceId=${invoice?.id}&credits=${bundleCredits}`);
     };
 
     if (!bundleName || !bundlePrice || !bundleCredits) {
@@ -274,7 +274,7 @@ function PurchaseContent() {
                                     </AlertDescription>
                                 </Alert>
                                 <div className="relative w-48 h-48 mx-auto border rounded-lg p-2">
-                                    <Image src="https://picsum.photos/seed/momoqr/200/200" alt="MoMo QR Code" layout="fill" objectFit="contain" data-ai-hint="qr code" />
+                                    <Image src="/Momo_QR_Code.jpg" alt="MoMo QR Code" layout="fill" objectFit="contain" data-ai-hint="qr code" />
                                 </div>
                                 <Link href="https://appbiz.momo.africa/momo/kashme/233536282694" target="_blank" className="text-sm text-primary hover:underline">
                                     Or click here to open payment link
