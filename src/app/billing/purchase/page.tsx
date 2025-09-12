@@ -274,7 +274,7 @@ function PurchaseContent() {
                                     </AlertDescription>
                                 </Alert>
                                 <div className="relative w-48 h-48 mx-auto border rounded-lg p-2">
-                                    <Image src="https://appbiz.momo.africa/momo/kashme/233536282694" alt="MoMo QR Code" layout="fill" objectFit="contain" />
+                                    <Image src="https://picsum.photos/seed/momoqr/200/200" alt="MoMo QR Code" layout="fill" objectFit="contain" data-ai-hint="qr code" />
                                 </div>
                                 <Link href="https://appbiz.momo.africa/momo/kashme/233536282694" target="_blank" className="text-sm text-primary hover:underline">
                                     Or click here to open payment link
