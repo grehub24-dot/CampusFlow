@@ -319,16 +319,16 @@ export default function CommunicationsPage() {
             setIsSubmitting(false);
             return;
         }
-        // Email logic using Firebase Extensions
+        // Save to 'queuedEmails' collection instead of 'mail'
         const batch = writeBatch(db);
         uniqueRecipients.forEach(email => {
-            const mailRef = doc(collection(db, "mail"));
+            const mailRef = doc(collection(db, "queuedEmails"));
             batch.set(mailRef, {
-                to: [email],
-                message: {
-                    subject: values.subject,
-                    html: values.message.replace(/\n/g, '<br>'), // Basic conversion of newlines to <br> for HTML email
-                },
+                to: email,
+                subject: values.subject,
+                html: values.message.replace(/\n/g, '<br>'),
+                status: 'queued',
+                createdAt: new Date().toISOString(),
             });
         });
         await batch.commit();
