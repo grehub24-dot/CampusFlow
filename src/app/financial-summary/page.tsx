@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { Student, Payment, AcademicTerm, FinancialSummaryItem } from '@/types';
+import type { Student, Payment, AcademicTerm, FinancialSummaryItem, Transaction } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { isToday, isThisWeek, isThisMonth } from 'date-fns';
 
@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
 import StatCard from '@/components/dashboard/stat-card';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
@@ -27,14 +27,14 @@ const formatCurrency = (amount: number) => {
 
 function SummaryDisplay({
     filteredPayments,
+    filteredTransactions,
     newStudents,
-    continuingStudents,
-    allTimeIncome
+    continuingStudents
 }: {
     filteredPayments: Payment[];
+    filteredTransactions: Transaction[];
     newStudents: Student[];
     continuingStudents: Student[];
-    allTimeIncome: number;
 }) {
     const newStudentPayments = React.useMemo(() => {
         const newStudentIds = new Set(newStudents.map(s => s.id));
@@ -77,32 +77,35 @@ function SummaryDisplay({
     }, [continuingStudentPayments]);
 
 
-    const newAdmissionsIncome = newAdmissionsSummary.reduce((sum, item) => sum + item.total, 0);
-    const continuingStudentsIncome = continuingStudentsSummary.reduce((sum, item) => sum + item.total, 0);
+    const feeIncome = newAdmissionsSummary.reduce((sum, item) => sum + item.total, 0) + continuingStudentsSummary.reduce((sum, item) => sum + item.total, 0);
+    const otherIncome = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const totalIncome = feeIncome + otherIncome;
+    const totalExpense = filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    const netBalance = totalIncome - totalExpense;
     
     return (
         <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
                  <StatCard 
-                    title="Total Income (New Admissions)"
-                    value={formatCurrency(newAdmissionsIncome)}
-                    icon={DollarSign}
+                    title="Total Income"
+                    value={formatCurrency(totalIncome)}
+                    icon={TrendingUp}
                     color="text-green-500"
-                    description={`${newStudents.length} new students`}
+                    description={`Fees + Other income`}
                 />
                 <StatCard 
-                    title="Total Income (Continuing)"
-                    value={formatCurrency(continuingStudentsIncome)}
-                    icon={DollarSign}
-                    color="text-purple-500"
-                    description={`${continuingStudents.length} continuing students`}
+                    title="Total Expenses"
+                    value={formatCurrency(totalExpense)}
+                    icon={TrendingDown}
+                    color="text-red-500"
+                    description={`All recorded expenses`}
                 />
                  <StatCard 
-                    title="Total Combined Income"
-                    value={formatCurrency(newAdmissionsIncome + continuingStudentsIncome)}
+                    title="Net Balance"
+                    value={formatCurrency(netBalance)}
                     icon={DollarSign}
-                    color="text-blue-500"
-                    description={`All-time record: ${formatCurrency(allTimeIncome)}`}
+                    color={netBalance >= 0 ? "text-primary" : "text-destructive"}
+                    description={`Income minus expenses`}
                 />
             </div>
             <div className="grid lg:grid-cols-2 gap-6">
@@ -186,9 +189,9 @@ function SummaryDisplay({
 export default function FinancialSummaryPage() {
     const [allStudents, setAllStudents] = useState<Student[]>([]);
     const [allPayments, setAllPayments] = useState<Payment[]>([]);
+    const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
     const [currentTerm, setCurrentTerm] = useState<AcademicTerm | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [allTimeIncome, setAllTimeIncome] = useState(0);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -201,8 +204,11 @@ export default function FinancialSummaryPage() {
         const unsubscribePayments = onSnapshot(paymentsQuery, (snapshot) => {
             const payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment));
             setAllPayments(payments);
-            const total = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-            setAllTimeIncome(total);
+        });
+
+        const transactionsQuery = query(collection(db, "transactions"));
+        const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
+            setAllTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
         });
 
         const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
@@ -223,6 +229,7 @@ export default function FinancialSummaryPage() {
         return () => {
             unsubscribeStudents();
             unsubscribePayments();
+            unsubscribeTransactions();
             unsubscribeSettings();
         };
     }, [toast]);
@@ -241,26 +248,28 @@ export default function FinancialSummaryPage() {
         return { newStudents: newStudentList, continuingStudents: continuingStudentList };
     }, [allStudents, currentTerm]);
 
-    const getFilteredPayments = (filter: 'today' | 'week' | 'month' | 'term' | 'year') => {
-        if (!currentTerm) return [];
+    const getFilteredData = (filter: 'today' | 'week' | 'month' | 'term' | 'year') => {
+        if (!currentTerm) return { payments: [], transactions: [] };
         
-        return allPayments.filter(p => {
-            const paymentDate = new Date(p.date);
+        const filterFn = (dateStr: string) => {
+            const date = new Date(dateStr);
             switch(filter) {
-                case 'today':
-                    return isToday(paymentDate);
-                case 'week':
-                    return isThisWeek(paymentDate, { weekStartsOn: 1 });
-                case 'month':
-                    return isThisMonth(paymentDate);
-                case 'term':
-                    return p.academicYear === currentTerm.academicYear && p.term === currentTerm.session;
+                case 'today': return isToday(date);
+                case 'week': return isThisWeek(date, { weekStartsOn: 1 });
+                case 'month': return isThisMonth(date);
+                case 'term': return date >= new Date(currentTerm.startDate) && date <= new Date(currentTerm.endDate);
                 case 'year':
-                    return p.academicYear === currentTerm.academicYear;
-                default:
-                    return true;
+                    const yearStart = new Date(currentTerm.academicYear.split('-')[0], 8, 1); // Assuming academic year starts Sep 1
+                    const yearEnd = new Date(parseInt(currentTerm.academicYear.split('-')[1]), 7, 31);
+                    return date >= yearStart && date <= yearEnd;
+                default: return true;
             }
-        });
+        }
+        
+        const payments = allPayments.filter(p => filterFn(p.date));
+        const transactions = allTransactions.filter(t => filterFn(t.date));
+
+        return { payments, transactions };
     }
 
     return (
@@ -290,19 +299,19 @@ export default function FinancialSummaryPage() {
                         <TabsTrigger value="year">Full Year</TabsTrigger>
                     </TabsList>
                      <TabsContent value="today">
-                        <SummaryCard title="Today's Summary" description={`Financial breakdown for today.`} payments={getFilteredPayments('today')} newStudents={newStudents} continuingStudents={continuingStudents} allTimeIncome={allTimeIncome} />
+                        <SummaryCard title="Today's Summary" description={`Financial breakdown for today.`} data={getFilteredData('today')} newStudents={newStudents} continuingStudents={continuingStudents} />
                     </TabsContent>
                     <TabsContent value="week">
-                        <SummaryCard title="This Week's Summary" description={`Financial breakdown for this week.`} payments={getFilteredPayments('week')} newStudents={newStudents} continuingStudents={continuingStudents} allTimeIncome={allTimeIncome} />
+                        <SummaryCard title="This Week's Summary" description={`Financial breakdown for this week.`} data={getFilteredData('week')} newStudents={newStudents} continuingStudents={continuingStudents} />
                     </TabsContent>
                     <TabsContent value="month">
-                        <SummaryCard title="This Month's Summary" description={`Financial breakdown for this month.`} payments={getFilteredPayments('month')} newStudents={newStudents} continuingStudents={continuingStudents} allTimeIncome={allTimeIncome} />
+                        <SummaryCard title="This Month's Summary" description={`Financial breakdown for this month.`} data={getFilteredData('month')} newStudents={newStudents} continuingStudents={continuingStudents} />
                     </TabsContent>
                     <TabsContent value="term">
-                        <SummaryCard title="Current Term Summary" description={`Financial breakdown for ${currentTerm.session} of the ${currentTerm.academicYear} academic year.`} payments={getFilteredPayments('term')} newStudents={newStudents} continuingStudents={continuingStudents} allTimeIncome={allTimeIncome} />
+                        <SummaryCard title="Current Term Summary" description={`Financial breakdown for ${currentTerm.session} of the ${currentTerm.academicYear} academic year.`} data={getFilteredData('term')} newStudents={newStudents} continuingStudents={continuingStudents} />
                     </TabsContent>
                     <TabsContent value="year">
-                        <SummaryCard title="Full Year Summary" description={`Financial breakdown for the entire ${currentTerm.academicYear} academic year.`} payments={getFilteredPayments('year')} newStudents={newStudents} continuingStudents={continuingStudents} allTimeIncome={allTimeIncome} />
+                        <SummaryCard title="Full Year Summary" description={`Financial breakdown for the entire ${currentTerm.academicYear} academic year.`} data={getFilteredData('year')} newStudents={newStudents} continuingStudents={continuingStudents} />
                     </TabsContent>
                 </Tabs>
             )}
@@ -310,7 +319,7 @@ export default function FinancialSummaryPage() {
     );
 }
 
-function SummaryCard({ title, description, payments, newStudents, continuingStudents, allTimeIncome }: { title: string, description: string, payments: Payment[], newStudents: Student[], continuingStudents: Student[], allTimeIncome: number }) {
+function SummaryCard({ title, description, data, newStudents, continuingStudents }: { title: string, description: string, data: { payments: Payment[], transactions: Transaction[] }, newStudents: Student[], continuingStudents: Student[] }) {
     return (
         <Card>
             <CardHeader>
@@ -319,10 +328,10 @@ function SummaryCard({ title, description, payments, newStudents, continuingStud
             </CardHeader>
             <CardContent>
                 <SummaryDisplay 
-                    filteredPayments={payments} 
+                    filteredPayments={data.payments}
+                    filteredTransactions={data.transactions}
                     newStudents={newStudents}
                     continuingStudents={continuingStudents}
-                    allTimeIncome={allTimeIncome}
                 />
             </CardContent>
         </Card>

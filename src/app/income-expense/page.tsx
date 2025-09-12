@@ -197,21 +197,21 @@ export default function IncomeExpensePage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
          <StatCard 
             title="Total Income"
-            value={`GHS ${totalIncome.toLocaleString()}`}
+            value={`GHS ${totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
             icon={TrendingUp}
             color="text-green-500"
             description="School fees + Other income"
         />
         <StatCard 
             title="Total Expenses"
-            value={`GHS ${totalExpense.toLocaleString()}`}
+            value={`GHS ${totalExpense.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
             icon={TrendingDown}
             color="text-red-500"
             description="All recorded expenses"
         />
         <StatCard 
             title="Net Balance"
-            value={`GHS ${netBalance.toLocaleString()}`}
+            value={`GHS ${netBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
             icon={DollarSign}
             color={netBalance >= 0 ? "text-primary" : "text-destructive"}
             description="Income minus expenses"
