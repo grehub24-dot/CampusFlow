@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { SchoolInformation } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 interface SchoolInfoContextType {
   schoolInfo: SchoolInformation | null;
@@ -38,7 +38,7 @@ export const SchoolInfoProvider: React.FC<{ children: React.ReactNode }> = ({
       let mergedInfo = { ...schoolData, ...billingData } as SchoolInformation;
       if (!mergedInfo.systemId) {
         // Generate and save a new systemId if it doesn't exist
-        const newId = `cf-${uuidv4().substring(0, 4)}-${uuidv4().substring(0, 4)}`;
+        const newId = `cf-${crypto.randomBytes(4).toString('hex')}`;
         mergedInfo.systemId = newId;
         setDoc(schoolInfoDocRef, { systemId: newId }, { merge: true });
       }
