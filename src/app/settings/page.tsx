@@ -7,6 +7,7 @@ import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolInfo } from '@/context/school-info-context';
 
 import { PageHeader } from "@/components/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,6 +24,7 @@ import { BillingSettings } from './billing-settings';
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
   const { toast } = useToast();
+  const { schoolInfo } = useSchoolInfo();
 
   React.useEffect(() => {
     // Note: Assuming a 'users' collection exists.
@@ -46,7 +48,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Settings"
-        description="Manage your school's information, user accounts, and system settings."
+        description={`Manage your school's information, accounts, and system settings. System ID: ${schoolInfo?.systemId || 'N/A'}`}
       />
       <Tabs defaultValue="school-info" className="space-y-4">
         <TabsList className="h-auto flex-wrap justify-start">

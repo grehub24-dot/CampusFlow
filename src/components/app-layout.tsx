@@ -157,9 +157,6 @@ function Header() {
                 </div>
             )}
         </div>
-        <div className="flex-1 text-center font-mono text-sm text-muted-foreground">
-            {schoolInfo?.systemId}
-        </div>
         <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon">
             <Bell className="h-5 w-5" />

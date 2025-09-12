@@ -298,7 +298,7 @@ export default function BillingPage() {
         <>
             <PageHeader
                 title="🚀 Nexora Cloud Subscriptions"
-                description="Reliable, secure, and scalable cloud services for schools of all sizes."
+                description={`Reliable, secure, and scalable cloud services. System ID: ${schoolInfo?.systemId || 'N/A'}`}
             />
             <div className="grid md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
               {subscriptionPlans.map((plan) => (
