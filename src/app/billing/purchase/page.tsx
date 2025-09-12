@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -47,6 +48,7 @@ function PurchaseContent() {
     const bundleName = searchParams.get('bundle');
     const bundleCredits = searchParams.get('credits');
     const bundlePrice = searchParams.get('price');
+    const purchaseType = searchParams.get('purchaseType') || 'sms'; // Default to 'sms'
 
     useEffect(() => {
         if (!bundleName || !bundleCredits || !bundlePrice) {
@@ -58,13 +60,13 @@ function PurchaseContent() {
     const createInvoice = async () => {
         setLoading(true);
         try {
-            const referenceId = `cf-sms-${uuid().substring(0, 8)}`;
+            const referenceId = `cf-${purchaseType}-${uuid().substring(0, 8)}`;
             const res = await fetch('/api/create-invoice', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     amount: bundlePrice,
-                    description: `${bundleCredits} SMS Credits (${bundleName})`,
+                    description: `${bundleName}`,
                     reference: referenceId,
                 }),
             });
@@ -161,7 +163,7 @@ function PurchaseContent() {
                 throw new Error(res.message || 'Failed to send activation code.');
             }
             // Redirect to the final confirmation page
-            router.push(`/billing/confirm-purchase?invoiceId=${invoice.id}&credits=${bundleCredits}`);
+            router.push(`/billing/confirm-purchase?purchaseType=${purchaseType}&invoiceId=${invoice.id}&credits=${bundleCredits}`);
         } catch(e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message });
             setStep(3); // Go back to payment step on failure
@@ -206,7 +208,7 @@ function PurchaseContent() {
     };
 
     const handleFinalConfirmation = () => {
-        router.push(`/billing/confirm-purchase?invoiceId=${invoice?.id}&credits=${bundleCredits}`);
+        router.push(`/billing/confirm-purchase?purchaseType=${purchaseType}&invoiceId=${invoice?.id}&credits=${bundleCredits}`);
     };
 
     if (!bundleName || !bundlePrice || !bundleCredits) {
@@ -364,8 +366,8 @@ function PurchaseContent() {
     return (
         <>
             <PageHeader
-                title="Purchase SMS Credits"
-                description={`You are purchasing the ${bundleName} bundle.`}
+                title={purchaseType === 'subscription' ? 'Confirm Subscription' : 'Purchase SMS Credits'}
+                description={`You are purchasing the ${bundleName}.`}
             />
 
             <div className="max-w-lg mx-auto">

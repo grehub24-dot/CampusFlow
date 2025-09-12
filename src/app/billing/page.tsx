@@ -146,8 +146,8 @@ export default function BillingPage() {
         frequency: '/month',
         description: 'Get started and explore the Nexora platform.',
         features: [
-          { text: 'Supports up to 50 students', included: true },
-          { text: 'Basic SMS notifications (limited to 50/month)', included: true },
+          { text: 'Supports up to 100 students', included: true },
+          { text: 'Basic SMS notifications (limited to 100/month)', included: true },
           { text: 'Community support', included: true },
           { text: '1 user account', included: true },
           { text: 'Automatic cloud backup', included: false },
@@ -168,10 +168,10 @@ export default function BillingPage() {
         description: 'For growing schools that need more control.',
         features: [
           { text: 'Supports up to 200 students', included: true },
-          { text: 'Weekly cloud backup (app + database)', included: true },
-          { text: 'Basic Email notifications (50/month)', included: true },
+          { text: 'Monthly cloud backup (database)', included: true },
           { text: 'Email-based support (48h response)', included: true },
           { text: 'Up to 2 user accounts', included: true },
+          { text: 'Basic Email notifications (50/month)', included: false },
           { text: 'WhatsApp integration', included: false },
           { text: 'Priority support', included: false },
         ],
@@ -189,11 +189,11 @@ export default function BillingPage() {
         description: 'For schools ready to scale operations.',
         features: [
           { text: 'Supports up to 500 students', included: true },
-          { text: 'Daily cloud backup (app + database)', included: true },
-          { text: 'Full email integration (1,000/month)', included: true },
-          { text: 'Full WhatsApp integration', included: true },
+          { text: 'Weekly cloud backup (app + database)', included: true },
+          { text: 'Basic Email notifications (50/month)', included: true },
+          { text: 'WhatsApp integration', included: true },
           { text: 'Priority support (Email + WhatsApp)', included: true },
-          { text: 'Up to 5 user accounts', included: true },
+          { text: 'Up to 3 user accounts', included: true },
         ],
         idealFor: 'Great for schools with multiple departments.',
         buttonText: 'Manage Subscription',
@@ -208,8 +208,9 @@ export default function BillingPage() {
         description: 'Custom infrastructure for large institutions.',
         features: [
           { text: 'Unlimited students', included: true },
-          { text: 'Real-time cloud backup', included: true },
-          { text: 'Advanced email & WhatsApp integration', included: true },
+          { text: 'Real-time /Daily cloud backup', included: true },
+          { text: 'Full email integration (1,000/month)', included: true },
+          { text: 'Full WhatsApp integration', included: true },
           { text: 'Dedicated account manager', included: true },
           { text: 'Unlimited user accounts', included: true },
           { text: 'Full API & system integration', included: true },
@@ -224,7 +225,7 @@ export default function BillingPage() {
         if (plan.id === 'enterprise') {
             setIsContactDialogOpen(true);
         } else if (plan.priceGHS > 0) {
-             router.push(`/billing/purchase?bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
+             router.push(`/billing/purchase?purchaseType=subscription&bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
         } else {
             // For free plan or other non-purchase actions
             setSelectedPlan(plan);
@@ -382,4 +383,5 @@ export default function BillingPage() {
       
 
     
+
 

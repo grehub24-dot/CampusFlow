@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React, { useEffect, useState, Suspense } from 'react';
@@ -22,7 +23,8 @@ function ConfirmPurchaseContent() {
   const [otp, setOtp] = useState('');
 
   const invoiceId = searchParams.get('invoiceId');
-  const bundleCredits = searchParams.get('credits');
+  const bundleCredits = searchParams.get('credits'); // This is planId for subscriptions
+  const purchaseType = searchParams.get('purchaseType') || 'sms';
   const confirmationPhone = '0536282694'; // Hardcoded number for the final OTP
 
   useEffect(() => {
@@ -50,11 +52,16 @@ function ConfirmPurchaseContent() {
     }
     setLoading(true);
     try {
-        // The API needs to know which OTP to check against which number.
         const res = await fetch('/api/finalize-purchase', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: confirmationPhone, otp, bundleCredits, invoiceId }),
+            body: JSON.stringify({ 
+                phone: confirmationPhone, 
+                otp, 
+                bundleCredits, // This is the value (e.g., SMS count or plan ID)
+                invoiceId,
+                purchaseType, // 'sms' or 'subscription'
+            }),
         });
 
         if (!res.ok) {
@@ -64,7 +71,9 @@ function ConfirmPurchaseContent() {
 
         toast({
             title: 'Purchase Successful!',
-            description: `Your account has been credited with ${bundleCredits} SMS units.`,
+            description: purchaseType === 'subscription' 
+                ? `Your subscription has been successfully upgraded.`
+                : `Your account has been credited with ${bundleCredits} SMS units.`,
         });
 
         router.push('/billing');

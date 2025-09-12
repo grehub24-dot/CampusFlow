@@ -6,9 +6,9 @@ import { verifyOtp } from '@/lib/frog-api';
 
 export async function POST(request: Request) {
   try {
-    const { phone, otp, bundleCredits, invoiceId } = await request.json();
+    const { phone, otp, bundleCredits, invoiceId, purchaseType } = await request.json();
 
-    if (!phone || !otp || !bundleCredits || !invoiceId) {
+    if (!phone || !otp || !bundleCredits || !invoiceId || !purchaseType) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -18,25 +18,41 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid OTP' }, { status: 400 });
     }
 
-    // 2. Update the SMS balance in a transaction
+    // 2. Update Firestore based on purchase type
     const billingSettingsRef = doc(db, "settings", "billing");
 
-    await runTransaction(db, async (transaction) => {
+    if (purchaseType === 'subscription') {
+      // It's a subscription upgrade, update the currentPlan
+      await runTransaction(db, async (transaction) => {
         const billingDoc = await transaction.get(billingSettingsRef);
-        
         if (!billingDoc.exists()) {
-            // If doc doesn't exist, create it with the new balance
-            transaction.set(billingSettingsRef, { smsBalance: Number(bundleCredits) });
+            // If doc doesn't exist, create it with the new plan
+            transaction.set(billingSettingsRef, { currentPlan: bundleCredits });
         } else {
-            const currentBalance = billingDoc.data().smsBalance || 0;
-            const newBalance = currentBalance + Number(bundleCredits);
-            transaction.update(billingSettingsRef, { smsBalance: newBalance });
+            transaction.update(billingSettingsRef, { currentPlan: bundleCredits });
         }
-    });
+      });
+
+    } else { // Default to 'sms'
+      // It's an SMS bundle purchase, update the smsBalance
+      await runTransaction(db, async (transaction) => {
+          const billingDoc = await transaction.get(billingSettingsRef);
+          
+          if (!billingDoc.exists()) {
+              // If doc doesn't exist, create it with the new balance
+              transaction.set(billingSettingsRef, { smsBalance: Number(bundleCredits) });
+          } else {
+              const currentBalance = billingDoc.data().smsBalance || 0;
+              const newBalance = currentBalance + Number(bundleCredits);
+              transaction.update(billingSettingsRef, { smsBalance: newBalance });
+          }
+      });
+    }
+
 
     // Optionally, you could also update the invoice status in another collection here.
 
-    return NextResponse.json({ success: true, message: 'Purchase confirmed and bundle applied.' }, { status: 200 });
+    return NextResponse.json({ success: true, message: 'Purchase confirmed and applied.' }, { status: 200 });
 
   } catch (error) {
     console.error('Error finalizing purchase:', error);
