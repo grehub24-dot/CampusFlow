@@ -45,6 +45,7 @@ import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useSchoolInfo } from '@/context/school-info-context';
 import { Skeleton } from './ui/skeleton';
+import { Badge } from './ui/badge';
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -140,11 +141,20 @@ function UserProfile() {
 }
 
 function Header() {
+  const { schoolInfo, loading } = useSchoolInfo();
+
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 sm:px-6">
         <SidebarTrigger />
         <div className="flex-1">
-            {/* Can add breadcrumbs or page title here */}
+             {loading ? (
+                <Skeleton className="h-6 w-24 rounded-md" />
+            ) : (
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground">Plan:</span>
+                    <Badge variant="outline" className="capitalize">{schoolInfo?.currentPlan || 'Free'}</Badge>
+                </div>
+            )}
         </div>
         <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon">
