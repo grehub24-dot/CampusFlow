@@ -75,12 +75,34 @@ function SummaryDisplay({
             .map(([category, total]) => ({ category, total }))
             .sort((a, b) => b.total - a.total);
     }, [continuingStudentPayments]);
+    
+    const otherIncomeSummary: FinancialSummaryItem[] = React.useMemo(() => {
+        const incomeByCategory = new Map<string, number>();
+        filteredTransactions.filter(t => t.type === 'income').forEach(transaction => {
+            const currentAmount = incomeByCategory.get(transaction.categoryName) || 0;
+            incomeByCategory.set(transaction.categoryName, currentAmount + transaction.amount);
+        });
+        return Array.from(incomeByCategory.entries())
+            .map(([category, total]) => ({ category, total }))
+            .sort((a, b) => b.total - a.total);
+    }, [filteredTransactions]);
+
+    const expenseSummary: FinancialSummaryItem[] = React.useMemo(() => {
+        const expenseByCategory = new Map<string, number>();
+        filteredTransactions.filter(t => t.type === 'expense').forEach(transaction => {
+            const currentAmount = expenseByCategory.get(transaction.categoryName) || 0;
+            expenseByCategory.set(transaction.categoryName, currentAmount + transaction.amount);
+        });
+        return Array.from(expenseByCategory.entries())
+            .map(([category, total]) => ({ category, total }))
+            .sort((a, b) => b.total - a.total);
+    }, [filteredTransactions]);
 
 
     const feeIncome = newAdmissionsSummary.reduce((sum, item) => sum + item.total, 0) + continuingStudentsSummary.reduce((sum, item) => sum + item.total, 0);
-    const otherIncome = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const otherIncome = otherIncomeSummary.reduce((sum, item) => sum + item.total, 0);
     const totalIncome = feeIncome + otherIncome;
-    const totalExpense = filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    const totalExpense = expenseSummary.reduce((sum, t) => sum + t.total, 0);
     const netBalance = totalIncome - totalExpense;
     
     return (
@@ -113,7 +135,7 @@ function SummaryDisplay({
                     <CardHeader>
                         <CardTitle>Income from New Admissions</CardTitle>
                         <CardDescription>
-                            This table shows the total amount received for each fee category from newly admitted students.
+                            Total amount received for each fee category from newly admitted students.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -136,7 +158,7 @@ function SummaryDisplay({
                                     ) : (
                                         <TableRow>
                                             <TableCell colSpan={2} className="h-24 text-center">
-                                                No income from new admissions recorded for this period yet.
+                                                No income from new admissions recorded.
                                             </TableCell>
                                         </TableRow>
                                     )}
@@ -149,7 +171,7 @@ function SummaryDisplay({
                     <CardHeader>
                         <CardTitle>Income from Continuing Students</CardTitle>
                         <CardDescription>
-                            This table shows the total amount received for each fee category from continuing students for this period.
+                            Total amount received for each fee category from continuing students.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -172,7 +194,79 @@ function SummaryDisplay({
                                     ) : (
                                         <TableRow>
                                             <TableCell colSpan={2} className="h-24 text-center">
-                                                No income from continuing students recorded for this period yet.
+                                                No income from continuing students recorded.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Other Income</CardTitle>
+                        <CardDescription>
+                            Breakdown of non-fee related income from other transactions.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Income Category</TableHead>
+                                        <TableHead className="text-right">Total Amount Received</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {otherIncomeSummary.length > 0 ? (
+                                        otherIncomeSummary.map(item => (
+                                            <TableRow key={item.category}>
+                                                <TableCell className="font-medium">{item.category}</TableCell>
+                                                <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={2} className="h-24 text-center">
+                                                No other income recorded.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Expenses</CardTitle>
+                        <CardDescription>
+                            Breakdown of all recorded expenses by category.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Expense Category</TableHead>
+                                        <TableHead className="text-right">Total Amount Spent</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {expenseSummary.length > 0 ? (
+                                        expenseSummary.map(item => (
+                                            <TableRow key={item.category}>
+                                                <TableCell className="font-medium">{item.category}</TableCell>
+                                                <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={2} className="h-24 text-center">
+                                                No expenses recorded.
                                             </TableCell>
                                         </TableRow>
                                     )}
