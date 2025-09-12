@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { sendSms } from '@/lib/frog-api';
+import { useSchoolInfo } from '@/context/school-info-context';
 
 
 const whyNexoraFeatures = [
@@ -119,6 +120,7 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
 export default function BillingPage() {
     const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
     const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
+    const { schoolInfo, loading: schoolInfoLoading } = useSchoolInfo();
     const [currentPlan, setCurrentPlan] = useState('pro'); // Default to pro for demo
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -127,15 +129,11 @@ export default function BillingPage() {
 
 
     useEffect(() => {
-        const billingSettingsRef = doc(db, "settings", "billing");
-        const unsubscribe = onSnapshot(billingSettingsRef, (doc) => {
-            if (doc.exists() && doc.data().currentPlan) {
-                setCurrentPlan(doc.data().currentPlan);
-            }
-            setIsLoading(false);
-        });
-        return () => unsubscribe();
-    }, []);
+        if (!schoolInfoLoading && schoolInfo?.currentPlan) {
+            setCurrentPlan(schoolInfo.currentPlan);
+        }
+        setIsLoading(schoolInfoLoading);
+    }, [schoolInfo, schoolInfoLoading]);
 
     const subscriptionPlans = [
       {
@@ -230,12 +228,10 @@ export default function BillingPage() {
         } else if (plan.priceGHS > 0) {
              router.push(`/billing/purchase?purchaseType=subscription&bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
         } else {
-            // For free plan or other non-purchase actions
             setSelectedPlan(plan);
-            // Send SMS notification for free plan selection
             if (plan.id === 'free') {
                 const message = `A user has selected the ${plan.name} plan. Please follow up.`;
-                await sendSms(['0536282694'], message);
+                await sendSms(['0536282694'], message, schoolInfo?.systemId);
                 toast({ title: "Request Sent", description: "A member of our team will contact you shortly." });
             }
         }
@@ -258,7 +254,7 @@ export default function BillingPage() {
                 });
 
             } else { // SMS
-                const result = await sendSms(['0536282694'], enterpriseSmsBody);
+                const result = await sendSms(['0536282694'], enterpriseSmsBody, schoolInfo?.systemId);
                 if (result.success) {
                     toast({
                         title: "Request Sent",
@@ -386,13 +382,3 @@ export default function BillingPage() {
         </>
     )
 }
-
-    
-
-      
-
-    
-
-
-
-

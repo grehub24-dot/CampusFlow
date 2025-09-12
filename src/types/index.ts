@@ -151,6 +151,7 @@ export type AdmissionSettings = {
 }
 
 export type SchoolInformation = {
+    systemId: string;
     schoolName: string;
     logoUrl?: string;
     address?: string;

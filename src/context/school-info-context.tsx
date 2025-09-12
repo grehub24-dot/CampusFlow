@@ -2,9 +2,10 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { SchoolInformation } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
 
 interface SchoolInfoContextType {
   schoolInfo: SchoolInformation | null;
@@ -22,6 +23,7 @@ export const SchoolInfoProvider: React.FC<{ children: React.ReactNode }> = ({
   const [schoolInfo, setSchoolInfo] = useState<SchoolInformation | null>({
     schoolName: 'CampusFlow',
     currentPlan: 'pro',
+    systemId: '',
   });
   const [loading, setLoading] = useState(true);
 
@@ -29,58 +31,34 @@ export const SchoolInfoProvider: React.FC<{ children: React.ReactNode }> = ({
     const schoolInfoDocRef = doc(db, 'settings', 'school-info');
     const billingDocRef = doc(db, 'settings', 'billing');
 
-    let schoolData: Partial<SchoolInformation> | null = null;
-    let billingData: Partial<SchoolInformation> | null = null;
-    
-    const updateState = () => {
-        if (schoolData !== null && billingData !== null) {
-            setSchoolInfo({
-                ...schoolData,
-                ...billingData
-            } as SchoolInformation)
-        }
-    }
+    const updateState = (
+      schoolData: Partial<SchoolInformation>,
+      billingData: Partial<SchoolInformation>
+    ) => {
+      let mergedInfo = { ...schoolData, ...billingData } as SchoolInformation;
+      if (!mergedInfo.systemId) {
+        // Generate and save a new systemId if it doesn't exist
+        const newId = `cf-${uuidv4().substring(0, 4)}-${uuidv4().substring(0, 4)}`;
+        mergedInfo.systemId = newId;
+        setDoc(schoolInfoDocRef, { systemId: newId }, { merge: true });
+      }
+      setSchoolInfo(mergedInfo);
+    };
 
-    const unsubscribeSchoolInfo = onSnapshot(
-      schoolInfoDocRef,
-      (doc) => {
-        schoolData = doc.data() as SchoolInformation;
-        updateState();
-      },
-      (error) => {
+    const unsubscribeSchoolInfo = onSnapshot(schoolInfoDocRef, (doc) => {
+        const schoolData = doc.data() || {};
+        onSnapshot(billingDocRef, (billingDoc) => {
+            const billingData = billingDoc.data() || {};
+            updateState(schoolData, billingData);
+            setLoading(false);
+        });
+    }, (error) => {
         console.error('Error fetching school info:', error);
-      }
-    );
-    
-    const unsubscribeBilling = onSnapshot(
-      billingDocRef,
-      (doc) => {
-        billingData = doc.data() as SchoolInformation;
-        updateState();
-      },
-      (error) => {
-        console.error('Error fetching billing info:', error);
-      }
-    )
-
-    // Initial load check
-    Promise.all([
-      new Promise(res => onSnapshot(schoolInfoDocRef, doc => { schoolData = doc.data() || {}; res(null) })),
-      new Promise(res => onSnapshot(billingDocRef, doc => { billingData = doc.data() || {}; res(null) }))
-    ]).finally(() => {
-        // Set a default plan if not found in db
-        const mergedInfo = { ...schoolData, ...billingData };
-        if (!mergedInfo.currentPlan) {
-          mergedInfo.currentPlan = 'pro';
-        }
-        setSchoolInfo(mergedInfo as SchoolInformation);
-        setLoading(false)
+        setLoading(false);
     });
-
 
     return () => {
         unsubscribeSchoolInfo();
-        unsubscribeBilling();
     };
   }, []);
 

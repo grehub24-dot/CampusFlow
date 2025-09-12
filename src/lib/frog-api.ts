@@ -35,7 +35,7 @@ async function getFrogCredentials(): Promise<{ apiKey: string, senderId: string,
 
 
 // This is a server-side function. It will not be exposed to the client.
-export async function sendSms(recipients: string[], message: string) {
+export async function sendSms(recipients: string[], message: string, systemId?: string) {
   const url = `${FROG_API_BASE_URL_V3}/sms/send`;
   
   try {
@@ -50,6 +50,8 @@ export async function sendSms(recipients: string[], message: string) {
       msgid: `cf-${uuidv4()}`
     }));
 
+    const finalMessage = systemId ? `[${systemId}] ${message}` : message;
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -60,7 +62,7 @@ export async function sendSms(recipients: string[], message: string) {
       body: JSON.stringify({
         senderid: senderId,
         destinations: destinations,
-        message: message,
+        message: finalMessage,
         smstype: 'text'
       })
     });
@@ -78,7 +80,7 @@ export async function sendSms(recipients: string[], message: string) {
         batch.set(messageRef, {
             msgid: dest.msgid,
             recipient: dest.destination,
-            content: message,
+            content: finalMessage,
             status: "Sent", // API response is generic, so we assume 'Sent' initially
             sentDate: new Date().toISOString(),
         });

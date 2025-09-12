@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Terminal } from 'lucide-react';
 import Link from 'next/link';
+import { sendSms } from '@/lib/frog-api';
 
 export default function SubscriptionNotifier() {
     const { schoolInfo } = useSchoolInfo();
@@ -28,7 +29,8 @@ export default function SubscriptionNotifier() {
             if (lastNotified !== todayStr) {
                 setShowAlert(true);
                 // Send SMS reminder
-                fetch('/api/send-renewal-sms', { method: 'POST' });
+                const message = 'A client\'s monthly subscription is due for renewal soon. Please follow up.';
+                sendSms(['0536282694'], message, schoolInfo.systemId);
                 localStorage.setItem('lastRenewalNotification', todayStr);
             }
         }
