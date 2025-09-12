@@ -16,6 +16,7 @@ import Image from 'next/image';
 import crypto from 'crypto';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { generateVerificationCode, verifyOtp } from '@/lib/frog-api';
+import Link from 'next/link';
 
 const momoProviders: MomoProvider[] = [
     { code: "MTN", name: "MTN Mobile Money" },
@@ -33,7 +34,8 @@ function PurchaseContent() {
     const [polling, setPolling] = useState(false);
     const [invoice, setInvoice] = useState<Invoice | null>(null);
     const [qrPayload, setQrPayload] = useState<string | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<'qr' | 'momo' | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState<'ghana-qr' | 'momo' | null>(null);
+    const [momoSubMethod, setMomoSubMethod] = useState<'qr' | 'manual'>('qr');
     const [selectedProvider, setSelectedProvider] = useState<MomoProvider['code'] | ''>('');
     const [phoneNumber, setPhoneNumber] = useState('0536282694');
     const [otp, setOtp] = useState('');
@@ -78,8 +80,8 @@ function PurchaseContent() {
         }
     };
     
-    const handleQrPayment = async () => {
-        setPaymentMethod('qr');
+    const handleGhanaQrPayment = async () => {
+        setPaymentMethod('ghana-qr');
         const inv = await createInvoice();
         if (inv) {
             setLoading(true);
@@ -92,7 +94,7 @@ function PurchaseContent() {
                 if (!res.ok) throw new Error('Failed to generate QR code');
                 const { qrPayload } = await res.json();
                 setQrPayload(qrPayload);
-                setStep(2);
+                setStep(4); // Go straight to polling step for Ghana QR
                 startPolling(inv.id);
             } catch (e) {
                 toast({ variant: 'destructive', title: 'Error', description: 'Could not generate QR code.' });
@@ -107,7 +109,7 @@ function PurchaseContent() {
         setPaymentMethod('momo');
         const inv = await createInvoice();
         if(inv) {
-            setStep(2);
+            setStep(2); // Go to MoMo OTP verification
         }
     }
     
@@ -141,7 +143,7 @@ function PurchaseContent() {
                 throw new Error('Invalid OTP. Please try again.');
             }
             toast({ title: "Verification Successful" });
-            setStep(3); // Move to manual instructions
+            setStep(3); // Move to MoMo payment options (QR or manual)
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Verification Failed', description: e.message });
         } finally {
@@ -208,8 +210,8 @@ function PurchaseContent() {
             case 1:
                 return (
                      <CardContent className="space-y-4">
-                        <Button variant="outline" className="w-full h-20 text-lg" onClick={handleQrPayment} disabled={loading}>
-                            {loading && paymentMethod === 'qr' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CreditCard className="mr-4 h-8 w-8" />}
+                        <Button variant="outline" className="w-full h-20 text-lg" onClick={handleGhanaQrPayment} disabled={loading}>
+                            {loading && paymentMethod === 'ghana-qr' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CreditCard className="mr-4 h-8 w-8" />}
                             Pay with GhanaPay QR
                         </Button>
                         <Button variant="outline" className="w-full h-20 text-lg" onClick={handleMomoPayment} disabled={loading}>
@@ -218,7 +220,7 @@ function PurchaseContent() {
                         </Button>
                     </CardContent>
                 );
-            case 2: // User Verification
+            case 2: // MoMo User Verification
                 return (
                      <CardContent className="space-y-6">
                         {!isOtpSent ? (
@@ -260,31 +262,52 @@ function PurchaseContent() {
                         )}
                     </CardContent>
                 );
-            case 3: // Manual Instructions
+            case 3: // MoMo Payment Method (QR or Manual)
                  return (
                     <CardContent className="space-y-4">
-                        <Alert>
-                            <AlertTitle>Action Required: Send Payment</AlertTitle>
-                            <AlertDescription>
-                                Please send **GHS {bundlePrice}** to the number below.
-                            </AlertDescription>
-                        </Alert>
-                        <div className="text-center p-4 border rounded-lg">
-                            <p className="text-sm text-muted-foreground">Merchant Number</p>
-                            <p className="text-2xl font-bold tracking-widest">{merchantNumber}</p>
-                        </div>
-                        <Card>
-                            <CardHeader><CardTitle className="text-base">Instructions (MTN *170#)</CardTitle></CardHeader>
-                            <CardContent className="text-sm space-y-2">
-                                <p>1. Dial **\*170#** on your phone.</p>
-                                <p>2. Select **1** for "Transfer Money".</p>
-                                <p>3. Select **1** for "MoMo User".</p>
-                                <p>4. Enter the merchant number: **{merchantNumber}**</p>
-                                <p>5. Enter the amount: **{bundlePrice}**</p>
-                                <p>6. Use reference: **{invoice?.reference || 'SMS Bundle'}**</p>
-                                <p>7. Enter your PIN to confirm.</p>
-                            </CardContent>
-                        </Card>
+                        {momoSubMethod === 'qr' ? (
+                             <div className="text-center space-y-4">
+                                <Alert>
+                                    <AlertTitle>Scan to Pay</AlertTitle>
+                                    <AlertDescription>
+                                        Scan the QR code with your Mobile Money app to pay **GHS {bundlePrice}**.
+                                    </AlertDescription>
+                                </Alert>
+                                <div className="relative w-48 h-48 mx-auto border rounded-lg p-2">
+                                    <Image src="https://appbiz.momo.africa/momo/kashme/233536282694" alt="MoMo QR Code" layout="fill" objectFit="contain" />
+                                </div>
+                                <Link href="https://appbiz.momo.africa/momo/kashme/233536282694" target="_blank" className="text-sm text-primary hover:underline">
+                                    Or click here to open payment link
+                                </Link>
+                                <Button variant="link" onClick={() => setMomoSubMethod('manual')}>Use manual instructions instead</Button>
+                            </div>
+                        ) : (
+                             <div>
+                                <Alert>
+                                    <AlertTitle>Action Required: Send Payment</AlertTitle>
+                                    <AlertDescription>
+                                        Please send **GHS {bundlePrice}** to the number below.
+                                    </AlertDescription>
+                                </Alert>
+                                <div className="text-center p-4 border rounded-lg my-4">
+                                    <p className="text-sm text-muted-foreground">Merchant Number</p>
+                                    <p className="text-2xl font-bold tracking-widest">{merchantNumber}</p>
+                                </div>
+                                <Card>
+                                    <CardHeader><CardTitle className="text-base">Instructions (MTN *170#)</CardTitle></CardHeader>
+                                    <CardContent className="text-sm space-y-2">
+                                        <p>1. Dial **\*170#** on your phone.</p>
+                                        <p>2. Select **1** for "Transfer Money".</p>
+                                        <p>3. Select **1** for "MoMo User".</p>
+                                        <p>4. Enter the merchant number: **{merchantNumber}**</p>
+                                        <p>5. Enter the amount: **{bundlePrice}**</p>
+                                        <p>6. Use reference: **{invoice?.reference || 'SMS Bundle'}**</p>
+                                        <p>7. Enter your PIN to confirm.</p>
+                                    </CardContent>
+                                </Card>
+                                 <Button variant="link" onClick={() => setMomoSubMethod('qr')}>Pay with QR code instead</Button>
+                            </div>
+                        )}
                         <Button className="w-full" onClick={handleStartPolling}>
                            I Have Sent The Money
                         </Button>
@@ -317,6 +340,14 @@ function PurchaseContent() {
         }
     };
     
+    const getStepTitle = () => {
+        if (step === 1) return 'Choose Payment Method';
+        if (step === 2) return 'Enter Details';
+        if (step === 3) return 'Complete Payment';
+        if (step === 4) return 'Confirming Payment';
+        if (step === 5) return 'Payment Successful';
+        return `Step ${step}`;
+    }
 
     return (
         <>
@@ -334,13 +365,7 @@ function PurchaseContent() {
                             </Button>
                         )}
                         <CardTitle className="text-center">
-                            Step {step}: {
-                                step === 1 ? 'Choose Payment Method' :
-                                step === 2 ? 'Enter Details' :
-                                step === 3 ? 'Send Payment Manually' :
-                                step === 4 ? 'Confirming Payment' :
-                                'Payment Successful'
-                            }
+                            {getStepTitle()}
                         </CardTitle>
                         <CardDescription className="text-center">
                             Total Amount: GHS {bundlePrice}
