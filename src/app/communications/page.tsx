@@ -383,7 +383,7 @@ export default function CommunicationsPage() {
   
   const currentTemplates = messageType === 'sms' ? smsTemplates : emailTemplates;
   const emailDisabled = schoolInfo?.currentPlan === 'free';
-  const smsDisabled = schoolInfo?.currentPlan === 'starter';
+  const smsDisabled = schoolInfo?.currentPlan === 'free';
   
   const whatsAppPlanDisabled = schoolInfo?.currentPlan !== 'pro' && schoolInfo?.currentPlan !== 'enterprise';
   const whatsAppConfigured = !!(integrationSettings?.whatsappAccessToken && integrationSettings?.whatsappPhoneNumberId);
@@ -413,7 +413,9 @@ export default function CommunicationsPage() {
             value={smsDisabled ? 'N/A' : balance.toLocaleString()}
             icon={Wallet}
             color={smsDisabled ? "text-muted-foreground" : "text-green-500"}
-            description={smsDisabled ? "Not available on Starter plan" : "Remaining SMS units"}
+            description={smsDisabled ? (
+                <Button variant="link" asChild className="p-0 h-auto text-xs"><Link href="/billing">Upgrade Plan</Link></Button>
+             ) : "Remaining SMS units"}
         />
         <StatCard
             title="WhatsApp Messaging"

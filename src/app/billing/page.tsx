@@ -149,7 +149,7 @@ export default function BillingPage() {
           { text: 'Supports up to 150 students', included: true },
           { text: 'Community support', included: true },
           { text: '1 user account', included: true },
-          { text: 'Basic SMS notifications (limited to 100/month)', included: false },
+          { text: 'SMS as a Pay-as-you-go service', included: false },
           { text: 'Automatic cloud backup', included: false },
           { text: 'Email notifications', included: false },
           { text: 'WhatsApp integration', included: false },
@@ -168,7 +168,7 @@ export default function BillingPage() {
         description: 'For growing schools that need more control.',
         features: [
           { text: 'Supports up to 300 students', included: true },
-          { text: 'Basic SMS notifications', included: true },
+          { text: 'SMS as a Pay-as-you-go service', included: true },
           { text: 'Up to 2 user accounts', included: true },
           { text: 'Community support', included: true },
           { text: 'Email-based support (48h response)', included: false },
@@ -190,7 +190,7 @@ export default function BillingPage() {
         features: [
           { text: 'Supports up to 500 students', included: true },
           { text: 'Weekly cloud backup (app + database)', included: true },
-          { text: 'Basic SMS notifications ', included: true },
+          { text: 'SMS as a Pay-as-you-go service', included: true },
           { text: 'Basic Email notifications (50/month)', included: true },
           { text: 'Email-based support (48h response)', included: true },
           { text: 'WhatsApp integration', included: true },
@@ -211,6 +211,7 @@ export default function BillingPage() {
         features: [
           { text: 'Unlimited students', included: true },
           { text: 'Real-time /Daily cloud backup', included: true },
+          { text: 'SMS as a Pay-as-you-go service', included: true },
           { text: 'Full email integration (1,000/month)', included: true },
           { text: 'Full WhatsApp integration', included: true },
           { text: 'Dedicated account manager', included: true },
@@ -385,5 +386,6 @@ export default function BillingPage() {
       
 
     
+
 
 
