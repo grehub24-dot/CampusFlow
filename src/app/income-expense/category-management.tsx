@@ -71,22 +71,23 @@ function CategoryForm({ onSubmit }: { onSubmit: SubmitHandler<FormValues> }) {
 }
 
 const defaultIncomeCategories = [
+    { name: 'Admission fees', type: 'income' as const },
+    { name: 'Book Sales (Continuing)', type: 'income' as const },
     { name: 'Canteen Fees', type: 'income' as const },
-    { name: 'Transport Fees', type: 'income' as const },
-    { name: 'School Fees (New Admissions)', type: 'income' as const },
-    { name: 'School Fees (Continuing)', type: 'income' as const },
-    { name: 'Book Sales', type: 'income' as const },
-    { name: 'Uniform Sales', type: 'income' as const },
-    { name: 'Printing & Photocopying', type: 'income' as const },
     { name: 'Miscellaneous Income', type: 'income' as const },
+    { name: 'Printing & Photocopying', type: 'income' as const },
+    { name: 'School Fees (Continuing)', type: 'income' as const },
+    { name: 'Transport Fees', type: 'income' as const },
+    { name: 'Uniform Sales (Continuing)', type: 'income' as const },
 ];
 
 const defaultExpenseCategories = [
     { name: 'Salary', type: 'expense' as const },
+    { name: 'Staff Deductions', type: 'expense' as const },
+    { name: 'Teachers Motivation', type: 'expense' as const },
     { name: 'Canteen Supplies', type: 'expense' as const },
     { name: 'Utilities (Water/Electricity)', type: 'expense' as const },
     { name: 'Transportation (Fuel/Maintenance)', type: 'expense' as const },
-    { name: 'Teacher Motivation/Allowances', type: 'expense' as const },
     { name: 'Administrative Costs', type: 'expense' as const },
     { name: 'Repairs & Maintenance', type: 'expense' as const },
     { name: 'Printing & Stationery', type: 'expense' as const },
