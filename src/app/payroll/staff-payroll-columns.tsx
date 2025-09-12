@@ -2,7 +2,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import type { StaffMember } from "@/types"
+import type { StaffArrears, StaffMember } from "@/types"
 import { Button } from "@/components/ui/button"
 
 type ColumnsProps = {
@@ -29,6 +29,15 @@ export const getStaffPayrollColumns = ({ onEdit }: ColumnsProps): ColumnDef<Staf
     accessorKey: "grossSalary",
     header: "Gross Salary (Annual)",
     cell: ({ row }) => formatCurrency(row.getValue("grossSalary"))
+  },
+  {
+    accessorKey: "arrears",
+    header: "Arrears",
+    cell: ({ row }) => {
+        const arrears = row.getValue("arrears") as StaffArrears[] | undefined;
+        const totalArrears = arrears?.reduce((sum, item) => sum + item.amount, 0) || 0;
+        return formatCurrency(totalArrears);
+    }
   },
   {
     id: "actions",
