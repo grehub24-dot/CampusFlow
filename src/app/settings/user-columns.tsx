@@ -47,6 +47,7 @@ export const userColumns: ColumnDef<User>[] = [
         "Admin": "default",
         "Teacher": "secondary",
         "Accountant": "outline",
+        "Support": "destructive",
       }[role] ?? "default" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
       return <Badge variant={variant}>{role}</Badge>
     }
