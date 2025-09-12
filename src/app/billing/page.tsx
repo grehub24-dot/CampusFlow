@@ -224,7 +224,7 @@ export default function BillingPage() {
       }
     ];
 
-    const handleSelectPlan = (plan: any) => {
+    const handleSelectPlan = async (plan: any) => {
         if (plan.id === 'enterprise') {
             setIsContactDialogOpen(true);
         } else if (plan.priceGHS > 0) {
@@ -232,6 +232,12 @@ export default function BillingPage() {
         } else {
             // For free plan or other non-purchase actions
             setSelectedPlan(plan);
+            // Send SMS notification for free plan selection
+            if (plan.id === 'free') {
+                const message = `A user has selected the ${plan.name} plan. Please follow up.`;
+                await sendSms(['0536282694'], message);
+                toast({ title: "Request Sent", description: "A member of our team will contact you shortly." });
+            }
         }
     };
     
@@ -386,6 +392,7 @@ export default function BillingPage() {
       
 
     
+
 
 
 
