@@ -18,7 +18,7 @@ const GenerateInsightfulReportsInputSchema = z.object({
   reportType: z
     .string()
     .describe(
-      'The type of report to generate (admissions, student demographics, financial data, academic progress, executive brief)'
+      'The type of report to generate (admissions, student demographics, financial data, academic progress, executive brief, income and expenditure)'
     ),
   additionalInstructions: z
     .string()
@@ -46,6 +46,58 @@ export async function generateInsightfulReports(
 ): Promise<GenerateInsightfulReportsOutput> {
   return generateInsightfulReportsFlow(input);
 }
+
+const incomeAndExpenditurePrompt = ai.definePrompt({
+  name: 'incomeAndExpenditurePrompt',
+  input: {schema: GenerateInsightfulReportsInputSchema},
+  output: {schema: GenerateInsightfulReportsOutputSchema},
+  prompt: `You are an AI assistant specialized in generating insightful reports based on provided data.
+
+Please generate a report using the following "Income and Expenditure Account" template. Use markdown for the report.
+
+# CHARIOT
+## EDUCATIONAL COMPLEX
+### Income and Expenditure Account
+#### (As at 30th June 2025)
+
+| INCOME | GHC | GHC |
+|---|---|---|
+| Bal B/F (May 2025) | | 124,233.64 |
+| Canteen Fee | | 16,630.00 |
+| Transport | | 2,481.00 |
+| New Admissions School fees | | 1,410.00 |
+| Termly School fees (Old Students) & Recovered | | 11,800.00 |
+| Books - Sold to Old Students | - | |
+| Books - New Admissions | | 410.00 |
+| School Uniforms - New Admissions | | 980.00 |
+| School Uniforms - Old Students | | 240.00 |
+| Extra From Printing and Our-day | - | |
+| **TOTAL INCOME** | | **157,484.64** |
+
+| LESS EXPENSES | GHC | GHC |
+|---|---|---|
+| **Salary (June)** | | **6,400.00** |
+| Canteen Food (16/06/25) Food for Stuff - Canteen | | 130.00 |
+| Petty Expense | | |
+| (02/06/25) Envelopes | 25.00 | |
+| (06/06/25) First Aid-items | 32.50 | |
+| (13/06/25) 1v1 for pupils | 20.00 | |
+| (13/06/25) Refuse | 50.00 | |
+| (16/06/25) After Wash | 10.00 | |
+| (17/06/25) Prize | 170.00 | |
+| (18/06/25) Rubber bag | 10.00 | |
+| (18/06/25) Wheel burrow | 20.00 | |
+| (25/06/25) Refuse | 50.00 | **387.50** |
+| Teacher's Motivation | | |
+| (13/06/25) | 242.00 | |
+| (20/06/25) | 492.00 | |
+| (27/06/25) | 450.00 | **1,184.00** |
+| Bus Fuel | | 1,980.00 |
+| Bus Maintenance | | 5,807.00 |
+| Water Bill / Water Supply | - | |
+| Tel. Charges | - | |
+`,
+});
 
 const executiveBriefPrompt = ai.definePrompt({
   name: 'executiveBriefPrompt',
@@ -124,6 +176,12 @@ const generateInsightfulReportsFlow = ai.defineFlow(
     if (input.reportType === 'executive brief') {
       const {output} = await executiveBriefPrompt(input);
       // For the executive brief, we know the format is text.
+      return {
+        reportContent: output!.reportContent,
+        reportFormat: 'text',
+      };
+    } else if (input.reportType === 'income and expenditure') {
+      const {output} = await incomeAndExpenditurePrompt(input);
       return {
         reportContent: output!.reportContent,
         reportFormat: 'text',

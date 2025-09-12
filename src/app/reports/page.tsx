@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState } from 'react';
@@ -88,6 +87,7 @@ export default function ReportsPage() {
                           <SelectItem value="financial data">Financial Data</SelectItem>
                           <SelectItem value="academic progress">Academic Progress</SelectItem>
                           <SelectItem value="executive brief">Executive Brief</SelectItem>
+                          <SelectItem value="income and expenditure">Income and Expenditure</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
