@@ -15,7 +15,7 @@ import type { Invoice, MomoProvider } from '@/types';
 import Image from 'next/image';
 import crypto from 'crypto';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { generateVerificationCode, verifyOtp } from '@/lib/frog-api';
+import { generateVerificationCode, verifyOtp, generateActivationCode } from '@/lib/frog-api';
 import Link from 'next/link';
 
 const momoProviders: MomoProvider[] = [
@@ -151,10 +151,22 @@ function PurchaseContent() {
         }
     }
 
-    const handleStartPolling = () => {
-        if (invoice) {
-            setStep(4);
-            startPolling(invoice.id);
+    const handleProceedToConfirmation = async () => {
+        if (!invoice) return;
+        setLoading(true);
+        setStep(4); // Show confirming payment screen
+        try {
+            const res = await generateActivationCode('0536282694');
+            if (res.status !== 'SUCCESS') {
+                throw new Error(res.message || 'Failed to send activation code.');
+            }
+            // Redirect to the final confirmation page
+            router.push(`/billing/confirm-purchase?invoiceId=${invoice.id}&credits=${bundleCredits}`);
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Error', description: e.message });
+            setStep(3); // Go back to payment step on failure
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -308,8 +320,8 @@ function PurchaseContent() {
                                  <Button variant="link" onClick={() => setMomoSubMethod('qr')}>Pay with QR code instead</Button>
                             </div>
                         )}
-                        <Button className="w-full" onClick={handleStartPolling}>
-                           I Have Sent The Money
+                        <Button className="w-full" onClick={handleProceedToConfirmation} disabled={loading}>
+                           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'I Have Sent The Money'}
                         </Button>
                     </CardContent>
                 );
