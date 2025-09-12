@@ -11,6 +11,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Student, SchoolClass, Message, Invoice as InvoiceType, MomoProvider, CommunicationTemplate, Bundle, IntegrationSettings } from '@/types';
 import { sendSms, generateVerificationCode, verifyOtp } from '@/lib/frog-api';
+import { processEmailQueue } from '@/lib/email-sender';
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -319,7 +320,7 @@ export default function CommunicationsPage() {
             setIsSubmitting(false);
             return;
         }
-        // Save to 'queuedEmails' collection instead of 'mail'
+        // Save to 'queuedEmails' collection
         const batch = writeBatch(db);
         uniqueRecipients.forEach(email => {
             const mailRef = doc(collection(db, "queuedEmails"));
@@ -335,8 +336,18 @@ export default function CommunicationsPage() {
 
         toast({
           title: 'Emails Queued',
-          description: `Emails for ${uniqueRecipients.length} recipients have been queued for sending.`,
+          description: `Emails for ${uniqueRecipients.length} recipients are being processed.`,
         });
+
+        // Trigger the email processing
+        processEmailQueue().then(result => {
+            if (result.success) {
+                toast({ title: 'Email Queue Processed', description: result.message });
+            } else {
+                toast({ variant: 'destructive', title: 'Email Processing Failed', description: result.message });
+            }
+        });
+
       } else if (values.messageType === 'whatsapp') {
         const res = await fetch('/api/send-whatsapp', {
             method: 'POST',
