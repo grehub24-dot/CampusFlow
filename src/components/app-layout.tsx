@@ -46,6 +46,7 @@ import { cn } from '@/lib/utils';
 import { useSchoolInfo } from '@/context/school-info-context';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
+import SubscriptionNotifier from './subscription-notifier';
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -215,6 +216,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col min-h-screen">
           <Header />
           <main className="flex-1 p-4 sm:p-6 bg-background">
+            <SubscriptionNotifier />
             {children}
           </main>
         </div>
