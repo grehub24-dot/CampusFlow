@@ -143,12 +143,17 @@ function UserProfile() {
 
 function Header() {
   const { schoolInfo, loading } = useSchoolInfo();
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 sm:px-6">
         <SidebarTrigger />
         <div className="flex-1">
-             {loading ? (
+             {(!isClient || loading) ? (
                 <Skeleton className="h-6 w-24 rounded-md" />
             ) : (
                 <div className="flex items-center gap-2">
