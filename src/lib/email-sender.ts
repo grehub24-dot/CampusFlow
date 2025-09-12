@@ -3,14 +3,21 @@
 
 import { collection, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { db } from "./firebase";
+import nodemailer from 'nodemailer';
+
+// Configure the Nodemailer transporter using Google SMTP
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'nsxorasystems@gmail.com',
+        pass: process.env.GMAIL_APP_PASSWORD, // Use environment variable for security
+    },
+});
 
 /**
- * NOTE: This is a placeholder for a real email sending service.
- * In a production environment, this function would be part of a serverless function
- * (e.g., a Google Cloud Function) that triggers when a new document is added to the 'queuedEmails' collection.
- * 
- * This function would then use an SMTP service like Nodemailer with Google SMTP, SendGrid, or another provider
- * to dispatch the emails.
+ * NOTE: This function can be called to process the email queue.
+ * In a production environment, you might set up a cron job or a
+ * recurring task to call this function periodically.
  */
 export async function processEmailQueue() {
     console.log("Checking for queued emails...");
@@ -19,41 +26,43 @@ export async function processEmailQueue() {
 
     if (querySnapshot.empty) {
         console.log("No queued emails to send.");
-        return;
+        return { success: true, message: "No emails in queue." };
     }
 
     const batch = writeBatch(db);
+    let sentCount = 0;
+    let failedCount = 0;
 
-    querySnapshot.forEach(docSnap => {
+    const emailPromises = querySnapshot.docs.map(async (docSnap) => {
         const emailData = docSnap.data();
-        
-        // ---- REAL EMAIL SENDING LOGIC WOULD GO HERE ----
-        // Example using a hypothetical 'sendEmail' function:
-        //
-        // try {
-        //   await sendEmail({
-        //     to: emailData.to,
-        //     subject: emailData.subject,
-        //     html: emailData.html
-        //   });
-        //   batch.update(docSnap.ref, { status: "sent" });
-        // } catch (error) {
-        //   console.error("Failed to send email:", error);
-        //   batch.update(docSnap.ref, { status: "failed", error: error.message });
-        // }
-        // ---------------------------------------------
-        
-        // For now, we'll just simulate success by logging and updating the status.
-        console.log(`Simulating sending email to: ${emailData.to}`);
-        console.log(`Subject: ${emailData.subject}`);
-        
-        batch.update(docSnap.ref, { status: "sent" });
+        const mailOptions = {
+            from: '"CampusFlow" <nsxorasystems@gmail.com>',
+            to: emailData.to,
+            subject: emailData.subject,
+            html: emailData.html,
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log(`Email sent successfully to: ${emailData.to}`);
+            batch.update(docSnap.ref, { status: "sent", sentAt: new Date().toISOString() });
+            sentCount++;
+        } catch (error) {
+            console.error(`Failed to send email to ${emailData.to}:`, error);
+            batch.update(docSnap.ref, { status: "failed", error: (error as Error).message });
+            failedCount++;
+        }
     });
+
+    await Promise.all(emailPromises);
 
     try {
         await batch.commit();
-        console.log(`Processed ${querySnapshot.size} emails.`);
+        const message = `Processed ${querySnapshot.size} emails. Sent: ${sentCount}, Failed: ${failedCount}.`;
+        console.log(message);
+        return { success: true, message };
     } catch (error) {
         console.error("Error updating email statuses:", error);
+        return { success: false, message: "Error updating email statuses in Firestore." };
     }
 }
