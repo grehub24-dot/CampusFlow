@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -24,8 +23,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { PlusCircle } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -56,18 +54,6 @@ export function UserTable<TData, TValue>({
 
   return (
     <Card>
-        <CardHeader>
-            <div className="flex items-center justify-between">
-                <div>
-                    <CardTitle>User Management</CardTitle>
-                    <CardDescription>Manage all users with access to the system.</CardDescription>
-                </div>
-                 <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add User
-                </Button>
-            </div>
-        </CardHeader>
       <CardContent>
         <div className="flex items-center py-4 gap-2">
             <Input
