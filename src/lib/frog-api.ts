@@ -114,9 +114,9 @@ export async function generateVerificationCode(phoneNumber: string): Promise<Otp
         number: phoneNumber,
         expiry: 5, // 5 minutes
         length: 6,
-        messagetemplate: 'Your verification code for CompusFlow is: %OTPCODE%. It expires in %EXPIRY% minutes.',
+        messagetemplate: 'Your verification code for CampusFlow is: %OTPCODE%. It expires in %EXPIRY% minutes.',
         type: 'NUMERIC',
-        senderid: 'CFlow OTP',
+        senderid: 'Nexora OTP',
       }),
     });
 
@@ -152,9 +152,9 @@ export async function generateActivationCode(phoneNumber: string): Promise<OtpRe
         number: phoneNumber,
         expiry: 20, // 20 minutes
         length: 8,
-        messagetemplate: 'Your activation code for CompusFlow is: %OTPCODE%. It expires in %EXPIRY% minutes.',
+        messagetemplate: 'Your activation code for CampusFlow is: %OTPCODE%. It expires in %EXPIRY% minutes.',
         type: 'NUMERIC',
-        senderid: 'CFlow Pay',
+        senderid: 'Nexora Pay',
       }),
     });
 

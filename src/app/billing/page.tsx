@@ -222,22 +222,20 @@ export default function BillingPage() {
       }
     ];
 
-    const handleSelectPlan = async (plan: any) => {
+    const handleSelectPlan = (plan: any) => {
         if (plan.id === 'enterprise') {
             setIsContactDialogOpen(true);
         } else if (plan.priceGHS > 0) {
              router.push(`/billing/purchase?purchaseType=subscription&bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
         } else {
             setSelectedPlan(plan);
-            if (plan.id === 'free') {
-                const message = `A user has selected the ${plan.name} plan. Please follow up.`;
-                await sendSms(['0536282694'], message, schoolInfo?.systemId);
-                toast({ title: "Request Sent", description: "A member of our team will contact you shortly." });
-            }
+             if (plan.id === 'free') {
+                handleContact('sms', 'A user has selected the Free Tier plan. Please follow up.');
+             }
         }
     };
     
-    const handleContact = async (method: 'sms' | 'email') => {
+    const handleContact = async (method: 'sms' | 'email', smsMessage: string = enterpriseSmsBody) => {
         setIsProcessing(true);
         try {
             if (method === 'email') {
@@ -254,11 +252,11 @@ export default function BillingPage() {
                 });
 
             } else { // SMS
-                const result = await sendSms(['0536282694'], enterpriseSmsBody, schoolInfo?.systemId);
+                const result = await sendSms(['0536282694'], smsMessage, schoolInfo?.systemId);
                 if (result.success) {
                     toast({
                         title: "Request Sent",
-                        description: "Your request has been sent via SMS. We will contact you shortly."
+                        description: "Your request has been sent. We will contact you shortly."
                     });
                 } else {
                     throw new Error(result.error || "Failed to send SMS.");
