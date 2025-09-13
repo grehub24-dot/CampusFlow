@@ -1,5 +1,4 @@
 
-
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -23,6 +22,7 @@ export type Student = {
   guardianEmail?: string;
   previousSchool?: string;
   notes?: string;
+  studentType?: 'New Admission' | 'Continuing';
 
   // For fee calculation logic
   isNewAdmission?: boolean;
@@ -264,3 +264,5 @@ export type FinancialSummaryItem = {
     category: string;
     total: number;
 }
+
+    

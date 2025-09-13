@@ -115,69 +115,83 @@ export default function StudentsPage() {
   }, [toast]);
 
   const studentsWithStatus = React.useMemo(() => {
-    if (!currentTerm || feeItems.length === 0 || feeStructures.length === 0) {
-      return students.map(s => ({ ...s, paymentStatus: 'Pending' as const }));
+    if (!currentTerm || feeItems.length === 0) {
+        return students.map(s => ({
+            ...s,
+            paymentStatus: 'Pending' as const,
+            studentType: 'Continuing' as const
+        }));
     }
 
+    const termStartDate = new Date(currentTerm.startDate);
+    const termEndDate = new Date(currentTerm.endDate);
+
     return students.map(student => {
-      const structure = feeStructures.find(fs => fs.classId === student.classId && fs.academicTermId === currentTerm.id);
-      if (!structure || !Array.isArray(structure.items)) {
-        return { ...student, paymentStatus: 'Unpaid' as const };
-      }
+        const studentType = student.admissionDate && new Date(student.admissionDate) >= termStartDate && new Date(student.admissionDate) <= termEndDate
+            ? 'New Admission' as const
+            : 'Continuing' as const;
 
-      const isNew = student.admissionTerm === currentTerm.session && student.admissionYear === currentTerm.academicYear;
-      const termNumber = parseInt(currentTerm.session.split(' ')[0], 10);
-      
-      const studentPaymentsForTerm = payments.filter(p => p.studentId === student.id && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session);
-      const paidItemNames = new Set(studentPaymentsForTerm.flatMap(p => p.items?.map(i => i.name) || []));
+        if (feeStructures.length === 0) {
+            return { ...student, studentType, paymentStatus: 'Unpaid' as const };
+        }
 
-      const totalDue = structure.items.map(item => {
-          const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
-          if (!feeItemInfo) return 0;
-          
-          let isApplicable = false;
-          if (!feeItemInfo.isOptional) {
-              const appliesToNew = feeItemInfo.appliesTo.includes('new');
-              const appliesToTerm1 = feeItemInfo.appliesTo.includes('term1');
-              const appliesToTerm23 = feeItemInfo.appliesTo.includes('term2_3');
+        const structure = feeStructures.find(fs => fs.classId === student.classId && fs.academicTermId === currentTerm.id);
+        if (!structure || !Array.isArray(structure.items)) {
+            return { ...student, studentType, paymentStatus: 'Unpaid' as const };
+        }
 
-              if (isNew) {
-                  if (appliesToNew || (termNumber === 1 && appliesToTerm1) || (termNumber > 1 && appliesToTerm23)) {
-                      isApplicable = true;
-                  }
-              } else {
-                  if ((termNumber === 1 && appliesToTerm1) || (termNumber > 1 && appliesToTerm23)) {
-                      isApplicable = true;
-                  }
-              }
-          }
-          
-          if (feeItemInfo.isOptional && paidItemNames.has(feeItemInfo.name)) {
-              isApplicable = true;
-          }
-          
-          return isApplicable ? item.amount : 0;
-        })
-        .reduce((total, amount) => total + amount, 0);
-      
-      if (totalDue === 0) {
-        return { ...student, paymentStatus: 'Paid' as const };
-      }
+        const isNew = student.admissionTerm === currentTerm.session && student.admissionYear === currentTerm.academicYear;
+        const termNumber = parseInt(currentTerm.session.split(' ')[0], 10);
+        
+        const studentPaymentsForTerm = payments.filter(p => p.studentId === student.id && p.academicYear === currentTerm.academicYear && p.term === currentTerm.session);
+        const paidItemNames = new Set(studentPaymentsForTerm.flatMap(p => p.items?.map(i => i.name) || []));
 
-      const totalPaid = studentPaymentsForTerm.reduce((sum, p) => sum + p.amount, 0);
+        const totalDue = structure.items.map(item => {
+            const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
+            if (!feeItemInfo) return 0;
+            
+            let isApplicable = false;
+            if (!feeItemInfo.isOptional) {
+                const appliesToNew = feeItemInfo.appliesTo.includes('new');
+                const appliesToTerm1 = feeItemInfo.appliesTo.includes('term1');
+                const appliesToTerm23 = feeItemInfo.appliesTo.includes('term2_3');
 
-      let status: 'Paid' | 'Part-Payment' | 'Unpaid';
-      if (totalPaid >= totalDue) {
-        status = 'Paid';
-      } else if (totalPaid > 0) {
-        status = 'Part-Payment';
-      } else {
-        status = 'Unpaid';
-      }
-      
-      return { ...student, paymentStatus: status };
+                if (isNew) {
+                    if (appliesToNew || (termNumber === 1 && appliesToTerm1) || (termNumber > 1 && appliesToTerm23)) {
+                        isApplicable = true;
+                    }
+                } else {
+                    if ((termNumber === 1 && appliesToTerm1) || (termNumber > 1 && appliesToTerm23)) {
+                        isApplicable = true;
+                    }
+                }
+            }
+            
+            if (feeItemInfo.isOptional && paidItemNames.has(feeItemInfo.name)) {
+                isApplicable = true;
+            }
+            
+            return isApplicable ? item.amount : 0;
+            }).reduce((total, amount) => total + amount, 0);
+        
+        if (totalDue === 0) {
+            return { ...student, studentType, paymentStatus: 'Paid' as const };
+        }
+
+        const totalPaid = studentPaymentsForTerm.reduce((sum, p) => sum + p.amount, 0);
+
+        let status: 'Paid' | 'Part-Payment' | 'Unpaid';
+        if (totalPaid >= totalDue) {
+            status = 'Paid';
+        } else if (totalPaid > 0) {
+            status = 'Part-Payment';
+        } else {
+            status = 'Unpaid';
+        }
+        
+        return { ...student, studentType, paymentStatus: status };
     });
-  }, [students, payments, feeStructures, feeItems, currentTerm]);
+}, [students, payments, feeStructures, feeItems, currentTerm]);
 
   const handleEditStudent = (student: Student) => {
     setSelectedStudent(student);
@@ -415,8 +429,8 @@ export default function StudentsPage() {
 
                         let admissionId = student.admissionId;
                         if (!admissionId) {
-                            const prefix = "CEC-";
-                            let maxNumber = 0;
+                           const prefix = "CEC-";
+                           let maxNumber = 0;
                             allStudentsSnapshot.forEach(doc => {
                                 const lastAdmissionId = doc.data().admissionId as string;
                                 if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
@@ -429,10 +443,7 @@ export default function StudentsPage() {
                                     }
                                 }
                             });
-                            // Also check new students being added in this same batch
-                            // This part is complex to handle within a single transaction without external state.
-                            // A simpler approach for now is to rely on a global max, which might have race conditions on simultaneous imports.
-                            const nextNumber = maxNumber + 1 + (newStudents.length - (importedCount + failedCount) - 1);
+                            const nextNumber = maxNumber + 1 + importedCount;
                             admissionId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
                         }
                         
@@ -685,3 +696,5 @@ export default function StudentsPage() {
     </>
   );
 }
+
+    

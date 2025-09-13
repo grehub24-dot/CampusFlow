@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
@@ -136,6 +135,13 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay, onStatusCha
     },
   },
   {
+    accessorKey: "studentType",
+    header: "Student Type",
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id));
+    },
+  },
+  {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
@@ -197,3 +203,5 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay, onStatusCha
     },
   },
 ]
+
+    

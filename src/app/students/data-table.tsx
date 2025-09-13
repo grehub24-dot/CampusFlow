@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import * as React from "react"
@@ -65,6 +64,12 @@ const paymentStatusOptions = [
     { label: "Part-Payment", value: "Part-Payment" },
 ]
 
+const studentTypeOptions = [
+    { label: "New Admission", value: "New Admission" },
+    { label: "Continuing", value: "Continuing" },
+];
+
+
 export function DataTable({
   data,
   onEdit,
@@ -78,6 +83,7 @@ export function DataTable({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
     guardianPhone: false,
+    studentType: false,
   })
   const [rowSelection, setRowSelection] = React.useState({})
   const [classes, setClasses] = React.useState<SchoolClass[]>([]);
@@ -155,6 +161,11 @@ export function DataTable({
                 column={table.getColumn("class")}
                 title="Class"
                 options={classOptions}
+            />
+            <DataTableFacetedFilter
+                column={table.getColumn("studentType")}
+                title="Student Type"
+                options={studentTypeOptions}
             />
             <div className="ml-auto flex items-center gap-2">
                 {table.getFilteredSelectedRowModel().rows.length > 0 && (
@@ -266,3 +277,5 @@ export function DataTable({
     </Card>
   )
 }
+
+    
