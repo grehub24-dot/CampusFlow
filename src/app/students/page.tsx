@@ -434,7 +434,7 @@ export default function StudentsPage() {
                             allStudentsSnapshot.forEach(doc => {
                                 const lastAdmissionId = doc.data().admissionId as string;
                                 if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
-                                    const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
+                                    const lastNumberMatch = lastAdmissionId.match(/(\\d+)$/);
                                     if (lastNumberMatch) {
                                         const currentNum = parseInt(lastNumberMatch[0], 10);
                                         if (currentNum > maxNumber) {
@@ -502,7 +502,7 @@ export default function StudentsPage() {
   }
 
 
-  const newAdmissions = React.useMemo(() => {
+  const newAdmissionsCount = React.useMemo(() => {
     if (!currentTerm) return 0;
     
     const termStartDate = new Date(currentTerm.startDate);
@@ -520,7 +520,8 @@ export default function StudentsPage() {
     total: students.length,
     male: students.filter(s => s.gender === 'Male').length,
     female: students.filter(s => s.gender === 'Female').length,
-    newAdmissions: newAdmissions,
+    newAdmissions: newAdmissionsCount,
+    continuing: students.length - newAdmissionsCount,
   };
 
 
@@ -573,7 +574,7 @@ export default function StudentsPage() {
         </div>
       </PageHeader>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5 mb-6">
         <StatCard 
             title="Total Students"
             value={studentStats.total.toLocaleString()}
@@ -586,6 +587,12 @@ export default function StudentsPage() {
             icon={UserPlus}
             color="text-green-500"
             description="This Term"
+        />
+         <StatCard 
+            title="Continuing Students"
+            value={studentStats.continuing.toLocaleString()}
+            icon={Users}
+            color="text-blue-500"
         />
         <StatCard 
             title="Male Students"
@@ -696,5 +703,7 @@ export default function StudentsPage() {
     </>
   );
 }
+
+    
 
     
