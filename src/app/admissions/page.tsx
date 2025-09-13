@@ -510,34 +510,23 @@ export default function AdmissionsPage() {
 
         await runTransaction(db, async (transaction) => {
             const studentsCollectionRef = collection(db, "students");
-            
-            const yearPart = currentTerm.academicYear.slice(2, 4);
-            const termPart = `T${currentTerm.session.split(' ')[0]}`;
-            const prefix = `${yearPart}-${termPart}-`;
+            const prefix = "CEC-";
 
-            const termQuery = query(
-                studentsCollectionRef,
-                where("admissionYear", "==", currentTerm.academicYear),
-                where("admissionTerm", "==", currentTerm.session)
-            );
+            const allStudentsSnapshot = await getDocs(query(studentsCollectionRef));
             
-            const termSnapshot = await getDocs(termQuery);
-
             let maxNumber = 0;
-            if (!termSnapshot.empty) {
-                termSnapshot.docs.forEach(doc => {
-                    const lastAdmissionId = doc.data().admissionId as string;
-                    if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
-                        const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
-                        if (lastNumberMatch) {
-                            const currentNum = parseInt(lastNumberMatch[0], 10);
-                            if (currentNum > maxNumber) {
-                                maxNumber = currentNum;
-                            }
+            allStudentsSnapshot.forEach(doc => {
+                const lastAdmissionId = doc.data().admissionId as string;
+                if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
+                    const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
+                    if (lastNumberMatch) {
+                        const currentNum = parseInt(lastNumberMatch[0], 10);
+                        if (currentNum > maxNumber) {
+                            maxNumber = currentNum;
                         }
                     }
-                });
-            }
+                }
+            });
             const nextNumber = maxNumber + 1;
             
             const admissionId = `${prefix}${String(nextNumber).padStart(4, '0')}`;

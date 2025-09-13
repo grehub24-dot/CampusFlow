@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import React from 'react';
@@ -379,6 +378,7 @@ export default function StudentsPage() {
                 let importedCount = 0;
                 let failedCount = 0;
 
+                const allStudentsSnapshot = await getDocs(query(collection(db, "students")));
 
                 for (const student of newStudents) {
                     const studentClass = classes.find(c => c.name.trim().toLowerCase() === student.class?.trim().toLowerCase());
@@ -391,54 +391,48 @@ export default function StudentsPage() {
                     await runTransaction(db, async (transaction) => {
                         const newStudentDocRef = doc(collection(db, "students"));
                         
-                        const admissionDate = student.admissionDate ? new Date(student.admissionDate) : new Date();
+                        let admissionDate;
+                        if (student.admissionDate && !isNaN(new Date(student.admissionDate).getTime())) {
+                            admissionDate = new Date(student.admissionDate);
+                        } else {
+                            admissionDate = new Date();
+                        }
                         
                         let admissionTerm = allTerms.find(term => {
                             const termStart = new Date(term.startDate);
                             const termEnd = new Date(term.endDate);
-                            // Set time to 0 to compare dates only
                             termStart.setHours(0,0,0,0);
                             termEnd.setHours(23,59,59,999);
-                            admissionDate.setHours(12,0,0,0);
+                            const checkDate = new Date(admissionDate);
+                            checkDate.setHours(12,0,0,0);
 
-                            return admissionDate >= termStart && admissionDate <= termEnd;
+                            return checkDate >= termStart && checkDate <= termEnd;
                         });
 
-                        // Fallback to current term if no matching term is found
                         if (!admissionTerm) {
                             admissionTerm = currentTerm;
                         }
 
                         let admissionId = student.admissionId;
                         if (!admissionId) {
-                            const yearPart = admissionTerm.academicYear.slice(2, 4);
-                            const termPart = `T${admissionTerm.session.split(' ')[0]}`;
-                            const prefix = `${yearPart}-${termPart}-`;
-
-                            const termQuery = query(
-                                collection(db, "students"),
-                                where("admissionYear", "==", admissionTerm.academicYear),
-                                where("admissionTerm", "==", admissionTerm.session),
-                                limit(1000)
-                            );
-                            
-                            const lastStudentSnapshot = await getDocs(termQuery);
-
-                            let nextNumber = 1;
-                            if (!lastStudentSnapshot.empty) {
-                                let maxNumber = 0;
-                                lastStudentSnapshot.docs.forEach(doc => {
-                                    const lastAdmissionId = doc.data().admissionId as string;
-                                    if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
-                                        const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
-                                        if (lastNumberMatch) {
-                                            const currentNum = parseInt(lastNumberMatch[0], 10);
-                                            if (currentNum > maxNumber) maxNumber = currentNum;
+                            const prefix = "CEC-";
+                            let maxNumber = 0;
+                            allStudentsSnapshot.forEach(doc => {
+                                const lastAdmissionId = doc.data().admissionId as string;
+                                if (lastAdmissionId && lastAdmissionId.startsWith(prefix)) {
+                                    const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
+                                    if (lastNumberMatch) {
+                                        const currentNum = parseInt(lastNumberMatch[0], 10);
+                                        if (currentNum > maxNumber) {
+                                            maxNumber = currentNum;
                                         }
                                     }
-                                });
-                                nextNumber = maxNumber + 1;
-                            }
+                                }
+                            });
+                            // Also check new students being added in this same batch
+                            // This part is complex to handle within a single transaction without external state.
+                            // A simpler approach for now is to rely on a global max, which might have race conditions on simultaneous imports.
+                            const nextNumber = maxNumber + 1 + (newStudents.length - (importedCount + failedCount) - 1);
                             admissionId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
                         }
                         
@@ -679,4 +673,3 @@ export default function StudentsPage() {
     </>
   );
 }
-
