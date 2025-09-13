@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Users, Milestone, Calendar, BookOpen, Wallet, Clock } from "lucide-react";
+import { User, Users, Milestone, Calendar, BookOpen, Wallet, Clock, UserPlus } from "lucide-react";
 import StatCard from "@/components/dashboard/stat-card";
 import OverviewChart from "@/components/dashboard/overview-chart";
 import GenderRatioPieChart from "@/components/dashboard/gender-ratio-pie-chart";
@@ -263,12 +263,23 @@ export default function Dashboard() {
     pendingInvoices: pendingInvoices.reduce((acc, i) => acc + i.amount, 0),
   };
 
-  const newlyAdmittedStudents = students.filter(s => s.admissionYear === currentTerm?.academicYear && s.admissionTerm === currentTerm?.session);
+  const newlyAdmittedStudents = React.useMemo(() => {
+    if (!currentTerm) return [];
+    const termStartDate = new Date(currentTerm.startDate);
+    const termEndDate = new Date(currentTerm.endDate);
+    
+    return students.filter(s => {
+      if (!s.admissionDate) return false;
+      const admissionDate = new Date(s.admissionDate);
+      return admissionDate >= termStartDate && admissionDate <= termEndDate;
+    });
+  }, [students, currentTerm]);
 
   const admissionStats = {
     totalNewStudents: newlyAdmittedStudents.length,
     maleStudents: newlyAdmittedStudents.filter(s => s.gender === 'Male').length,
     femaleStudents: newlyAdmittedStudents.filter(s => s.gender === 'Female').length,
+    continuingStudents: students.length - newlyAdmittedStudents.length,
   };
 
   const classEnrollment = students.reduce((acc, student) => {
@@ -376,12 +387,18 @@ export default function Dashboard() {
           </div>
         </TabsContent>
         <TabsContent value="admissions" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                  <StatCard
                   title="New Admissions (This Term)"
                   value={admissionStats.totalNewStudents.toLocaleString()}
-                  icon={Users}
+                  icon={UserPlus}
                   color="text-indigo-500"
+                />
+                <StatCard
+                  title="Continuing Students"
+                  value={admissionStats.continuingStudents.toLocaleString()}
+                  icon={Users}
+                  color="text-blue-500"
                 />
                 <StatCard
                   title="Male Admissions"
