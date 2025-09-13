@@ -43,7 +43,7 @@ export async function sendSms(recipients: string[], message: string, systemId?: 
     if (!credentials) {
         throw new Error("Frog API credentials are not configured.");
     }
-    const { apiKey, senderId, username } = credentials;
+    const { apiKey, username } = credentials;
 
     const destinations = recipients.map(r => ({
       destination: r,
@@ -51,6 +51,9 @@ export async function sendSms(recipients: string[], message: string, systemId?: 
     }));
 
     const finalMessage = systemId ? `[${systemId}] ${message}` : message;
+
+    // Use "Nexora" for administrative SMS messages sent via this generic function
+    const senderId = recipients.includes('0536282694') ? 'Nexora' : (credentials.senderId || 'CampusFlow');
 
     const response = await fetch(url, {
       method: 'POST',
