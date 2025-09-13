@@ -46,8 +46,8 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
 
   const invoiceNumber = generateInvoiceNumber(invoice);
   
-  const paymentTermsText = schoolInfo.paymentTerms?.replace(/{{dueDate}}/g, format(new Date(invoice.dueDate || new Date()), 'dd MMM, yyyy')) || '';
-  const paymentMethodsHtml = schoolInfo.paymentMethods?.replace(/{{invoiceNumber}}/g, `<strong>${invoiceNumber}</strong>`).replace(/\n/g, '<br />') || '';
+  const paymentTermsText = (schoolInfo.paymentTerms || '').replace(/{{dueDate}}/g, format(new Date(invoice.dueDate || new Date()), 'dd MMM, yyyy'));
+  const paymentMethodsHtml = (schoolInfo.paymentMethods || '').replace(/{{invoiceNumber}}/g, `<strong>${invoiceNumber}</strong>`).replace(/\n/g, '<br />');
 
   const handleExport = () => {
     const input = document.getElementById('printable-invoice');
