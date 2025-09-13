@@ -441,7 +441,7 @@ export default function StudentsPage() {
                             guardianName: student.guardianName || '',
                             guardianPhone: student.guardianPhone || '',
                             guardianEmail: student.guardianEmail || '',
-                            admissionDate: new Date().toISOString(),
+                            admissionDate: student.admissionDate ? new Date(student.admissionDate).toISOString() : new Date().toISOString(),
                             admissionTerm: currentTerm.session,
                             admissionYear: currentTerm.academicYear,
                             status: student.status || 'Active',
@@ -522,7 +522,7 @@ export default function StudentsPage() {
                                <Download className="h-4 w-4" /> Download Sample CSV Template
                             </a>
                              <p className="text-muted-foreground mt-1">
-                                Required columns: firstName, lastName, class, gender, dateOfBirth. `admissionId` is optional.
+                                Required columns: firstName, lastName, class, gender, dateOfBirth, admissionDate. `admissionId` is optional.
                             </p>
                         </div>
                     </div>
@@ -631,7 +631,7 @@ export default function StudentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the {studentsToDelete.length} selected student(s).
+              This action cannot be undone. This will permanently delete the ${studentsToDelete.length} selected student(s).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
