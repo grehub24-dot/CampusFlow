@@ -37,6 +37,7 @@ import PaymentForm from '../payments/payment-form';
 
 export default function StudentsPage() {
   const [students, setStudents] = React.useState<Student[]>([]);
+  const [allTerms, setAllTerms] = React.useState<AcademicTerm[]>([]);
   const [currentTerm, setCurrentTerm] = React.useState<AcademicTerm | null>(null);
   const [classes, setClasses] = React.useState<SchoolClass[]>([]);
   const [feeStructures, setFeeStructures] = React.useState<FeeStructure[]>([]);
@@ -54,14 +55,13 @@ export default function StudentsPage() {
   const { toast } = useToast();
 
   React.useEffect(() => {
-    const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
-    const unsubscribeSettings = onSnapshot(academicTermsQuery, (snapshot) => {
-        if (!snapshot.empty) {
-            const termDoc = snapshot.docs[0];
-            setCurrentTerm({ id: termDoc.id, ...termDoc.data() } as AcademicTerm);
-        } else {
-            setCurrentTerm(null);
-        }
+    const allTermsQuery = query(collection(db, "academic-terms"));
+    const unsubscribeAllTerms = onSnapshot(allTermsQuery, (snapshot) => {
+        const termsData: AcademicTerm[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AcademicTerm));
+        setAllTerms(termsData);
+        
+        const current = termsData.find(t => t.isCurrent);
+        setCurrentTerm(current || null);
     });
 
     const studentsQuery = collection(db, "students");
@@ -106,7 +106,7 @@ export default function StudentsPage() {
 
     return () => {
       unsubscribe();
-      unsubscribeSettings();
+      unsubscribeAllTerms();
       unsubscribeClasses();
       unsubscribeFeeStructures();
       unsubscribePayments();
@@ -389,25 +389,36 @@ export default function StudentsPage() {
 
                     await runTransaction(db, async (transaction) => {
                         const newStudentDocRef = doc(collection(db, "students"));
-                        let admissionId = student.admissionId;
+                        
+                        const admissionDate = student.admissionDate ? new Date(student.admissionDate) : new Date();
+                        
+                        let admissionTerm = allTerms.find(term => {
+                            const termStart = new Date(term.startDate);
+                            const termEnd = new Date(term.endDate);
+                            return admissionDate >= termStart && admissionDate <= termEnd;
+                        });
 
+                        // Fallback to current term if no matching term is found
+                        if (!admissionTerm) {
+                            admissionTerm = currentTerm;
+                        }
+
+                        let admissionId = student.admissionId;
                         if (!admissionId) {
-                            // Format: YY-TT-9999
-                            const yearPart = currentTerm.academicYear.slice(2, 4);
-                            const termPart = `T${currentTerm.session.split(' ')[0]}`;
+                            const yearPart = admissionTerm.academicYear.slice(2, 4);
+                            const termPart = `T${admissionTerm.session.split(' ')[0]}`;
                             const prefix = `${yearPart}-${termPart}-`;
 
                             const termQuery = query(
                                 collection(db, "students"),
-                                where("admissionYear", "==", currentTerm.academicYear),
-                                where("admissionTerm", "==", currentTerm.session),
+                                where("admissionYear", "==", admissionTerm.academicYear),
+                                where("admissionTerm", "==", admissionTerm.session),
                                 limit(1000)
                             );
                             
                             const lastStudentSnapshot = await getDocs(termQuery);
 
                             let nextNumber = 1;
-
                             if (!lastStudentSnapshot.empty) {
                                 let maxNumber = 0;
                                 lastStudentSnapshot.docs.forEach(doc => {
@@ -416,15 +427,12 @@ export default function StudentsPage() {
                                         const lastNumberMatch = lastAdmissionId.match(/(\d+)$/);
                                         if (lastNumberMatch) {
                                             const currentNum = parseInt(lastNumberMatch[0], 10);
-                                            if (currentNum > maxNumber) {
-                                                maxNumber = currentNum;
-                                            }
+                                            if (currentNum > maxNumber) maxNumber = currentNum;
                                         }
                                     }
                                 });
                                 nextNumber = maxNumber + 1;
                             }
-                            
                             admissionId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
                         }
                         
@@ -441,9 +449,9 @@ export default function StudentsPage() {
                             guardianName: student.guardianName || '',
                             guardianPhone: student.guardianPhone || '',
                             guardianEmail: student.guardianEmail || '',
-                            admissionDate: student.admissionDate ? new Date(student.admissionDate).toISOString() : new Date().toISOString(),
-                            admissionTerm: currentTerm.session,
-                            admissionYear: currentTerm.academicYear,
+                            admissionDate: admissionDate.toISOString(),
+                            admissionTerm: admissionTerm.session,
+                            admissionYear: admissionTerm.academicYear,
                             status: student.status || 'Active',
                             paymentStatus: student.paymentStatus || 'Pending',
                             dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString() : new Date().toISOString(),
