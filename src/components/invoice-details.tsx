@@ -167,9 +167,9 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
             </div>
         </footer>
          <div className="invoice-final-footer">
-          <p>Powered by <strong>CompusFlow</strong></p>
+          <p>Powered by <strong>Nexora Systems</strong></p>
           <p>“Where code, connectivity & commerce flow together.”</p>
-          <p>- {schoolInfo.phone} -</p>
+          <p>+233 536 282 694 / +233 548 525 388</p>
         </div>
       </div>
 
