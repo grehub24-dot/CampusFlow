@@ -78,7 +78,7 @@ export default function StudentsPage() {
       setIsLoading(false);
     });
 
-    const classesQuery = collection(db, "classes");
+    const classesQuery = query(collection(db, "classes"));
     const unsubscribeClasses = onSnapshot(classesQuery, (snapshot) => {
       const classesData: SchoolClass[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SchoolClass));
       setClasses(classesData);
@@ -95,7 +95,7 @@ export default function StudentsPage() {
         setFeeItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeItem)));
     });
 
-    const paymentsQuery = collection(db, "payments");
+    const paymentsQuery = query(collection(db, "payments"));
     const unsubscribePayments = onSnapshot(paymentsQuery, (querySnapshot) => {
       const paymentsData: Payment[] = [];
       querySnapshot.forEach((doc) => {
@@ -491,7 +491,19 @@ export default function StudentsPage() {
   }
 
 
-  const newAdmissions = currentTerm ? students.filter(s => s.admissionTerm === currentTerm.session && s.admissionYear === currentTerm.academicYear).length : 0;
+  const newAdmissions = React.useMemo(() => {
+    if (!currentTerm) return 0;
+    
+    const termStartDate = new Date(currentTerm.startDate);
+    const termEndDate = new Date(currentTerm.endDate);
+    
+    return students.filter(s => {
+      if (!s.admissionDate) return false;
+      const admissionDate = new Date(s.admissionDate);
+      return admissionDate >= termStartDate && admissionDate <= termEndDate;
+    }).length;
+  }, [students, currentTerm]);
+
 
   const studentStats = {
     total: students.length,
