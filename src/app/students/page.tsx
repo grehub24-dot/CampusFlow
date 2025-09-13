@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React from 'react';
@@ -395,6 +396,11 @@ export default function StudentsPage() {
                         let admissionTerm = allTerms.find(term => {
                             const termStart = new Date(term.startDate);
                             const termEnd = new Date(term.endDate);
+                            // Set time to 0 to compare dates only
+                            termStart.setHours(0,0,0,0);
+                            termEnd.setHours(23,59,59,999);
+                            admissionDate.setHours(12,0,0,0);
+
                             return admissionDate >= termStart && admissionDate <= termEnd;
                         });
 
@@ -673,3 +679,4 @@ export default function StudentsPage() {
     </>
   );
 }
+
