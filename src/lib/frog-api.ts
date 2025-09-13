@@ -157,7 +157,7 @@ export async function generateActivationCode(phoneNumber: string): Promise<OtpRe
         length: 8,
         messagetemplate: 'Your activation code for CampusFlow is: %OTPCODE%. It expires in %EXPIRY% minutes.',
         type: 'NUMERIC',
-        senderid: 'Nexora Pay',
+        senderid: 'NexoraPay',
       }),
     });
 
