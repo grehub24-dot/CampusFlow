@@ -153,7 +153,7 @@ export async function generateActivationCode(phoneNumber: string): Promise<OtpRe
       },
       body: JSON.stringify({
         number: phoneNumber,
-        expiry: 20, // 20 minutes
+        expiry: 15, // 15 minutes
         length: 8,
         messagetemplate: 'Your activation code for CampusFlow is: %OTPCODE%. It expires in %EXPIRY% minutes.',
         type: 'NUMERIC',

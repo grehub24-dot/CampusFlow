@@ -35,7 +35,7 @@ const whyNexoraFeatures = [
     {
         icon: Mail,
         title: "Flexible Communication",
-        description: "Built-in email tools (SMS optional) to keep parents informed."
+        description: "Built-in SMS tools (Email optional) to keep parents informed."
     },
     {
         icon: Scaling,
