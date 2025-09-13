@@ -168,8 +168,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
         </footer>
          <div className="invoice-final-footer">
           <p>Powered by <strong>Nexora Systems</strong></p>
-          <p>“Where code, connectivity & commerce flow together.”</p>
-          <p>+233 536 282 694 / +233 548 525 388</p>
+          <p>“Where code, connectivity & commerce flow together.” +233 536 282 694 / +233 548 525 388</p>
         </div>
       </div>
 
