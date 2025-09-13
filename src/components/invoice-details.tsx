@@ -99,8 +99,9 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
                     {schoolInfo.phone}
                 </div>
             </div>
-            <div className="invoice-title">
+            <div className="invoice-title text-right">
                 <h1>INVOICE</h1>
+                <p>Invoice #: <strong>{invoiceNumber}</strong></p>
             </div>
         </header>
 
@@ -116,7 +117,6 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
             <div className="invoice-dates">
                 <table>
                     <tbody>
-                        <tr><th>Invoice #</th><td>{invoiceNumber}</td></tr>
                         <tr><th>Issue Date</th><td>{format(new Date(), 'dd MMM, yyyy')}</td></tr>
                         <tr><th>Due Date</th><td>{format(new Date(invoice.dueDate || new Date()), 'dd MMM, yyyy')}</td></tr>
                     </tbody>
