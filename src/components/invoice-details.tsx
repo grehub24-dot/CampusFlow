@@ -55,11 +55,11 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
       html2canvas(input, { scale: 2 }) // Increase scale for better resolution
         .then((canvas) => {
           const imgData = canvas.toDataURL('image/png');
-          // A5 dimensions in mm: 148 x 210
+          // A4 dimensions in mm: 210 x 297
           const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'mm',
-            format: 'a5'
+            format: 'a4'
           });
           const pdfWidth = pdf.internal.pageSize.getWidth();
           const pdfHeight = pdf.internal.pageSize.getHeight();
