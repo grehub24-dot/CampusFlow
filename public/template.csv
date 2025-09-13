@@ -1,5 +1,3 @@
-admissionId,firstName,lastName,dateOfBirth,gender,class,guardianName,guardianPhone,guardianEmail
-,John,Doe,2015-08-12,Male,Kindergarten 1,Jane Doe,0244444444,jane.doe@example.com
-,Mary,Smith,2014-06-22,Female,Kindergarten 2,Peter Smith,0200000000,
-
-    
+admissionId,firstName,lastName,dateOfBirth,gender,class,guardianName,guardianPhone,guardianEmail,admissionDate
+,John,Doe,2015-08-12,Male,Kindergarten 1,Jane Doe,0244444444,jane.doe@example.com,2024-09-01
+,Mary,Smith,2014-06-22,Female,Kindergarten 2,Peter Smith,0200000000,,2024-09-01
