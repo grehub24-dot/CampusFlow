@@ -471,13 +471,22 @@ export default function AdmissionsPage() {
         where("admissionTerm", "==", currentTerm.session)
     );
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const students: Student[] = [];
+      const studentsFromDb: Student[] = [];
       querySnapshot.forEach((doc) => {
-        students.push({ id: doc.id, ...doc.data() } as Student);
+        studentsFromDb.push({ id: doc.id, ...doc.data() } as Student);
       });
-      // Sort client-side
-      students.sort((a, b) => (b.admissionId || "").localeCompare(a.admissionId || ""));
-      setAdmittedStudents(students);
+      
+      const termStartDate = new Date(currentTerm.startDate);
+      const termEndDate = new Date(currentTerm.endDate);
+
+      const trulyNewAdmissions = studentsFromDb.filter(student => {
+        if (!student.admissionDate) return false;
+        const admissionDate = new Date(student.admissionDate);
+        return admissionDate >= termStartDate && admissionDate <= termEndDate;
+      });
+
+      trulyNewAdmissions.sort((a, b) => (b.admissionId || "").localeCompare(a.admissionId || ""));
+      setAdmittedStudents(trulyNewAdmissions);
       setIsTableLoading(false);
     }, (error) => {
       console.error("Error fetching students:", error);
@@ -755,3 +764,5 @@ export default function AdmissionsPage() {
     </>
   );
 }
+
+    
