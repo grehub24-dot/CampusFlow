@@ -38,7 +38,7 @@ function PurchaseContent() {
     const [paymentMethod, setPaymentMethod] = useState<'ghana-qr' | 'momo' | null>(null);
     const [momoSubMethod, setMomoSubMethod] = useState<'qr' | 'manual'>('qr');
     const [selectedProvider, setSelectedProvider] = useState<MomoProvider['code'] | ''>('');
-    const [phoneNumber, setPhoneNumber] = useState('0536282694');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [otp, setOtp] = useState('');
     const [isOtpSent, setIsOtpSent] = useState(false);
 

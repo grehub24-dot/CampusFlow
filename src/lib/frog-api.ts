@@ -119,7 +119,7 @@ export async function generateVerificationCode(phoneNumber: string): Promise<Otp
         length: 6,
         messagetemplate: 'Your verification code for CampusFlow is: %OTPCODE%. It expires in %EXPIRY% minutes.',
         type: 'NUMERIC',
-        senderid: 'Nexora OTP',
+        senderid: 'Nexora',
       }),
     });
 
