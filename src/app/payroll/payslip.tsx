@@ -57,8 +57,8 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
     }
   }
 
-  const customDeductionsTotal = payslip.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
-  const arrearsTotal = payslip.arrears?.reduce((acc, a) => acc + a.amount, 0) || 0;
+  const customDeductionsTotal = (payslip.deductions || []).reduce((acc, d) => acc + d.amount, 0);
+  const arrearsTotal = (payslip.arrears || []).reduce((acc, a) => acc + a.amount, 0);
   const totalEarnings = payslip.grossSalary + arrearsTotal;
   const totalDeductions = payslip.ssnitEmployee + payslip.incomeTax + customDeductionsTotal;
 
@@ -89,7 +89,7 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
                     <span>Gross Salary</span>
                     <span>GHS {payslip.grossSalary.toFixed(2)}</span>
                 </div>
-                {payslip.arrears.map((arrear, index) => (
+                {(payslip.arrears || []).map((arrear, index) => (
                     <div key={index} className="flex justify-between py-1.5">
                         <span>{arrear.name}</span>
                         <span>GHS {arrear.amount.toFixed(2)}</span>
@@ -111,7 +111,7 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
                     <span>Income Tax (PAYE)</span>
                     <span>GHS {payslip.incomeTax.toFixed(2)}</span>
                 </div>
-                 {payslip.deductions.map((deduction, index) => (
+                 {(payslip.deductions || []).map((deduction, index) => (
                     <div key={index} className="flex justify-between py-1.5">
                         <span>{deduction.name}</span>
                         <span>GHS {deduction.amount.toFixed(2)}</span>
