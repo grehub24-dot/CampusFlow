@@ -1,4 +1,3 @@
-
 'use client'
 
 import React from 'react';
@@ -74,7 +73,7 @@ export function SchoolInfoSettings() {
         
         const newInfo = { 
             schoolName: values.schoolName,
-            logoUrl: logoPreview || schoolInfo?.logoUrl || "https://picsum.photos/80/80",
+            logoUrl: logoPreview || schoolInfo?.logoUrl || "/logo.png",
             address: values.address,
             phone: values.phone,
         };
@@ -158,7 +157,7 @@ export function SchoolInfoSettings() {
                         <FormLabel>School Logo</FormLabel>
                         <div className="flex items-center gap-4">
                             <Image 
-                                src={logoPreview || "https://picsum.photos/80/80"} 
+                                src={logoPreview || "/logo.png"} 
                                 width={80} 
                                 height={80} 
                                 alt="School Logo" 
