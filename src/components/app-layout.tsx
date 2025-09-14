@@ -38,7 +38,9 @@ import {
   FileText,
   Briefcase,
   DollarSign,
-  FileBarChart
+  FileBarChart,
+  LogOut,
+  Loader2,
 } from "lucide-react"
 
 import { Button } from './ui/button';
@@ -47,6 +49,9 @@ import { useSchoolInfo } from '@/context/school-info-context';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import SubscriptionNotifier from './subscription-notifier';
+import { AuthProvider, useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -108,12 +113,19 @@ function MainNav() {
 function UserProfile() {
     const { state } = useSidebar();
     const [isClient, setIsClient] = React.useState(false);
+    const { user, signOut } = useAuth();
+    const router = useRouter();
 
     React.useEffect(() => {
         setIsClient(true);
     }, []);
+    
+    const handleSignOut = async () => {
+        await signOut();
+        router.push('/login');
+    }
 
-    if (!isClient) {
+    if (!isClient || !user) {
         return (
             <div className="flex w-full items-center gap-2 overflow-hidden p-2">
                 <Skeleton className="h-10 w-10 rounded-full" />
@@ -126,18 +138,29 @@ function UserProfile() {
     }
 
     return (
-        <div className="flex w-full items-center gap-2 overflow-hidden p-2">
-            <Avatar>
-                <AvatarImage src="https://picsum.photos/id/237/40/40" alt="Admin" data-ai-hint="person" />
-                <AvatarFallback>AD</AvatarFallback>
-            </Avatar>
-            {state !== 'collapsed' && (
-                <div className="flex flex-col truncate">
-                    <span className="text-sm font-semibold text-sidebar-foreground">Admin User</span>
-                    <span className="text-xs text-sidebar-foreground/70">admin@campusflow.com</span>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                 <div className="flex w-full items-center gap-2 overflow-hidden p-2 cursor-pointer hover:bg-sidebar-accent rounded-md">
+                    <Avatar>
+                        <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`} alt="Admin" data-ai-hint="person" />
+                        <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    {state !== 'collapsed' && (
+                        <div className="flex flex-col truncate">
+                            <span className="text-sm font-semibold text-sidebar-foreground">{(user as any).name || 'Admin User'}</span>
+                            <span className="text-xs text-sidebar-foreground/70">{user.email}</span>
+                        </div>
+                    )}
                 </div>
-            )}
-        </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right" align="start">
+                <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2" />
+                    Log out
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+       
     )
 }
 
@@ -201,7 +224,29 @@ function Brand() {
     )
 }
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+function ProtectedAppLayout({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  React.useEffect(() => {
+    if (!loading && !user && pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [user, loading, router, pathname]);
+
+  if (loading || (!user && pathname !== '/login')) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+  
+  if (pathname === '/login') {
+    return <>{children}</>;
+  }
+
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
@@ -228,4 +273,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </SidebarInset>
     </SidebarProvider>
   )
+}
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <AuthProvider>
+            <ProtectedAppLayout>{children}</ProtectedAppLayout>
+        </AuthProvider>
+    )
 }

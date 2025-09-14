@@ -1,10 +1,10 @@
-
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import AppLayout from '@/components/app-layout';
 import { SchoolInfoProvider } from '@/context/school-info-context';
+import { AuthProvider } from '@/context/auth-context';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,9 +21,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <SchoolInfoProvider>
-          <AppLayout>{children}</AppLayout>
-        </SchoolInfoProvider>
+        <AuthProvider>
+          <SchoolInfoProvider>
+            <AppLayout>{children}</AppLayout>
+          </SchoolInfoProvider>
+        </AuthProvider>
         <Toaster />
       </body>
     </html>
