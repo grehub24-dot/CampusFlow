@@ -17,7 +17,7 @@ import { ToastAction } from "@/components/ui/toast";
 
 const PLAN_LIMITS = {
   free: 1,
-  starter: 2,
+  starter: 3,
   pro: 5,
   enterprise: Infinity,
 }

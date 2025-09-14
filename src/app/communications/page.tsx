@@ -310,11 +310,11 @@ export default function CommunicationsPage() {
           description: `SMS dispatched to ${uniqueRecipients.length} recipients.`,
         });
       } else if (values.messageType === 'email') {
-        if (schoolInfo?.currentPlan === 'free') {
+        if (schoolInfo?.currentPlan === 'free' || schoolInfo?.currentPlan === 'starter') {
             toast({
                 variant: 'destructive',
                 title: 'Feature Not Available',
-                description: 'Email notifications are not available on the Free plan.',
+                description: 'Email notifications are not available on your current plan.',
                 action: <ToastAction altText="Upgrade" asChild><Link href="/billing">Upgrade Plan</Link></ToastAction>
             });
             setIsSubmitting(false);
@@ -382,7 +382,7 @@ export default function CommunicationsPage() {
   };
   
   const currentTemplates = messageType === 'sms' ? smsTemplates : emailTemplates;
-  const emailDisabled = schoolInfo?.currentPlan === 'free';
+  const emailDisabled = schoolInfo?.currentPlan === 'free' || schoolInfo?.currentPlan === 'starter';
   const smsDisabled = schoolInfo?.currentPlan === 'free';
   
   const whatsAppPlanDisabled = schoolInfo?.currentPlan !== 'pro' && schoolInfo?.currentPlan !== 'enterprise';
@@ -433,7 +433,7 @@ export default function CommunicationsPage() {
               <Mail className="h-4 w-4" />
               <AlertTitle>Upgrade to Unlock More Features</AlertTitle>
               <AlertDescription>
-                {emailDisabled && 'Email notifications are not included in the Free plan. '}
+                {emailDisabled && 'Email notifications are not included in your current plan. '}
                 <Button variant="link" asChild className="p-0 h-auto ml-1"><Link href="/billing">Upgrade Plan</Link></Button>
               </AlertDescription>
           </Alert>
