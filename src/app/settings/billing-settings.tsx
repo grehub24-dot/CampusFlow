@@ -1,3 +1,4 @@
+
 'use client'
 
 import React from 'react';
@@ -68,7 +69,9 @@ export function BillingSettings() {
                     <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
                             <p className="font-semibold">Current Plan: <span className="text-primary">Pro Tier</span></p>
-                            <p className="text-sm text-muted-foreground">Connected to: Nexora Cloud (studio-773059025)</p>
+                             <Link href="https://studio--nexora-cloud-lvt16.us-central1.hosted.app" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline">
+                                Connected to: Nexora Cloud (studio-773059025)
+                            </Link>
                         </div>
                         <Link href="/billing" passHref>
                             <Button>Manage Subscription</Button>
