@@ -21,40 +21,7 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
   }
   
   const handlePrint = () => {
-    const printableArea = document.getElementById('payslip-printable');
-    if (printableArea) {
-      const printWindow = window.open('', '', 'height=800,width=800');
-      if (printWindow) {
-        printWindow.document.write('<html><head><title>Payslip</title>');
-        // Inject styles for printing
-        const styles = Array.from(document.styleSheets)
-            .map(styleSheet => {
-                try {
-                    return Array.from(styleSheet.cssRules)
-                        .map(rule => rule.cssText)
-                        .join('');
-                } catch (e) {
-                    console.warn('Could not read cross-origin stylesheet:', e);
-                    return '';
-                }
-            })
-            .filter(Boolean)
-            .join('\n');
-        
-        printWindow.document.write(`<style>${styles}</style>`);
-        printWindow.document.write('<style>.no-print { display: none; } body { -webkit-print-color-adjust: exact; } </style>');
-
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(printableArea.innerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        
-        setTimeout(() => {
-          printWindow.print();
-          printWindow.close();
-        }, 250);
-      }
-    }
+    window.print();
   }
 
   const customDeductionsTotal = (payslip.deductions || []).reduce((acc, d) => acc + d.amount, 0);
