@@ -166,7 +166,7 @@ export default function BillingPage() {
         description: 'For growing schools that need more control.',
         features: [
           { text: 'Supports up to 200 students', included: true },
-          { text: 'SMS as a Pay-as-you-go service', included: true },
+          { text: '100 SMS credits/month', included: true },
           { text: 'Up to 3 user accounts', included: true },
           { text: 'Community support', included: true },
           { text: 'Email-based support (48h response)', included: true },

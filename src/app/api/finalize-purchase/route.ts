@@ -21,34 +21,30 @@ export async function POST(request: Request) {
     // 2. Update Firestore based on purchase type
     const billingSettingsRef = doc(db, "settings", "billing");
 
-    if (purchaseType === 'subscription') {
-      // It's a subscription upgrade, update the currentPlan
-      await runTransaction(db, async (transaction) => {
+    await runTransaction(db, async (transaction) => {
         const billingDoc = await transaction.get(billingSettingsRef);
-        if (!billingDoc.exists()) {
-            // If doc doesn't exist, create it with the new plan
-            transaction.set(billingSettingsRef, { currentPlan: bundleCredits });
-        } else {
-            transaction.update(billingSettingsRef, { currentPlan: bundleCredits });
+        const currentData = billingDoc.data() || {};
+        
+        let updates: Record<string, any> = {};
+
+        if (purchaseType === 'subscription') {
+            updates.currentPlan = bundleCredits;
+            // If upgrading to starter, add 100 SMS credits
+            if (bundleCredits === 'starter') {
+                const currentBalance = currentData.smsBalance || 0;
+                updates.smsBalance = currentBalance + 100;
+            }
+        } else { // 'sms' purchase
+            const currentBalance = currentData.smsBalance || 0;
+            updates.smsBalance = currentBalance + Number(bundleCredits);
         }
-      });
 
-    } else { // Default to 'sms'
-      // It's an SMS bundle purchase, update the smsBalance
-      await runTransaction(db, async (transaction) => {
-          const billingDoc = await transaction.get(billingSettingsRef);
-          
-          if (!billingDoc.exists()) {
-              // If doc doesn't exist, create it with the new balance
-              transaction.set(billingSettingsRef, { smsBalance: Number(bundleCredits) });
-          } else {
-              const currentBalance = billingDoc.data().smsBalance || 0;
-              const newBalance = currentBalance + Number(bundleCredits);
-              transaction.update(billingSettingsRef, { smsBalance: newBalance });
-          }
-      });
-    }
-
+        if (billingDoc.exists()) {
+            transaction.update(billingSettingsRef, updates);
+        } else {
+            transaction.set(billingSettingsRef, updates);
+        }
+    });
 
     // Optionally, you could also update the invoice status in another collection here.
 
