@@ -14,7 +14,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 
 const formSchema = z.object({
-  invoiceFooter: z.string().optional(),
   paymentTerms: z.string().optional(),
   paymentMethods: z.string().optional(),
 });
@@ -31,7 +30,6 @@ export function BillingSettingsForm({ onSubmit, defaultValues, isSubmitting }: B
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      invoiceFooter: defaultValues?.invoiceFooter || 'Thank you for your business!',
       paymentTerms: defaultValues?.paymentTerms || 'Payment is due by {{dueDate}}.\nLate fee of 2% per month may apply after the due date.\nPlease quote the invoice number when making payments.',
       paymentMethods: defaultValues?.paymentMethods || 'Mobile Money\n\nDial <strong>+233 536 282 694</strong>.\nRemember to use the invoice number as reference.',
     }
@@ -39,7 +37,6 @@ export function BillingSettingsForm({ onSubmit, defaultValues, isSubmitting }: B
 
   React.useEffect(() => {
     form.reset({
-      invoiceFooter: defaultValues?.invoiceFooter || 'Thank you for your business!',
       paymentTerms: defaultValues?.paymentTerms || 'Payment is due by {{dueDate}}.\nLate fee of 2% per month may apply after the due date.\nPlease quote the invoice number when making payments.',
       paymentMethods: defaultValues?.paymentMethods || 'Mobile Money\n\nDial <strong>+233 536 282 694</strong>.\nRemember to use the invoice number as reference.',
     })
@@ -78,20 +75,6 @@ export function BillingSettingsForm({ onSubmit, defaultValues, isSubmitting }: B
                             <Textarea placeholder={'e.g. Dial *123# and use {{invoiceNumber}} as reference.'} {...field} rows={4}/>
                         </FormControl>
                         <FormDescription>This text will appear under the 'Payment Methods' section. Available placeholders: {'`{{invoiceNumber}}`'}</FormDescription>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="invoiceFooter"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Invoice Footer Text</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="e.g. Thank you for your business!" {...field} />
-                        </FormControl>
-                        <FormDescription>This text will appear at the bottom of all invoices and receipts.</FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}
