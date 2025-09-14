@@ -35,7 +35,7 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
 
   return (
     <div className="p-4">
-      <div id="payslip-printable" className="payslip-container bg-white text-black p-6 font-sans">
+      <div id="payslip-printable" className="printable-area payslip-container bg-white text-black p-6 font-sans">
         <header className="text-center mb-6 border-b-2 pb-4">
              <div className="flex justify-center items-center gap-4">
                 <Image src={schoolInfo.logoUrl || "/logo.jpg"} width={60} height={60} alt="School Logo" className="object-contain" data-ai-hint="logo" />
