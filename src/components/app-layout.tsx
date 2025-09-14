@@ -54,32 +54,38 @@ import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/admissions", icon: UserPlus, label: "Admissions" },
-  { href: "/students", icon: Users, label: "Students" },
-  { href: "/staff", icon: Briefcase, label: "Staff" },
-  { href: "/payments", icon: CreditCard, label: "Payments" },
-  { href: "/invoices", icon: Receipt, label: "Invoices" },
-  { href: "/fees", icon: FileText, label: "Fees" },
-  { href: "/reports", icon: BarChart3, label: "Reports" },
-  { href: "/communications", icon: MessageSquare, label: "Communications" },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ['Admin', 'Accountant'] },
+  { href: "/admissions", icon: UserPlus, label: "Admissions", roles: ['Admin', 'Accountant'] },
+  { href: "/students", icon: Users, label: "Students", roles: ['Admin', 'Teacher', 'Accountant'] },
+  { href: "/staff", icon: Briefcase, label: "Staff", roles: ['Admin'] },
+  { href: "/payments", icon: CreditCard, label: "Payments", roles: ['Admin', 'Accountant'] },
+  { href: "/invoices", icon: Receipt, label: "Invoices", roles: ['Admin', 'Accountant'] },
+  { href: "/fees", icon: FileText, label: "Fees", roles: ['Admin', 'Accountant'] },
+  { href: "/reports", icon: BarChart3, label: "Reports", roles: ['Admin'] },
+  { href: "/communications", icon: MessageSquare, label: "Communications", roles: ['Admin'] },
 ];
 
 const secondaryNavItems = [
-  { href: "/payroll", icon: DollarSign, label: "Payroll" },
-  { href: "/income-expense", icon: DollarSign, label: "Income & Expense" },
-  { href: "/financial-summary", icon: FileBarChart, label: "Financial Summary" },
-  { href: "/billing", icon: CreditCard, label: "Billing" },
-  { href: "/settings", icon: Settings, label: "Settings" },
+  { href: "/payroll", icon: DollarSign, label: "Payroll", roles: ['Admin', 'Accountant'] },
+  { href: "/income-expense", icon: DollarSign, label: "Income & Expense", roles: ['Admin', 'Accountant'] },
+  { href: "/financial-summary", icon: FileBarChart, label: "Financial Summary", roles: ['Admin', 'Accountant'] },
+  { href: "/billing", icon: CreditCard, label: "Billing", roles: ['Admin'] },
+  { href: "/settings", icon: Settings, label: "Settings", roles: ['Admin'] },
 ]
 
 
 function MainNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const userRole = user?.role || 'User';
+
+  const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
+  const filteredSecondaryNavItems = secondaryNavItems.filter(item => item.roles.includes(userRole));
+
 
   return (
     <SidebarMenu>
-      {navItems.map((item) => (
+      {filteredNavItems.map((item) => (
         <SidebarMenuItem key={item.href}>
           <Link href={item.href} passHref>
             <SidebarMenuButton
@@ -92,8 +98,8 @@ function MainNav() {
           </Link>
         </SidebarMenuItem>
       ))}
-       <SidebarSeparator className="my-2" />
-       {secondaryNavItems.map((item) => (
+       {(filteredNavItems.length > 0 && filteredSecondaryNavItems.length > 0) && <SidebarSeparator className="my-2" />}
+       {filteredSecondaryNavItems.map((item) => (
         <SidebarMenuItem key={item.href}>
           <Link href={item.href} passHref>
             <SidebarMenuButton
@@ -136,18 +142,20 @@ function UserProfile() {
             </div>
         )
     }
+    
+    const fallback = user.name ? user.name.split(' ').map(n => n[0]).join('') : (user.email?.[0] || 'U').toUpperCase();
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                  <div className="flex w-full items-center gap-2 overflow-hidden p-2 cursor-pointer hover:bg-sidebar-accent rounded-md">
                     <Avatar>
-                        <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`} alt="Admin" data-ai-hint="person" />
-                        <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+                        <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.name || user.email}`} alt="Admin" data-ai-hint="person" />
+                        <AvatarFallback>{fallback}</AvatarFallback>
                     </Avatar>
                     {state !== 'collapsed' && (
                         <div className="flex flex-col truncate">
-                            <span className="text-sm font-semibold text-sidebar-foreground">{(user as any).name || 'Admin User'}</span>
+                            <span className="text-sm font-semibold text-sidebar-foreground">{user.name || 'User'}</span>
                             <span className="text-xs text-sidebar-foreground/70">{user.email}</span>
                         </div>
                     )}

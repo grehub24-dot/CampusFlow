@@ -8,6 +8,7 @@ import { db } from '@/lib/firebase';
 import type { User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSchoolInfo } from '@/context/school-info-context';
+import { useAuth } from '@/context/auth-context';
 
 import { PageHeader } from "@/components/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,10 +26,16 @@ export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
   const { toast } = useToast();
   const { schoolInfo } = useSchoolInfo();
+  const { user } = useAuth();
+  
+  const canViewUsers = user?.role === 'Admin';
+
 
   React.useEffect(() => {
-    // Note: Assuming a 'users' collection exists.
-    // You will need to create this and add data for users to appear.
+    if (!canViewUsers) {
+      setUsers([]);
+      return;
+    }
     const usersQuery = query(collection(db, "users"));
     const unsubscribeUsers = onSnapshot(usersQuery, (querySnapshot) => {
       const usersData: User[] = [];
@@ -42,7 +49,7 @@ export default function SettingsPage() {
     });
 
     return () => unsubscribeUsers();
-  }, [toast]);
+  }, [toast, canViewUsers]);
 
   return (
     <>
@@ -57,7 +64,7 @@ export default function SettingsPage() {
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="fee-items">Fee Items</TabsTrigger>
           <TabsTrigger value="fee-structure">Fee Structure</TabsTrigger>
-          <TabsTrigger value="users">User Management</TabsTrigger>
+          {canViewUsers && <TabsTrigger value="users">User Management</TabsTrigger>}
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="billing">Billing & Invoices</TabsTrigger>
@@ -83,9 +90,11 @@ export default function SettingsPage() {
             <FeeStructureSettings />
         </TabsContent>
 
-        <TabsContent value="users">
-            <UserManagementSettings users={users} />
-        </TabsContent>
+        {canViewUsers && (
+          <TabsContent value="users">
+              <UserManagementSettings users={users} />
+          </TabsContent>
+        )}
 
         <TabsContent value="integrations">
             <IntegrationsSettings />

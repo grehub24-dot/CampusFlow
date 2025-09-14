@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from "react"
@@ -6,6 +7,7 @@ import type { User } from "@/types"
 import { useSchoolInfo } from "@/context/school-info-context"
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/auth-context";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -30,8 +32,13 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
   const { schoolInfo } = useSchoolInfo();
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleAddUserClick = () => {
+    if (user?.role !== 'Admin') {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: 'Only Admins can add new users.' });
+        return;
+    }
     const limit = PLAN_LIMITS[schoolInfo?.currentPlan || 'free'];
     if (users.length >= limit) {
         toast({
