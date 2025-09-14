@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { doc, onSnapshot, addDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { IntegrationSettings } from '@/types';
@@ -69,6 +70,13 @@ Best regards,
 
 const enterpriseSmsBody = `Hello CampusFlow Team, We’re interested in your Enterprise plan for our institution. Could you kindly share details on pricing, setup, and demo availability?`;
 
+const planRanks: { [key: string]: number } = {
+  free: 0,
+  starter: 1,
+  pro: 2,
+  enterprise: 3,
+};
+
 
 function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: any, onSelect: (plan: any) => void, isCurrent: boolean, isProcessing: boolean }) {
   return (
@@ -105,11 +113,11 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
        <CardFooter>
          <Button 
           className="w-full" 
-          disabled={isProcessing && !isCurrent}
-          variant={plan.buttonVariant || 'default'}
+          disabled={isCurrent || (isProcessing && !isCurrent)}
+          variant={isCurrent ? 'secondary' : (plan.buttonVariant || 'default')}
           onClick={() => onSelect(plan)}
         >
-          {isCurrent ? (plan.id === 'pro' ? 'Manage Subscription' : 'Current Plan') : plan.buttonText}
+          {isCurrent ? 'Current Plan' : plan.buttonText}
         </Button>
       </CardFooter>
     </Card>
@@ -120,8 +128,9 @@ function SubscriptionCard({ plan, onSelect, isCurrent, isProcessing }: { plan: a
 export default function BillingPage() {
     const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
     const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
+    const [isDowngradeDialogOpen, setIsDowngradeDialogOpen] = useState(false);
     const { schoolInfo, loading: schoolInfoLoading } = useSchoolInfo();
-    const [currentPlan, setCurrentPlan] = useState('pro'); // Default to pro for demo
+    const [currentPlan, setCurrentPlan] = useState('free');
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const { toast } = useToast();
@@ -142,7 +151,7 @@ export default function BillingPage() {
         priceGHS: 0,
         price: 'GHS 0',
         frequency: '/month',
-        description: 'Get started and explore the Nexora platform.',
+        description: 'Get started and explore the platform.',
         features: [
           { text: 'Supports up to 50 students', included: true },
           { text: 'Community support', included: true },
@@ -154,7 +163,7 @@ export default function BillingPage() {
           { text: 'Priority support', included: false },
         ],
         idealFor: 'Ideal for small schools testing the platform.',
-        buttonText: 'Choose Plan',
+        buttonText: 'Downgrade to Free',
         buttonVariant: 'outline' as const,
       },
       {
@@ -174,7 +183,7 @@ export default function BillingPage() {
           { text: 'WhatsApp integration', included: false },
         ],
         idealFor: 'Best value for mid-sized schools managing termly data.',
-        buttonText: 'Upgrade Now',
+        buttonText: 'Choose Plan',
         buttonVariant: 'default' as const,
         recommended: true,
       },
@@ -189,13 +198,13 @@ export default function BillingPage() {
           { text: 'Supports up to 500 students', included: true },
           { text: '200 SMS credits/month', included: true },
           { text: 'Weekly cloud backup (app + database)', included: true },
-          { text: 'Email notifications (100/month)', included: true },
+          { text: 'Email notifications', included: true },
           { text: 'WhatsApp integration', included: true },
           { text: 'Priority support (Email + WhatsApp)', included: true },
           { text: 'Up to 5 user accounts', included: true },
         ],
         idealFor: 'Great for schools with multiple departments.',
-        buttonText: 'Manage Subscription',
+        buttonText: 'Upgrade to Pro',
         buttonVariant: 'default' as const,
       },
       {
@@ -207,8 +216,8 @@ export default function BillingPage() {
         description: 'Custom infrastructure for large institutions.',
         features: [
           { text: 'Unlimited students', included: true },
-          { text: 'Real-time /Daily cloud backup', included: true },
           { text: '500 SMS credits/month', included: true },
+          { text: 'Real-time /Daily cloud backup', included: true },
           { text: 'Full email integration (1,000/month)', included: true },
           { text: 'Full WhatsApp integration', included: true },
           { text: 'Dedicated account manager', included: true },
@@ -222,17 +231,24 @@ export default function BillingPage() {
     ];
 
     const handleSelectPlan = (plan: any) => {
-        if (plan.id === 'enterprise') {
-            setIsContactDialogOpen(true);
-        } else if (plan.priceGHS > 0) {
-             router.push(`/billing/purchase?purchaseType=subscription&bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
+        setSelectedPlan(plan);
+        const currentRank = planRanks[currentPlan];
+        const selectedRank = planRanks[plan.id];
+
+        if (selectedRank < currentRank) {
+            setIsDowngradeDialogOpen(true);
         } else {
-            setSelectedPlan(plan);
-             if (plan.id === 'free') {
-                handleContact('sms', 'A user has selected the Free Tier plan. Please follow up.');
-             }
+            proceedWithSelection(plan);
         }
     };
+    
+    const proceedWithSelection = (plan: any) => {
+        if (plan.id === 'enterprise') {
+            setIsContactDialogOpen(true);
+        } else {
+            router.push(`/billing/purchase?purchaseType=subscription&bundle=${plan.name} Subscription&credits=${plan.id}&price=${plan.priceGHS}`);
+        }
+    }
     
     const handleContact = async (method: 'sms' | 'email', smsMessage: string = enterpriseSmsBody) => {
         setIsProcessing(true);
@@ -363,21 +379,29 @@ export default function BillingPage() {
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={!!selectedPlan && !isContactDialogOpen} onOpenChange={(isOpen) => !isOpen && setSelectedPlan(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Confirm Your Choice</DialogTitle>
-                        <DialogDescription>
-                            You are about to choose the <strong>{selectedPlan?.name}</strong> plan. A member of our team will contact you shortly to complete the process.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex justify-end pt-4">
-                        <Button onClick={() => setSelectedPlan(null)}>Got it</Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+             <AlertDialog open={isDowngradeDialogOpen} onOpenChange={setIsDowngradeDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Plan Downgrade</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            You are about to downgrade to the <strong>{selectedPlan?.name}</strong> plan. 
+                            Downgrading may result in the loss of features and data. This action will take effect at the end of your current billing cycle.
+                            Are you sure you want to proceed?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                            setIsDowngradeDialogOpen(false);
+                            if (selectedPlan) {
+                                proceedWithSelection(selectedPlan);
+                            }
+                        }}>
+                            Yes, Proceed
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     )
 }
-
-    
