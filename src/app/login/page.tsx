@@ -55,7 +55,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-            <Image src="/logo.png" alt="CampusFlow Logo" width={80} height={80} className="mx-auto" data-ai-hint="logo graduation cap"/>
+            <Image src="/logo.jpg" alt="CampusFlow Logo" width={80} height={80} className="mx-auto" data-ai-hint="logo graduation cap"/>
             <h1 className="text-3xl font-bold">Welcome to CampusFlow</h1>
             <p className="text-muted-foreground">Enter your credentials to access your dashboard.</p>
         </div>
