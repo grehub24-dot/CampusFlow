@@ -73,7 +73,7 @@ export function SchoolInfoSettings() {
         
         const newInfo = { 
             schoolName: values.schoolName,
-            logoUrl: logoPreview || schoolInfo?.logoUrl || "/logo.jpg",
+            logoUrl: logoPreview || schoolInfo?.logoUrl || "/logo.png",
             address: values.address,
             phone: values.phone,
         };
@@ -157,7 +157,7 @@ export function SchoolInfoSettings() {
                         <FormLabel>School Logo</FormLabel>
                         <div className="flex items-center gap-4">
                             <Image 
-                                src={logoPreview || "/logo.jpg"} 
+                                src={logoPreview || "/logo.png"} 
                                 width={80} 
                                 height={80} 
                                 alt="School Logo" 

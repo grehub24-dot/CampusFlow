@@ -214,7 +214,7 @@ function Brand() {
     
     return (
          <div className="flex items-center gap-3 p-2">
-            <Image src={schoolInfo?.logoUrl || "/logo.jpg"} width={48} height={48} alt="School Logo" className="h-12 w-12 rounded-md object-contain" data-ai-hint="logo graduation cap" />
+            <Image src={schoolInfo?.logoUrl || "/logo.png"} width={48} height={48} alt="School Logo" className="h-12 w-12 rounded-md object-contain" data-ai-hint="logo graduation cap" />
             
             {state !== 'collapsed' && (
                 <span className="text-xl font-bold">{schoolInfo?.schoolName || 'CampusFlow'}</span>
