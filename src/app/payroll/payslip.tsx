@@ -82,7 +82,7 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
             <div><strong>Pay Date:</strong> {format(new Date(), 'PPP')}</div>
         </section>
 
-        <section className="space-y-4">
+        <section className="grid grid-cols-2 gap-8">
             <div>
                 <h4 className="font-semibold text-base mb-2 underline">Earnings</h4>
                 <div className="flex justify-between py-1.5">
@@ -95,13 +95,12 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
                         <span>GHS {arrear.amount.toFixed(2)}</span>
                     </div>
                 ))}
+                 <div className="flex justify-between py-1.5 border-t mt-2 pt-2 font-bold">
+                    <span>Total Earnings</span>
+                    <span>GHS {totalEarnings.toFixed(2)}</span>
+                </div>
             </div>
             
-            <div className="flex justify-between py-1.5 border-t border-b font-bold">
-                <span>Total Earnings</span>
-                <span>GHS {totalEarnings.toFixed(2)}</span>
-            </div>
-
             <div>
                 <h4 className="font-semibold text-base mb-2 underline">Deductions</h4>
                  <div className="flex justify-between py-1.5">
@@ -118,15 +117,14 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
                         <span>GHS {deduction.amount.toFixed(2)}</span>
                     </div>
                 ))}
-            </div>
-
-            <div className="flex justify-between py-1.5 border-t border-b font-bold">
-                <span>Total Deductions</span>
-                <span>GHS {totalDeductions.toFixed(2)}</span>
+                 <div className="flex justify-between py-1.5 border-t mt-2 pt-2 font-bold">
+                    <span>Total Deductions</span>
+                    <span>GHS {totalDeductions.toFixed(2)}</span>
+                </div>
             </div>
         </section>
         
-        <section className="mt-6 text-right">
+        <section className="mt-8 text-right">
             <div className="text-xl font-bold inline-flex gap-4 p-2 bg-gray-100 rounded">
               <span>Net Salary:</span>
               <span>GHS {payslip.netSalary.toFixed(2)}</span>
