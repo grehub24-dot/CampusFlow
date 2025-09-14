@@ -208,7 +208,7 @@ export default function BillingPage() {
         features: [
           { text: 'Unlimited students', included: true },
           { text: 'Real-time /Daily cloud backup', included: true },
-          { text: 'SMS as a Pay-as-you-go service', included: true },
+          { text: '500 SMS credits/month', included: true },
           { text: 'Full email integration (1,000/month)', included: true },
           { text: 'Full WhatsApp integration', included: true },
           { text: 'Dedicated account manager', included: true },

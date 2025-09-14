@@ -36,6 +36,9 @@ export async function POST(request: Request) {
             } else if (bundleCredits === 'pro') {
                 const currentBalance = currentData.smsBalance || 0;
                 updates.smsBalance = currentBalance + 200;
+            } else if (bundleCredits === 'enterprise') {
+                const currentBalance = currentData.smsBalance || 0;
+                updates.smsBalance = currentBalance + 500;
             }
         } else { // 'sms' purchase
             const currentBalance = currentData.smsBalance || 0;
