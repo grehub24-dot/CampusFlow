@@ -136,10 +136,30 @@ export function FeeStructureSettings() {
         }
     }
     
-    const calculateTotal = (items: { feeItemId: string, amount: number }[]) => {
-        if (!Array.isArray(items)) return 0;
-        return items.reduce((acc, item) => acc + (item.amount || 0), 0);
-    }
+    const calculateTotals = (structure: FeeStructure) => {
+        let newAdmissionTotal = 0;
+        let term1Total = 0;
+        let term2And3Total = 0;
+
+        if (Array.isArray(structure.items)) {
+            structure.items.forEach(item => {
+                const feeItemInfo = feeItems.find(fi => fi.id === item.feeItemId);
+                if (feeItemInfo && !feeItemInfo.isOptional) {
+                    if (feeItemInfo.appliesTo.includes('new')) {
+                        newAdmissionTotal += item.amount;
+                    }
+                    if (feeItemInfo.appliesTo.includes('term1')) {
+                        term1Total += item.amount;
+                    }
+                    if (feeItemInfo.appliesTo.includes('term2_3')) {
+                        term2And3Total += item.amount;
+                    }
+                }
+            });
+        }
+        return { newAdmissionTotal, term1Total, term2And3Total };
+    };
+
 
     const onSubmit: SubmitHandler<FormValues> = async (values) => {
         setIsSubmitting(true);
@@ -223,39 +243,46 @@ export function FeeStructureSettings() {
                             <TableRow>
                                 <TableHead>Class</TableHead>
                                 <TableHead>Term</TableHead>
-                                <TableHead className="text-right">Total Amount</TableHead>
+                                <TableHead className="text-right">New Admission</TableHead>
+                                <TableHead className="text-right">Term 1</TableHead>
+                                <TableHead className="text-right">Term 2/3</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow><TableCell colSpan={4} className="h-24 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                                <TableRow><TableCell colSpan={6} className="h-24 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
                             ) : feeStructures.length > 0 ? (
-                                feeStructures.map(structure => (
-                                    <TableRow key={structure.id}>
-                                        <TableCell>{getClassName(structure.classId)}</TableCell>
-                                        <TableCell>{getTermName(structure.academicTermId)}</TableCell>
-                                        <TableCell className="text-right">GHS {calculateTotal(structure.items).toLocaleString()}</TableCell>
-                                        <TableCell className="text-right">
-                                             <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0" disabled={isSubmitting}>
-                                                        <span className="sr-only">Open menu</span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => handleEdit(structure)}>Edit</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleDelete(structure)} className="text-destructive">
-                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                feeStructures.map(structure => {
+                                    const totals = calculateTotals(structure);
+                                    return (
+                                        <TableRow key={structure.id}>
+                                            <TableCell>{getClassName(structure.classId)}</TableCell>
+                                            <TableCell>{getTermName(structure.academicTermId)}</TableCell>
+                                            <TableCell className="text-right">GHS {totals.newAdmissionTotal.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right">GHS {totals.term1Total.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right">GHS {totals.term2And3Total.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right">
+                                                 <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0" disabled={isSubmitting}>
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => handleEdit(structure)}>Edit</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleDelete(structure)} className="text-destructive">
+                                                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })
                             ) : (
-                                <TableRow><TableCell colSpan={4} className="h-24 text-center">No fee structures found.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={6} className="h-24 text-center">No fee structures found.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>
