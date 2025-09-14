@@ -187,7 +187,7 @@ export default function BillingPage() {
         description: 'For schools ready to scale operations.',
         features: [
           { text: 'Supports up to 500 students', included: true },
-          { text: '100 SMS credits/month', included: true },
+          { text: '200 SMS credits/month', included: true },
           { text: 'Weekly cloud backup (app + database)', included: true },
           { text: 'Email notifications (100/month)', included: true },
           { text: 'WhatsApp integration', included: true },
@@ -379,3 +379,5 @@ export default function BillingPage() {
         </>
     )
 }
+
+    

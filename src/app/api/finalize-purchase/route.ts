@@ -29,10 +29,13 @@ export async function POST(request: Request) {
 
         if (purchaseType === 'subscription') {
             updates.currentPlan = bundleCredits;
-            // If upgrading to starter or pro, add 100 SMS credits
-            if (bundleCredits === 'starter' || bundleCredits === 'pro') {
+            // If upgrading to starter, add 100 SMS credits
+            if (bundleCredits === 'starter') {
                 const currentBalance = currentData.smsBalance || 0;
                 updates.smsBalance = currentBalance + 100;
+            } else if (bundleCredits === 'pro') {
+                const currentBalance = currentData.smsBalance || 0;
+                updates.smsBalance = currentBalance + 200;
             }
         } else { // 'sms' purchase
             const currentBalance = currentData.smsBalance || 0;
@@ -55,3 +58,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+    
