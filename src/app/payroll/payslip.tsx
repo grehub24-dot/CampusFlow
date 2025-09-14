@@ -62,6 +62,10 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
   const totalEarnings = payslip.grossSalary + arrearsTotal;
   const totalDeductions = payslip.ssnitEmployee + payslip.incomeTax + customDeductionsTotal;
 
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   return (
     <div className="p-4">
       <div id="payslip-printable" className="payslip-container bg-white text-black p-6 font-sans">
@@ -87,17 +91,17 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
                 <h4 className="font-semibold text-base mb-2 underline">Earnings</h4>
                 <div className="flex justify-between py-1.5">
                     <span>Gross Salary</span>
-                    <span>GHS {payslip.grossSalary.toFixed(2)}</span>
+                    <span>GHS {formatCurrency(payslip.grossSalary)}</span>
                 </div>
                 {(payslip.arrears || []).map((arrear, index) => (
                     <div key={index} className="flex justify-between py-1.5">
                         <span>{arrear.name}</span>
-                        <span>GHS {arrear.amount.toFixed(2)}</span>
+                        <span>GHS {formatCurrency(arrear.amount)}</span>
                     </div>
                 ))}
                  <div className="flex justify-between py-1.5 border-t mt-2 pt-2 font-bold">
                     <span>Total Earnings</span>
-                    <span>GHS {totalEarnings.toFixed(2)}</span>
+                    <span>GHS {formatCurrency(totalEarnings)}</span>
                 </div>
             </div>
             
@@ -105,21 +109,21 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
                 <h4 className="font-semibold text-base mb-2 underline">Deductions</h4>
                  <div className="flex justify-between py-1.5">
                     <span>Employee SSNIT (5.5%)</span>
-                    <span>GHS {payslip.ssnitEmployee.toFixed(2)}</span>
+                    <span>GHS {formatCurrency(payslip.ssnitEmployee)}</span>
                 </div>
                 <div className="flex justify-between py-1.5">
                     <span>Income Tax (PAYE)</span>
-                    <span>GHS {payslip.incomeTax.toFixed(2)}</span>
+                    <span>GHS {formatCurrency(payslip.incomeTax)}</span>
                 </div>
                  {(payslip.deductions || []).map((deduction, index) => (
                     <div key={index} className="flex justify-between py-1.5">
                         <span>{deduction.name}</span>
-                        <span>GHS {deduction.amount.toFixed(2)}</span>
+                        <span>GHS {formatCurrency(deduction.amount)}</span>
                     </div>
                 ))}
                  <div className="flex justify-between py-1.5 border-t mt-2 pt-2 font-bold">
                     <span>Total Deductions</span>
-                    <span>GHS {totalDeductions.toFixed(2)}</span>
+                    <span>GHS {formatCurrency(totalDeductions)}</span>
                 </div>
             </div>
         </section>
@@ -127,7 +131,7 @@ export function PayslipDetails({ payslip }: PayslipDetailsProps) {
         <section className="mt-8 text-right">
             <div className="text-xl font-bold inline-flex gap-4 p-2 bg-gray-100 rounded">
               <span>Net Salary:</span>
-              <span>GHS {payslip.netSalary.toFixed(2)}</span>
+              <span>GHS {formatCurrency(payslip.netSalary)}</span>
             </div>
         </section>
       </div>
