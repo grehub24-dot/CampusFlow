@@ -187,8 +187,8 @@ export default function BillingPage() {
         description: 'For schools ready to scale operations.',
         features: [
           { text: 'Supports up to 500 students', included: true },
+          { text: '100 SMS credits/month', included: true },
           { text: 'Weekly cloud backup (app + database)', included: true },
-          { text: 'SMS as a Pay-as-you-go service', included: true },
           { text: 'Email notifications (100/month)', included: true },
           { text: 'WhatsApp integration', included: true },
           { text: 'Priority support (Email + WhatsApp)', included: true },

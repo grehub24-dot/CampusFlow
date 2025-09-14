@@ -29,8 +29,8 @@ export async function POST(request: Request) {
 
         if (purchaseType === 'subscription') {
             updates.currentPlan = bundleCredits;
-            // If upgrading to starter, add 100 SMS credits
-            if (bundleCredits === 'starter') {
+            // If upgrading to starter or pro, add 100 SMS credits
+            if (bundleCredits === 'starter' || bundleCredits === 'pro') {
                 const currentBalance = currentData.smsBalance || 0;
                 updates.smsBalance = currentBalance + 100;
             }
