@@ -49,7 +49,10 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
         return;
     }
     const limit = PLAN_LIMITS[schoolInfo?.currentPlan || 'free'];
-    if (users.length >= limit) {
+    // Exclude the superadmin from the user count for the purpose of checking the limit
+    const billableUsers = users.filter(u => u.email !== 'superadmin@campusflow.com');
+    
+    if (billableUsers.length >= limit) {
         toast({
             variant: "destructive",
             title: "User Limit Reached",
