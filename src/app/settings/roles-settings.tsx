@@ -135,7 +135,6 @@ export function RolesSettings({ roles }: { roles: Role[] }) {
         if (!selectedRole) return;
         setIsSubmitting(true);
         
-        // Ensure all possible permissions have a boolean value
         const fullPermissions: RolePermissions = {};
         for (const feature in permissionConfig) {
             fullPermissions[feature] = {};
@@ -177,7 +176,7 @@ export function RolesSettings({ roles }: { roles: Role[] }) {
             <CardContent>
                 <div className="grid md:grid-cols-4 gap-6">
                     <div className="md:col-span-1 flex flex-col gap-2">
-                         {roles.sort((a,b) => a.name.localeCompare(b.name)).map(role => (
+                         {roles.filter(role => role.name).sort((a,b) => a.name.localeCompare(b.name)).map(role => (
                             <Button 
                                 key={role.id}
                                 variant={selectedRole?.id === role.id ? 'default' : 'outline'}
