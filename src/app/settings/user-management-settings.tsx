@@ -41,6 +41,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isFormOpen, setIsFormOpen] = React.useState(false);
+  const [isSupportFormOpen, setIsSupportFormOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
 
@@ -63,6 +64,14 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
     } else {
         setIsFormOpen(true);
     }
+  }
+
+  const handleAddSupportUserClick = () => {
+     if (user?.role !== 'Admin') {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: 'Only Admins can add new users.' });
+        return;
+    }
+    setIsSupportFormOpen(true);
   }
 
   const onSubmit: SubmitHandler<UserFormValues> = async (values) => {
@@ -96,6 +105,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
         await sendSms([adminPhoneNumber], message);
 
         setIsFormOpen(false);
+        setIsSupportFormOpen(false);
 
     } catch (error: any) {
         console.error("Error creating user:", error);
@@ -125,10 +135,16 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
                     <CardTitle>User Management</CardTitle>
                     <CardDescription>Manage all users with access to the system.</CardDescription>
                 </div>
-                 <Button onClick={handleAddUserClick}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add User
-                </Button>
+                <div className="flex items-center gap-2">
+                     <Button variant="outline" onClick={handleAddSupportUserClick}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Create Support User
+                    </Button>
+                    <Button onClick={handleAddUserClick}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add User
+                    </Button>
+                </div>
             </div>
         </CardHeader>
         <CardContent>
@@ -142,6 +158,15 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
                 <DialogDescription>Create a new user account and assign them a role.</DialogDescription>
             </DialogHeader>
             <UserForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
+        </DialogContent>
+    </Dialog>
+    <Dialog open={isSupportFormOpen} onOpenChange={setIsSupportFormOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Add Support User</DialogTitle>
+                <DialogDescription>Create a new user account with the Support role.</DialogDescription>
+            </DialogHeader>
+            <UserForm onSubmit={onSubmit} isSubmitting={isSubmitting} isSupportForm={true} />
         </DialogContent>
     </Dialog>
     </>

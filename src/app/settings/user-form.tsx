@@ -24,16 +24,17 @@ export type FormValues = z.infer<typeof formSchema>;
 type UserFormProps = {
     onSubmit: SubmitHandler<FormValues>;
     isSubmitting: boolean;
+    isSupportForm?: boolean;
 }
 
-export function UserForm({ onSubmit, isSubmitting }: UserFormProps) {
+export function UserForm({ onSubmit, isSubmitting, isSupportForm = false }: UserFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
         name: '',
         email: '',
         password: '',
-        role: 'Teacher',
+        role: isSupportForm ? 'Support' : 'Teacher',
     }
   });
 
@@ -79,7 +80,7 @@ export function UserForm({ onSubmit, isSubmitting }: UserFormProps) {
             render={({ field }) => (
                 <FormItem>
                     <FormLabel>Role</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isSupportForm}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="Admin">Admin</SelectItem>
