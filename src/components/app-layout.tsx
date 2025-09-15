@@ -55,34 +55,33 @@ import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ['Admin', 'Accountant'] },
-  { href: "/admissions", icon: UserPlus, label: "Admissions", roles: ['Admin', 'Accountant'] },
-  { href: "/students", icon: Users, label: "Students", roles: ['Admin', 'Teacher', 'Accountant'] },
-  { href: "/staff", icon: Briefcase, label: "Staff", roles: ['Admin'] },
-  { href: "/payments", icon: CreditCard, label: "Payments", roles: ['Admin', 'Accountant'] },
-  { href: "/invoices", icon: Receipt, label: "Invoices", roles: ['Admin', 'Accountant'] },
-  { href: "/fees", icon: FileText, label: "Fees", roles: ['Admin', 'Accountant'] },
-  { href: "/reports", icon: BarChart3, label: "Reports", roles: ['Admin'] },
-  { href: "/communications", icon: MessageSquare, label: "Communications", roles: ['Admin'] },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", permission: "dashboard:read" },
+  { href: "/admissions", icon: UserPlus, label: "Admissions", permission: "admissions:read" },
+  { href: "/students", icon: Users, label: "Students", permission: "students:read" },
+  { href: "/staff", icon: Briefcase, label: "Staff", permission: "staff:read" },
+  { href: "/payments", icon: CreditCard, label: "Payments", permission: "payments:read" },
+  { href: "/invoices", icon: Receipt, label: "Invoices", permission: "invoices:read" },
+  { href: "/fees", icon: FileText, label: "Fees", permission: "fees:read" },
+  { href: "/reports", icon: BarChart3, label: "Reports", permission: "reports:read" },
+  { href: "/communications", icon: MessageSquare, label: "Communications", permission: "communications:read" },
 ];
 
 const secondaryNavItems = [
-  { href: "/payroll", icon: DollarSign, label: "Payroll", roles: ['Admin', 'Accountant'] },
-  { href: "/income-expense", icon: DollarSign, label: "Income & Expense", roles: ['Admin', 'Accountant'] },
-  { href: "/financial-summary", icon: FileBarChart, label: "Financial Summary", roles: ['Admin', 'Accountant'] },
-  { href: "/billing", icon: CreditCard, label: "Billing", roles: ['Admin'] },
-  { href: "/settings", icon: Settings, label: "Settings", roles: ['Admin'] },
-  { href: "/activity-log", icon: ListOrdered, label: "Activity Log", roles: ['Admin'] },
+  { href: "/payroll", icon: DollarSign, label: "Payroll", permission: "payroll:read" },
+  { href: "/income-expense", icon: DollarSign, label: "Income & Expense", permission: "transactions:read" },
+  { href: "/financial-summary", icon: FileBarChart, label: "Financial Summary", permission: "reports:read" },
+  { href: "/billing", icon: CreditCard, label: "Billing", permission: "billing:read" },
+  { href: "/settings", icon: Settings, label: "Settings", permission: "settings:read" },
+  { href: "/activity-log", icon: ListOrdered, label: "Activity Log", permission: "activity:read" },
 ]
 
 
 function MainNav() {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const userRole = user?.role || 'User';
+  const { hasPermission } = useAuth();
 
-  const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
-  const filteredSecondaryNavItems = secondaryNavItems.filter(item => item.roles.includes(userRole));
+  const filteredNavItems = navItems.filter(item => hasPermission(item.permission));
+  const filteredSecondaryNavItems = secondaryNavItems.filter(item => hasPermission(item.permission));
 
 
   return (

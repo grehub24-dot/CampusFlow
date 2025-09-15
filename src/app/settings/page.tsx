@@ -4,7 +4,7 @@
 import React from 'react';
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { User } from '@/types';
+import type { User, Role } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSchoolInfo } from '@/context/school-info-context';
 import { useAuth } from '@/context/auth-context';
@@ -21,9 +21,11 @@ import { SchoolInfoSettings } from './school-info-settings';
 import { TemplatesSettings } from './templates-settings';
 import { BillingSettings } from './billing-settings';
 import { PayrollSettings } from './payroll-settings';
+import { RolesSettings } from './roles-settings';
 
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
+  const [roles, setRoles] = React.useState<Role[]>([]);
   const { toast } = useToast();
   const { schoolInfo } = useSchoolInfo();
   const { user } = useAuth();
@@ -43,7 +45,6 @@ export default function SettingsPage() {
         usersData.push({ id: doc.id, ...doc.data() } as User);
       });
 
-      // Ensure the current admin user is always in the list, even if not in Firestore
       if (user && user.role === 'Admin' && !usersData.find(u => u.id === user.id)) {
         usersData.unshift(user);
       }
@@ -53,8 +54,16 @@ export default function SettingsPage() {
       console.error("Error fetching users:", error);
       toast({ variant: "destructive", title: "Error", description: "Could not fetch users." });
     });
+    
+    const rolesQuery = query(collection(db, "roles"));
+    const unsubscribeRoles = onSnapshot(rolesQuery, (querySnapshot) => {
+        setRoles(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Role)));
+    });
 
-    return () => unsubscribeUsers();
+    return () => {
+        unsubscribeUsers();
+        unsubscribeRoles();
+    }
   }, [toast, canViewUsers, user]);
 
   return (
@@ -71,6 +80,7 @@ export default function SettingsPage() {
           <TabsTrigger value="fee-items">Fee Items</TabsTrigger>
           <TabsTrigger value="fee-structure">Fee Structure</TabsTrigger>
           {canViewUsers && <TabsTrigger value="users">User Management</TabsTrigger>}
+          {canViewUsers && <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>}
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="billing">Billing & Invoices</TabsTrigger>
@@ -101,6 +111,12 @@ export default function SettingsPage() {
           <TabsContent value="users">
               <UserManagementSettings users={users} />
           </TabsContent>
+        )}
+        
+        {canViewUsers && (
+            <TabsContent value="roles">
+                <RolesSettings roles={roles} />
+            </TabsContent>
         )}
 
         <TabsContent value="integrations">

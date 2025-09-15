@@ -297,3 +297,33 @@ export type GenerateInsightfulReportsOutput = {
   reportContent: string;
   reportFormat: string;
 }
+
+export type Permission = {
+    read: boolean;
+    create: boolean;
+    update: boolean;
+    delete: boolean;
+}
+
+export type RolePermissions = {
+    dashboard?: Pick<Permission, 'read'>;
+    admissions?: Permission;
+    students?: Permission;
+    staff?: Permission;
+    payments?: Permission;
+    invoices?: Permission;
+    fees?: Permission;
+    reports?: Permission;
+    communications?: Permission;
+    payroll?: Permission & { run: boolean };
+    transactions?: Permission;
+    billing?: Pick<Permission, 'read' | 'update'>;
+    settings?: Pick<Permission, 'read' | 'update'>;
+    activity?: Pick<Permission, 'read'>;
+}
+
+export type Role = {
+    id: string;
+    name: 'Admin' | 'Accountant' | 'Teacher' | 'Support';
+    permissions: RolePermissions;
+}
