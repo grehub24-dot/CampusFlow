@@ -9,6 +9,7 @@ import html2canvas from 'html2canvas';
 import { useSchoolInfo } from '@/context/school-info-context';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
+import { format, endOfMonth } from 'date-fns';
 
 export function IncomeAndExpenditureReport() {
   const { schoolInfo, loading } = useSchoolInfo();
@@ -51,6 +52,8 @@ export function IncomeAndExpenditureReport() {
     )
   }
 
+  const reportDate = endOfMonth(new Date());
+
   return (
     <div className="p-4 bg-white">
       <div id="income-expenditure-report" className="printable-area financial-report-container p-6">
@@ -63,7 +66,7 @@ export function IncomeAndExpenditureReport() {
               <Image src={schoolInfo.logoUrl || '/logo.jpg'} alt="School Logo" width={100} height={100} className="object-contain" />
           </div>
           <h3>Income and Expenditure Account</h3>
-          <h4>(As at 30th June 2025)</h4>
+          <h4>(As at {format(reportDate, 'do MMMM yyyy')})</h4>
         </header>
 
         {/* Income Table */}
