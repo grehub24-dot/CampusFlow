@@ -50,8 +50,8 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
         return;
     }
     const limit = PLAN_LIMITS[schoolInfo?.currentPlan || 'free'];
-    // Exclude the superadmin from the user count for the purpose of checking the limit
-    const billableUsers = users.filter(u => u.email !== 'superadmin@campusflow.com');
+    // Exclude system accounts from the user count for the purpose of checking the limit
+    const billableUsers = users.filter(u => u.email !== 'superadmin@campusflow.com' && u.email !== 'support@campusflow.com');
     
     if (billableUsers.length >= limit) {
         toast({
@@ -91,7 +91,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
         // 3. Send admin notification
         const adminPhoneNumber = '0536282694';
         const limit = PLAN_LIMITS[schoolInfo?.currentPlan || 'free'];
-        const currentCount = users.filter(u => u.email !== 'superadmin@campusflow.com').length + 1;
+        const currentCount = users.filter(u => u.email !== 'superadmin@campusflow.com' && u.email !== 'support@campusflow.com').length + 1;
         const message = `New User Created: ${values.name} (${values.role}). Total users: ${currentCount}/${limit} on ${schoolInfo?.currentPlan} plan.`;
         await sendSms([adminPhoneNumber], message);
 

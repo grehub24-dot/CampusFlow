@@ -37,6 +37,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     setLoading(false);
                     return;
                 }
+                if (firebaseUser.email === 'support@campusflow.com') {
+                    // Special case for the support user
+                    setUser({
+                        id: firebaseUser.uid,
+                        email: firebaseUser.email,
+                        name: 'Support Team',
+                        role: 'Support',
+                        lastLogin: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
+                    });
+                    setLoading(false);
+                    return;
+                }
 
                 // User is signed in, now fetch their role from Firestore
                 const userDocRef = doc(db, 'users', firebaseUser.uid);
