@@ -94,8 +94,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
 
   const onSubmit: SubmitHandler<UserFormValues> = async (values) => {
     setIsSubmitting(true);
-    const auth = getAuth();
-
+    
     try {
         if (selectedUser) {
             // Update user in Firestore
@@ -109,6 +108,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
 
         } else {
             // Create user in Firebase Auth
+            const auth = getAuth();
             const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password!);
             const newFirebaseUser = userCredential.user;
 
@@ -209,3 +209,4 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
     </>
   )
 }
+
