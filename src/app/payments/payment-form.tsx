@@ -30,6 +30,8 @@ import { Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useAuth } from '@/context/auth-context';
+import { logActivity } from '@/lib/activity-logger';
 
 interface Props {
   students: Student[];
@@ -66,6 +68,7 @@ export default function PaymentForm({
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [smsTemplates, setSmsTemplates] = useState<Record<string, CommunicationTemplate>>({});
   const [integrationSettings, setIntegrationSettings] = useState<IntegrationSettings | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     switch (paymentMethod) {
@@ -323,6 +326,8 @@ export default function PaymentForm({
       await updateDoc(doc(db, 'students', selectedStudent.id), {
         paymentStatus: newStudentStatus,
       });
+
+      await logActivity(user, 'Payment Recorded', `Recorded a payment of GHS ${payingAmount.toFixed(2)} for ${selectedStudent.name}.`);
 
       toast({
         title: 'Payment Recorded',

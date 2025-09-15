@@ -32,6 +32,8 @@ import { StudentDetails } from '@/components/student-details';
 import PaymentForm from '../payments/payment-form';
 import { sendSms } from '@/lib/frog-api';
 import { useSchoolInfo } from '@/context/school-info-context';
+import { useAuth } from '@/context/auth-context';
+import { logActivity } from '@/lib/activity-logger';
 
 
 const formSchema = z.object({
@@ -328,6 +330,7 @@ export default function AdmissionsPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { schoolInfo } = useSchoolInfo();
+  const { user } = useAuth();
 
   React.useEffect(() => {
     // Listener for all students to get the total count
@@ -566,9 +569,13 @@ export default function AdmissionsPage() {
             transaction.set(newStudentDocRef, newStudentData);
         });
 
+        const studentName = `${values.firstName} ${values.lastName}`;
+        await logActivity(user, 'New Admission', `Admitted a new student: ${studentName} into ${values.admissionClass}.`);
+
+
         toast({
             title: 'Application Submitted',
-            description: `${values.firstName} ${values.lastName}'s application has been successfully submitted.`,
+            description: `${studentName}'s application has been successfully submitted.`,
         });
         
         setIsAdmissionDialogOpen(false);
@@ -764,5 +771,3 @@ export default function AdmissionsPage() {
     </>
   );
 }
-
-    

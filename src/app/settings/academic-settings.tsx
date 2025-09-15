@@ -25,6 +25,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 
 import { AcademicTermForm, type FormValues } from './academic-settings-form';
+import { useAuth } from '@/context/auth-context';
+import { logActivity } from '@/lib/activity-logger';
 
 export function AcademicSettings() {
     const [terms, setTerms] = React.useState<AcademicTerm[]>([]);
@@ -33,6 +35,7 @@ export function AcademicSettings() {
     const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
     const [selectedTerm, setSelectedTerm] = React.useState<AcademicTerm | null>(null);
     const { toast } = useToast();
+    const { user } = useAuth();
 
     React.useEffect(() => {
         const q = query(collection(db, "academic-terms"));
@@ -87,6 +90,9 @@ export function AcademicSettings() {
             });
 
             await batch.commit();
+
+            await logActivity(user, 'Set Current Term', `Set ${termToSet.session} ${termToSet.academicYear} as the current academic term.`);
+
             toast({
                 title: 'Current Term Updated',
                 description: `${termToSet.academicYear} - ${termToSet.session} is now the current term.`,
@@ -119,16 +125,19 @@ export function AcademicSettings() {
                 startDate: values.startDate.toISOString(),
                 endDate: values.endDate.toISOString(),
             };
+            const details = `${termData.session} ${termData.academicYear}`;
 
             if (selectedTerm) {
                 const termDocRef = doc(db, "academic-terms", selectedTerm.id);
                 await updateDoc(termDocRef, termData);
+                await logActivity(user, 'Update Academic Term', `Updated academic term: ${details}.`);
                 toast({
                     title: 'Term Updated',
                     description: 'The academic term has been successfully updated.',
                 });
             } else {
                 await addDoc(collection(db, "academic-terms"), { ...termData, isCurrent: false });
+                await logActivity(user, 'Add Academic Term', `Added new academic term: ${details}.`);
                 toast({
                     title: 'Term Added',
                     description: 'The new academic term has been successfully added.',

@@ -12,6 +12,7 @@ import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { sendSms } from "@/lib/frog-api";
+import { logActivity } from "@/lib/activity-logger";
 
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -92,6 +93,8 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
             lastLogin: new Date().toISOString(),
         });
         
+        await logActivity(user, 'User Created', `Created a new user: ${values.name} with role ${values.role}.`);
+
         toast({
             title: "User Created",
             description: `${values.name} has been added as a new ${values.role}.`

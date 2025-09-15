@@ -265,4 +265,15 @@ export type FinancialSummaryItem = {
     total: number;
 }
 
-    
+export type ActivityLog = {
+    id: string;
+    timestamp: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+    };
+    action: string;
+    details: string;
+  };

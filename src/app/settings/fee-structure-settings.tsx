@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/alert-dialog"
 
 import { FeeStructureForm, type FormValues } from './fee-structure-form';
+import { useAuth } from '@/context/auth-context';
+import { logActivity } from '@/lib/activity-logger';
 
 const categoryOrder = ['Pre-school', 'Primary', 'Junior High School'];
 const preSchoolOrder = ['Creche', 'Nursery 1', 'Nursery 2', 'Kindergarten 1', 'Kindergarten 2'];
@@ -46,6 +48,7 @@ export function FeeStructureSettings() {
     const [selectedFeeStructure, setSelectedFeeStructure] = React.useState<FeeStructure | null>(null);
     const [structureToDelete, setStructureToDelete] = React.useState<FeeStructure | null>(null);
     const { toast } = useToast();
+    const { user } = useAuth();
 
     React.useEffect(() => {
         const feeStructuresQuery = query(collection(db, "fee-structures"));
@@ -126,6 +129,8 @@ export function FeeStructureSettings() {
         setIsSubmitting(true);
         try {
             await deleteDoc(doc(db, "fee-structures", structureToDelete.id));
+            const details = `Deleted fee structure for ${getClassName(structureToDelete.classId)} - ${getTermName(structureToDelete.academicTermId)}.`;
+            await logActivity(user, 'Delete Fee Structure', details);
             toast({ title: "Fee Structure Deleted", description: "The fee structure has been successfully deleted." });
         } catch (error) {
             console.error("Error deleting fee structure:", error);
@@ -175,6 +180,8 @@ export function FeeStructureSettings() {
                 };
                 const docRef = doc(db, "fee-structures", selectedFeeStructure.id);
                 await updateDoc(docRef, data);
+                const details = `Updated fee structure for ${getClassName(data.classId)} - ${getTermName(data.academicTermId)}.`;
+                await logActivity(user, 'Update Fee Structure', details);
                 toast({ title: 'Fee Structure Updated', description: 'The fee structure has been successfully updated.' });
             } else {
                  const data = {
@@ -186,6 +193,8 @@ export function FeeStructureSettings() {
                     }))
                 };
                 await addDoc(collection(db, "fee-structures"), data);
+                const details = `Added new fee structure for ${getClassName(data.classId)} - ${getTermName(data.academicTermId)}.`;
+                await logActivity(user, 'Add Fee Structure', details);
                 toast({ title: 'Fee Structure Added', description: 'The new fee structure has been successfully added.' });
             }
             setIsFormDialogOpen(false);

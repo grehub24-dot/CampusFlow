@@ -41,6 +41,7 @@ import {
   FileBarChart,
   LogOut,
   Loader2,
+  ListOrdered,
 } from "lucide-react"
 
 import { Button } from './ui/button';
@@ -71,6 +72,7 @@ const secondaryNavItems = [
   { href: "/financial-summary", icon: FileBarChart, label: "Financial Summary", roles: ['Admin', 'Accountant'] },
   { href: "/billing", icon: CreditCard, label: "Billing", roles: ['Admin'] },
   { href: "/settings", icon: Settings, label: "Settings", roles: ['Admin'] },
+  { href: "/activity-log", icon: ListOrdered, label: "Activity Log", roles: ['Admin'] },
 ]
 
 
