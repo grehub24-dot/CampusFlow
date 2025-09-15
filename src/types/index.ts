@@ -1,4 +1,5 @@
 
+
 export type Student = {
   id: string; // This is the Firestore document ID
   admissionId?: string; // Add this new field
@@ -290,3 +291,9 @@ export type PayrollSettings = {
   ssnitEmployerRate: number;
   payeTaxBrackets: TaxBracket[];
 };
+
+// Add GenerateInsightfulReportsOutput to types
+export type GenerateInsightfulReportsOutput = {
+  reportContent: string;
+  reportFormat: string;
+}

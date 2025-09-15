@@ -1,6 +1,7 @@
+
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,12 +12,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
-import type { GenerateInsightfulReportsOutput } from '@/ai/flows/generate-insightful-reports';
+import type { GenerateInsightfulReportsOutput, Student, Payment, Transaction, AcademicTerm } from '@/types';
 import { ReportDisplay } from './report-display';
 import { useToast } from '@/hooks/use-toast';
 import { reportTemplates } from "./report-templates";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { IncomeAndExpenditureReport } from './income-and-expenditure-report';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const formSchema = z.object({
   reportType: z.string().min(1, 'Please select a report type.'),
@@ -30,6 +33,42 @@ export default function ReportsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isIncomeStatementOpen, setIsIncomeStatementOpen] = useState(false);
   const { toast } = useToast();
+
+  const [students, setStudents] = useState<Student[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [currentTerm, setCurrentTerm] = useState<AcademicTerm | null>(null);
+
+
+  useEffect(() => {
+    const studentsQuery = query(collection(db, "students"));
+    const unsubscribeStudents = onSnapshot(studentsQuery, (snapshot) => {
+      setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student)));
+    });
+
+    const paymentsQuery = query(collection(db, "payments"));
+    const unsubscribePayments = onSnapshot(paymentsQuery, (snapshot) => {
+      setPayments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment)));
+    });
+
+    const transactionsQuery = query(collection(db, "transactions"));
+    const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
+      setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
+    });
+
+    const termsQuery = query(collection(db, "academic-terms"));
+    const unsubscribeTerms = onSnapshot(termsQuery, (snapshot) => {
+        const current = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AcademicTerm)).find(t => t.isCurrent);
+        setCurrentTerm(current || null);
+    });
+
+    return () => {
+        unsubscribeStudents();
+        unsubscribePayments();
+        unsubscribeTransactions();
+        unsubscribeTerms();
+    }
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -149,7 +188,12 @@ export default function ReportsPage() {
                 </DialogDescription>
             </DialogHeader>
             <div className="max-h-[80vh] overflow-y-auto">
-                <IncomeAndExpenditureReport />
+                <IncomeAndExpenditureReport 
+                  payments={payments}
+                  transactions={transactions}
+                  students={students}
+                  currentTerm={currentTerm}
+                />
             </div>
         </DialogContent>
       </Dialog>

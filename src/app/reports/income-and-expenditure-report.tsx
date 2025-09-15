@@ -3,15 +3,22 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
+import { Printer, Loader2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useSchoolInfo } from '@/context/school-info-context';
 import Image from 'next/image';
-import { Loader2 } from 'lucide-react';
-import { format, endOfMonth } from 'date-fns';
+import { format, endOfMonth, startOfMonth, isWithinInterval } from 'date-fns';
+import type { Payment, Transaction, Student, AcademicTerm } from '@/types';
 
-export function IncomeAndExpenditureReport() {
+interface ReportProps {
+  payments: Payment[];
+  transactions: Transaction[];
+  students: Student[];
+  currentTerm: AcademicTerm | null;
+}
+
+export function IncomeAndExpenditureReport({ payments, transactions, students, currentTerm }: ReportProps) {
   const { schoolInfo, loading } = useSchoolInfo();
 
   const handlePrint = () => {
@@ -44,6 +51,55 @@ export function IncomeAndExpenditureReport() {
     }
   };
   
+  const reportDate = endOfMonth(new Date());
+  const reportMonthStart = startOfMonth(new Date());
+
+  const monthlyPayments = payments.filter(p => isWithinInterval(new Date(p.date), { start: reportMonthStart, end: reportDate }));
+  const monthlyTransactions = transactions.filter(t => isWithinInterval(new Date(t.date), { start: reportMonthStart, end: reportDate }));
+  
+  const incomeFromPayments = monthlyPayments.reduce((acc, payment) => {
+    payment.items?.forEach(item => {
+      const student = students.find(s => s.id === payment.studentId);
+      const isNew = student?.admissionTerm === currentTerm?.session && student?.admissionYear === currentTerm?.academicYear;
+      
+      let category = item.name;
+      if (item.name.toLowerCase().includes('school fees')) {
+        category = isNew ? 'New Admissions School fees' : 'Termly School fees (Old Students) & Recovered';
+      } else if (item.name.toLowerCase().includes('books')) {
+        category = isNew ? 'Books - New Admissions' : 'Books - Sold to Old Students';
+      } else if (item.name.toLowerCase().includes('uniform')) {
+        category = isNew ? 'School Uniforms - New Admissions' : 'School Uniforms - Old Students';
+      }
+
+      acc[category] = (acc[category] || 0) + item.amount;
+    });
+    return acc;
+  }, {} as Record<string, number>);
+
+  const otherIncome = monthlyTransactions
+    .filter(t => t.type === 'income')
+    .reduce((acc, t) => {
+        const category = t.categoryName === 'Printing & Photocopying' ? 'Extra From Printing and Our-day' : t.categoryName;
+        acc[category] = (acc[category] || 0) + t.amount;
+        return acc;
+    }, {} as Record<string, number>);
+    
+  const allIncome = {...incomeFromPayments, ...otherIncome};
+  const totalIncome = Object.values(allIncome).reduce((sum, amount) => sum + amount, 0);
+
+  const expenses = monthlyTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((acc, t) => {
+        let category = t.categoryName;
+        if(t.categoryName === 'Canteen Supplies') category = 'Canteen Food';
+        if(t.categoryName === 'Transportation (Fuel/Maintenance)') category = 'Bus Fuel'; // Simplified
+        acc[category] = (acc[category] || 0) + t.amount;
+        return acc;
+    }, {} as Record<string, number>);
+
+  const totalExpenses = Object.values(expenses).reduce((sum, amount) => sum + amount, 0);
+
+
   if (loading || !schoolInfo) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -52,7 +108,28 @@ export function IncomeAndExpenditureReport() {
     )
   }
 
-  const reportDate = endOfMonth(new Date());
+  const incomeItems = [
+      { label: 'Canteen Fee', value: allIncome['Canteen Fee'] || 0 },
+      { label: 'Transport', value: allIncome['Transport'] || 0 },
+      { label: 'New Admissions School fees', value: allIncome['New Admissions School fees'] || 0 },
+      { label: 'Termly School fees (Old Students) & Recovered', value: allIncome['Termly School fees (Old Students) & Recovered'] || 0 },
+      { label: 'Books - Sold to Old Students', value: allIncome['Books - Sold to Old Students'] || 0 },
+      { label: 'Books - New Admissions', value: allIncome['Books - New Admissions'] || 0 },
+      { label: 'School Uniforms - New Admissions', value: allIncome['School Uniforms - New Admissions'] || 0 },
+      { label: 'School Uniforms - Old Students', value: allIncome['School Uniforms - Old Students'] || 0 },
+      { label: 'Extra From Printing and Our-day', value: allIncome['Extra From Printing and Our-day'] || 0 },
+  ];
+
+  const expenseItems = [
+      { label: 'Salary (June)', value: expenses['Salary'] || 0 },
+      { label: 'Canteen Food', value: expenses['Canteen Food'] || 0 },
+      { label: 'Petty Expense', value: expenses['Petty Expenses'] || 0 },
+      { label: "Teacher's Motivation", value: expenses["Teachers Motivation"] || 0 },
+      { label: 'Bus Fuel', value: expenses['Bus Fuel'] || 0 },
+      { label: 'Bus Maintenance', value: expenses['Repairs & Maintenance'] || 0 },
+      { label: 'Water Bill / Water Supply', value: expenses['Utilities (Water/Electricity)'] || 0 },
+      { label: 'Tel. Charges', value: expenses['Administrative Costs'] || 0 },
+  ];
 
   return (
     <div className="p-4 bg-white">
@@ -77,54 +154,36 @@ export function IncomeAndExpenditureReport() {
             <tr className="main-header">
               <th>INCOME</th>
               <th className="amount-col">GHC</th>
-              <th className="amount-col">GHC</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>Bal B/F (May 2025)</td><td className="amount-col"></td><td className="amount-col">124,233.64</td></tr>
-            <tr><td>Canteen Fee</td><td className="amount-col"></td><td className="amount-col">16,630.00</td></tr>
-            <tr><td>Transport</td><td className="amount-col"></td><td className="amount-col">2,481.00</td></tr>
-            <tr><td>New Admissions School fees</td><td className="amount-col"></td><td className="amount-col">1,410.00</td></tr>
-            <tr><td>Termly School fees (Old Students) & Recovered</td><td className="amount-col"></td><td className="amount-col">11,800.00</td></tr>
-            <tr><td>Books - Sold to Old Students</td><td className="amount-col">-</td><td className="amount-col"></td></tr>
-            <tr><td>Books - New Admissions</td><td className="amount-col"></td><td className="amount-col">410.00</td></tr>
-            <tr><td>School Uniforms - New Admissions</td><td className="amount-col"></td><td className="amount-col">980.00</td></tr>
-            <tr><td>School Uniforms - Old Students</td><td className="amount-col"></td><td className="amount-col">240.00</td></tr>
-            <tr><td>Extra From Printing and Our-day</td><td className="amount-col">-</td><td className="amount-col"></td></tr>
-            <tr className="total-row"><td>TOTAL INCOME</td><td className="amount-col"></td><td className="amount-col">157,484.64</td></tr>
+            {incomeItems.map(item => (
+                <tr key={item.label}>
+                    <td>{item.label}</td>
+                    <td className="amount-col">{item.value > 0 ? item.value.toFixed(2) : '-'}</td>
+                </tr>
+            ))}
+            <tr className="total-row"><td>TOTAL INCOME</td><td className="amount-col">{totalIncome.toFixed(2)}</td></tr>
           </tbody>
         </table>
 
         {/* Expenses Table */}
-        <table>
+        <table className="mt-8">
             <thead>
                 <tr className="main-header">
                 <th>LESS EXPENSES</th>
                 <th className="amount-col">GHC</th>
-                <th className="amount-col">GHC</th>
                 </tr>
             </thead>
             <tbody>
-                <tr><td><strong>Salary (June)</strong></td><td className="amount-col"></td><td className="amount-col"><strong>6,400.00</strong></td></tr>
-                <tr><td>Canteen Food (16/06/25) Food for Stuff - Canteen</td><td className="amount-col"></td><td className="amount-col">130.00</td></tr>
-                <tr><td className="font-semibold">Petty Expense</td><td className="amount-col"></td><td className="amount-col"></td></tr>
-                <tr><td className="sub-item">(02/06/25) Envelopes</td><td className="sub-amount-col">25.00</td><td className="amount-col"></td></tr>
-                <tr><td className="sub-item">(06/06/25) First Aid-items</td><td className="sub-amount-col">32.50</td><td className="amount-col"></td></tr>
-                <tr><td className="sub-item">(13/06/25) 1v1 for pupils</td><td className="sub-amount-col">20.00</td><td className="amount-col"></td></tr>
-                <tr><td className="sub-item">(13/06/25) Refuse</td><td className="sub-amount-col">50.00</td><td className="amount-col"></td></tr>
-                <tr><td className="sub-item">(16/06/25) After Wash</td><td className="sub-amount-col">10.00</td><td className="amount-col"></td></tr>
-                <tr><td className="sub-item">(17/06/25) Prize</td><td className="sub-amount-col">170.00</td><td className="amount-col"></td></tr>
-                <tr><td className="sub-item">(18/06/25) Rubber bag</td><td className="sub-amount-col">10.00</td><td className="amount-col"></td></tr>
-                <tr><td className="sub-item">(18/06/25) Wheel burrow</td><td className="sub-amount-col">20.00</td><td className="amount-col"></td></tr>
-                <tr><td className="sub-item">(25/06/25) Refuse</td><td className="sub-amount-col">50.00</td><td className="amount-col"><strong>387.50</strong></td></tr>
-                <tr><td className="font-semibold">Teacher's Motivation</td><td className="amount-col"></td><td className="amount-col"></td></tr>
-                <tr><td className="sub-item">(13/06/25)</td><td className="sub-amount-col">242.00</td><td className="amount-col"></td></tr>
-                <tr><td className="sub-item">(20/06/25)</td><td className="sub-amount-col">492.00</td><td className="amount-col"></td></tr>
-                <tr><td className="sub-item">(27/06/25)</td><td className="sub-amount-col">450.00</td><td className="amount-col"><strong>1,184.00</strong></td></tr>
-                <tr><td>Bus Fuel</td><td className="amount-col"></td><td className="amount-col">1,980.00</td></tr>
-                <tr><td>Bus Maintenance</td><td className="amount-col"></td><td className="amount-col">5,807.00</td></tr>
-                <tr><td>Water Bill / Water Supply</td><td className="amount-col">-</td><td className="amount-col"></td></tr>
-                <tr><td>Tel. Charges</td><td className="amount-col">-</td><td className="amount-col"></td></tr>
+                {expenseItems.map(item => (
+                     <tr key={item.label}>
+                        <td>{item.label}</td>
+                        <td className="amount-col">{item.value > 0 ? item.value.toFixed(2) : '-'}</td>
+                    </tr>
+                ))}
+                 <tr className="total-row"><td>TOTAL EXPENSES</td><td className="amount-col">{totalExpenses.toFixed(2)}</td></tr>
+                 <tr className="total-row"><td>NET BALANCE</td><td className="amount-col">{(totalIncome - totalExpenses).toFixed(2)}</td></tr>
             </tbody>
         </table>
       </div>
