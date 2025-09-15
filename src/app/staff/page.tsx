@@ -8,6 +8,7 @@ import { doc, addDoc, updateDoc, deleteDoc, collection, onSnapshot, query } from
 import { db } from '@/lib/firebase';
 import type { SubmitHandler } from 'react-hook-form';
 import { logActivity } from '@/lib/activity-logger';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -133,7 +134,8 @@ export default function StaffPage() {
 
             } else {
                 // Create
-                await addDoc(collection(db, "staff"), data);
+                const payrollId = `STAFF-${uuidv4().substring(0, 8).toUpperCase()}`;
+                await addDoc(collection(db, "staff"), { ...data, payrollId });
                 await logActivity(user, 'Staff Added', `Added new staff member: ${values.name}`);
                 toast({ title: 'Staff Added', description: 'New staff member has been added.' });
             }

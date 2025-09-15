@@ -165,6 +165,14 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
                         </FormItem>
                     )}
                 />
+                 {defaultValues?.payrollId && (
+                    <FormItem className="md:col-span-2">
+                        <FormLabel>Payroll ID</FormLabel>
+                        <FormControl>
+                            <Input value={defaultValues.payrollId} readOnly disabled />
+                        </FormControl>
+                    </FormItem>
+                )}
             </div>
         </div>
 

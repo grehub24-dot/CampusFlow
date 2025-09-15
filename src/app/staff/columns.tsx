@@ -31,6 +31,10 @@ const formatCurrency = (amount: number) => {
 
 export const getStaffColumns = ({ onEdit, onDelete, canManage }: ColumnsProps): ColumnDef<StaffMember>[] => [
   {
+    accessorKey: "payrollId",
+    header: "Payroll ID",
+  },
+  {
     accessorKey: "name",
     header: "Name",
   },

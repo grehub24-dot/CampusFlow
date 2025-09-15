@@ -203,6 +203,7 @@ export type StaffArrears = {
 
 export type StaffMember = {
     id: string;
+    payrollId: string;
     name: string;
     role: string;
     grossSalary: number;
@@ -318,7 +319,7 @@ export type RolePermissions = {
     reports?: Pick<Permission, 'read'>;
     financials?: Pick<Permission, 'read'>;
     communications?: Pick<Permission, 'read' | 'create'>;
-    payroll?: Pick<Permission, 'read' | 'run'>;
+    payroll?: Pick<Permission, 'read' | 'update' | 'run'>;
     transactions?: Permission;
     billing?: Pick<Permission, 'read' | 'update'>;
     settings?: Pick<Permission, 'read' | 'update'>;
