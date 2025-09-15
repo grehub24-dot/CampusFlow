@@ -155,10 +155,7 @@ const generalReportPrompt = ai.definePrompt({
   name: 'generalReportPrompt',
   input: {schema: GenerateInsightfulReportsInputSchema},
   output: {schema: GenerateInsightfulReportsOutputSchema},
-  prompt: `Generate a professionally formatted report with clear headings, sub-sections, and a concise executive summary.
-
-Report Type: {{{reportType}}}
-Additional Instructions: {{{additionalInstructions}}}
+  prompt: `Generate a professionally formatted {{{reportType}}} report with clear headings, sub-sections, and a concise executive summary.
 
 Output Requirements
 
@@ -184,6 +181,8 @@ Export: Ensure the layout copies cleanly to Word (.docx) and PDF.
 For Excel-bound data, include all tabular info as clean CSV-friendly tables with headers.
 
 You must also determine the most suitable format for the content requested. The format should be most suitable for the content, be it text, CSV, or a chart.
+
+Additional Instructions: {{{additionalInstructions}}}
 `,
 });
 
