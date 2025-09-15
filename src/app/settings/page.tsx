@@ -28,9 +28,9 @@ export default function SettingsPage() {
   const [roles, setRoles] = React.useState<Role[]>([]);
   const { toast } = useToast();
   const { schoolInfo } = useSchoolInfo();
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   
-  const canViewUsers = user?.role === 'Admin';
+  const canViewUsers = hasPermission('settings:read'); // Simplified check
 
 
   React.useEffect(() => {

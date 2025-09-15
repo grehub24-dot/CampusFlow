@@ -330,7 +330,11 @@ export default function AdmissionsPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { schoolInfo } = useSchoolInfo();
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
+  
+  const canCreateAdmission = hasPermission('admissions:create');
+  const canDeleteAdmission = hasPermission('admissions:delete');
+  const canCreatePayment = hasPermission('payments:create');
 
   React.useEffect(() => {
     // Listener for all students to get the total count
@@ -684,7 +688,7 @@ export default function AdmissionsPage() {
       >
         <Dialog open={isAdmissionDialogOpen} onOpenChange={setIsAdmissionDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleAddNewStudentClick}>
+            <Button onClick={handleAddNewStudentClick} disabled={!canCreateAdmission}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add New Student
             </Button>
@@ -736,7 +740,13 @@ export default function AdmissionsPage() {
       </div>
       
       <div className="space-y-6">
-        <AdmittedStudentTable data={studentsWithStatus} onViewApplication={handleViewApplication} onPay={handlePay} />
+        <AdmittedStudentTable 
+            data={studentsWithStatus} 
+            onViewApplication={handleViewApplication} 
+            onPay={handlePay}
+            canCreatePayment={canCreatePayment}
+            canDeleteAdmission={canDeleteAdmission}
+        />
       </div>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

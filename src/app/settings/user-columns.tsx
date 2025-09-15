@@ -75,7 +75,7 @@ export const getUserColumns = ({ onEdit, canEdit }: ColumnsProps): ColumnDef<Use
     cell: ({ row }) => {
       const user = row.original;
       // Never show actions for the superadmin
-      if (user.email === 'superadmin@campusflow.com') return null;
+      if (user.email === 'superadmin@campusflow.com' || !canEdit) return null;
 
       return (
         <div className="text-right">
@@ -88,7 +88,7 @@ export const getUserColumns = ({ onEdit, canEdit }: ColumnsProps): ColumnDef<Use
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                {canEdit && <DropdownMenuItem onClick={() => onEdit(user)}>Edit user</DropdownMenuItem>}
+                <DropdownMenuItem onClick={() => onEdit(user)}>Edit user</DropdownMenuItem>
                 <DropdownMenuItem>Reset password</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive">Deactivate user</DropdownMenuItem>

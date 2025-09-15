@@ -20,6 +20,8 @@ import { cn } from "@/lib/utils"
 type ColumnsProps = {
   onViewApplication: (student: Student) => void;
   onPay: (student: Student) => void;
+  canCreatePayment: boolean;
+  canDeleteAdmission: boolean;
 }
 
 const calculateAge = (dob: string) => {
@@ -33,7 +35,7 @@ const calculateAge = (dob: string) => {
     return age;
 };
 
-export const getColumns = ({ onViewApplication, onPay }: ColumnsProps): ColumnDef<Student>[] => [
+export const getColumns = ({ onViewApplication, onPay, canCreatePayment, canDeleteAdmission }: ColumnsProps): ColumnDef<Student>[] => [
   {
     accessorKey: "admissionId",
     header: "Admission ID",
@@ -94,7 +96,7 @@ export const getColumns = ({ onViewApplication, onPay }: ColumnsProps): ColumnDe
                 variant="outline"
                 size="sm"
                 onClick={() => onPay(student)}
-                disabled={student.paymentStatus === 'Paid'}
+                disabled={student.paymentStatus === 'Paid' || !canCreatePayment}
             >
                 Pay
             </Button>
@@ -108,8 +110,12 @@ export const getColumns = ({ onViewApplication, onPay }: ColumnsProps): ColumnDe
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onViewApplication(student)}>View Application</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">Reject Application</DropdownMenuItem>
+                {canDeleteAdmission && (
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive">Reject Application</DropdownMenuItem>
+                    </>
+                )}
             </DropdownMenuContent>
             </DropdownMenu>
         </div>

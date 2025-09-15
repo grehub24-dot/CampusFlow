@@ -34,8 +34,8 @@ const months = [
 const years = Array.from({ length: 5 }, (_, i) => getYear(new Date()) - i);
 
 function StaffPayrollTable({ staff, onEdit }: { staff: StaffMember[], onEdit: (staff: StaffMember) => void }) {
-    const { user } = useAuth();
-    const canEdit = user?.role === 'Admin';
+    const { hasPermission } = useAuth();
+    const canEdit = hasPermission('payroll:update');
     const columns = React.useMemo(() => getStaffPayrollColumns({ onEdit, canEdit }), [onEdit, canEdit]);
     const table = useReactTable({
         data: staff,
@@ -96,8 +96,8 @@ export default function PayrollPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-  const { user } = useAuth();
-  const canRunPayroll = user?.role === 'Admin';
+  const { user, hasPermission } = useAuth();
+  const canRunPayroll = hasPermission('payroll:run');
 
   useEffect(() => {
     const staffQuery = query(collection(db, "staff"));

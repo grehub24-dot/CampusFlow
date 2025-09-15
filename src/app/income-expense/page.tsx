@@ -39,8 +39,12 @@ export default function IncomeExpensePage() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   
+  const canCreate = hasPermission('transactions:create');
+  const canUpdate = hasPermission('transactions:update');
+  const canDelete = hasPermission('transactions:delete');
+
   useEffect(() => {
     const transactionsQuery = query(collection(db, "transactions"), orderBy("date", "desc"));
     const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
@@ -166,7 +170,10 @@ export default function IncomeExpensePage() {
     }
   }
 
-  const columns = React.useMemo(() => getTransactionColumns({ onEdit: handleEditClick, onDelete: handleDeleteClick }), []);
+  const columns = React.useMemo(() => getTransactionColumns({ 
+    onEdit: canUpdate ? handleEditClick : () => {}, 
+    onDelete: canDelete ? handleDeleteClick : () => {},
+  }), [canUpdate, canDelete]);
 
   const totalIncome = allTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = allTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
@@ -181,7 +188,7 @@ export default function IncomeExpensePage() {
       >
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
-                <Button onClick={handleAddClick}>
+                <Button onClick={handleAddClick} disabled={!canCreate}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Transaction
                 </Button>

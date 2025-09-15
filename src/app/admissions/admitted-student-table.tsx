@@ -31,16 +31,20 @@ interface DataTableProps {
   data: Student[]
   onViewApplication: (student: Student) => void;
   onPay: (student: Student) => void;
+  canCreatePayment: boolean;
+  canDeleteAdmission: boolean;
 }
 
 export function AdmittedStudentTable({
   data,
   onViewApplication,
   onPay,
+  canCreatePayment,
+  canDeleteAdmission,
 }: DataTableProps) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   
-  const columns = React.useMemo(() => getColumns({ onViewApplication, onPay }), [onViewApplication, onPay]);
+  const columns = React.useMemo(() => getColumns({ onViewApplication, onPay, canCreatePayment, canDeleteAdmission }), [onViewApplication, onPay, canCreatePayment, canDeleteAdmission]);
 
   const table = useReactTable({
     data,

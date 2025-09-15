@@ -30,9 +30,10 @@ export default function StaffPage() {
     const [selectedStaff, setSelectedStaff] = React.useState<StaffMember | null>(null);
     const [staffToDelete, setStaffToDelete] = React.useState<StaffMember | null>(null);
     const { toast } = useToast();
-    const { user } = useAuth();
-    const canManageStaff = user?.role === 'Admin';
-    
+    const { user, hasPermission } = useAuth();
+    const canManageStaff = hasPermission('staff:update') || hasPermission('staff:delete');
+    const canCreateStaff = hasPermission('staff:create');
+
     React.useEffect(() => {
         const staffQuery = query(collection(db, "staff"));
         const unsubscribeStaff = onSnapshot(staffQuery, (snapshot) => {
@@ -145,7 +146,7 @@ export default function StaffPage() {
         }
     };
     
-    const columns = React.useMemo(() => getStaffColumns({ onEdit: handleEdit, onDelete: handleDelete, canManage: canManageStaff }), [canManageStaff]);
+    const columns = React.useMemo(() => getStaffColumns({ onEdit: handleEdit, onDelete: handleDelete, canManage }), [canManage]);
     const table = useReactTable({
         data: staff,
         columns,
@@ -158,7 +159,7 @@ export default function StaffPage() {
                 title="Staff Management"
                 description="Manage all employees in the school."
             >
-                {canManageStaff && (
+                {canCreateStaff && (
                     <Button onClick={handleAddNew}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Add Staff

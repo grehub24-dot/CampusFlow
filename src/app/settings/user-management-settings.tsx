@@ -40,13 +40,14 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
   const { schoolInfo } = useSchoolInfo();
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isSupportFormOpen, setIsSupportFormOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
 
-  const canManageUsers = user?.role === 'Admin';
+  const canCreate = hasPermission('settings:create');
+  const canUpdate = hasPermission('settings:update');
 
 
   const handleAddUserClick = () => {
@@ -157,7 +158,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
     }
   }
 
-  const columns = React.useMemo(() => getUserColumns({ onEdit: handleEditUser, canEdit: canManageUsers }), [canManageUsers]);
+  const columns = React.useMemo(() => getUserColumns({ onEdit: handleEditUser, canEdit: canUpdate }), [canUpdate]);
 
 
   return (
@@ -169,7 +170,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
                     <CardTitle>User Management</CardTitle>
                     <CardDescription>Manage all users with access to the system.</CardDescription>
                 </div>
-                {canManageUsers && (
+                {canCreate && (
                     <div className="flex items-center gap-2">
                         <Button variant="outline" onClick={handleAddSupportUserClick}>
                             <PlusCircle className="mr-2 h-4 w-4" />
