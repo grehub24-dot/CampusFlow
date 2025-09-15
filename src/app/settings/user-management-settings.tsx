@@ -41,7 +41,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
   const { schoolInfo } = useSchoolInfo();
   const router = useRouter();
   const { toast } = useToast();
-  const { user, hasPermission, updateUserStatus, deleteUserAccount } = useAuth();
+  const { user, hasPermission } = useAuth();
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isSupportFormOpen, setIsSupportFormOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -161,7 +161,8 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
     setIsSubmitting(true);
     const newStatus = !userToDeactivate.disabled;
     try {
-        await updateUserStatus(userToDeactivate.id, newStatus);
+        const userDocRef = doc(db, 'users', userToDeactivate.id);
+        await updateDoc(userDocRef, { disabled: newStatus });
         const action = newStatus ? 'Deactivated' : 'Re-activated';
         await logActivity(user, `User ${action}`, `Set status for ${userToDeactivate.name} to ${newStatus ? 'Inactive' : 'Active'}.`);
         toast({ title: `User ${action}`, description: `${userToDeactivate.name} has been ${action.toLowerCase()}.` });
@@ -178,9 +179,10 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
     if (!userToDelete) return;
     setIsSubmitting(true);
     try {
-        await deleteUserAccount(userToDelete.id);
+        const userDocRef = doc(db, 'users', userToDelete.id);
+        await deleteDoc(userDocRef);
         await logActivity(user, 'User Deleted', `Permanently deleted user: ${userToDelete.name}.`);
-        toast({ title: "User Deleted", description: "The user account has been permanently deleted." });
+        toast({ title: "User Deleted", description: "The user account has been permanently deleted from Firestore." });
     } catch (error) {
          console.error("Error deleting user:", error);
         toast({ variant: "destructive", title: "Error", description: "Could not delete user account." });
