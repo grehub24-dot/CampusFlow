@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -37,6 +36,7 @@ const formSchema = z.object({
   invoices: permissionSchema.optional(),
   fees: permissionSchema.optional(),
   reports: permissionSchema.optional(),
+  financials: permissionSchema.optional(),
   communications: permissionSchema.optional(),
   payroll: permissionSchema.optional(),
   transactions: permissionSchema.optional(),
@@ -56,6 +56,7 @@ const permissionConfig = {
     invoices: ['read', 'create', 'update', 'delete'],
     fees: ['read', 'create', 'update', 'delete'],
     reports: ['read'],
+    financials: ['read'],
     communications: ['read', 'create'],
     payroll: ['read', 'run'],
     transactions: ['read', 'create', 'update', 'delete'],
@@ -159,7 +160,7 @@ export function RolesSettings({ roles }: { roles: Role[] }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Roles & Permissions</CardTitle>
+                <CardTitle>Roles &amp; Permissions</CardTitle>
                 <CardDescription>Define what each user role can see and do within the system.</CardDescription>
             </CardHeader>
             <CardContent>

@@ -1,4 +1,3 @@
-
 'use client'
 
 import React from 'react';
@@ -39,6 +38,7 @@ export default function InvoicesPage() {
   
   const canCreatePayment = hasPermission('payments:create');
   const canSendCommunication = hasPermission('communications:create');
+  const canReadFinancials = hasPermission('financials:read');
 
 
   React.useEffect(() => {
@@ -244,20 +244,24 @@ export default function InvoicesPage() {
             icon={BookOpen}
             color="text-green-500"
         />
-        <StatCard 
-            title="Revenue (This Term)"
-            value={`GHS ${revenueThisTerm.toLocaleString()}`}
-            icon={Receipt}
-            color="text-purple-500"
-            description={`For ${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}`}
-        />
-        <StatCard 
-            title="Total Pending Invoices"
-            value={`${pendingInvoices.length}`}
-            icon={Clock}
-            color="text-orange-500"
-            description={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
-        />
+        {canReadFinancials && (
+            <>
+                <StatCard 
+                    title="Revenue (This Term)"
+                    value={`GHS ${revenueThisTerm.toLocaleString()}`}
+                    icon={Receipt}
+                    color="text-purple-500"
+                    description={`For ${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}`}
+                />
+                <StatCard 
+                    title="Total Pending Invoices"
+                    value={`${pendingInvoices.length}`}
+                    icon={Clock}
+                    color="text-orange-500"
+                    description={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
+                />
+            </>
+        )}
       </div>
 
       <div>

@@ -1,4 +1,3 @@
-
 'use server'
 
 import { collection, writeBatch, getDocs, doc } from "firebase/firestore";
@@ -18,6 +17,7 @@ const defaultRoles: Role[] = [
             invoices: { read: true, create: true, update: true, delete: true },
             fees: { read: true, create: true, update: true, delete: true },
             reports: { read: true },
+            financials: { read: true },
             communications: { read: true, create: true },
             payroll: { read: true, run: true },
             transactions: { read: true, create: true, update: true, delete: true },
@@ -38,6 +38,7 @@ const defaultRoles: Role[] = [
             invoices: { read: true, create: true, update: false, delete: false },
             fees: { read: true, create: false, update: false, delete: false },
             reports: { read: true },
+            financials: { read: true },
             communications: { read: true, create: true },
             payroll: { read: true, run: true },
             transactions: { read: true, create: true, update: true, delete: true },
@@ -58,6 +59,7 @@ const defaultRoles: Role[] = [
             invoices: { read: false, create: false, update: false, delete: false },
             fees: { read: false, create: false, update: false, delete: false },
             reports: { read: false },
+            financials: { read: false },
             communications: { read: true, create: true },
             payroll: { read: false, run: false },
             transactions: { read: false, create: false, update: false, delete: false },
@@ -78,6 +80,7 @@ const defaultRoles: Role[] = [
             invoices: { read: false, create: false, update: false, delete: false },
             fees: { read: false, create: false, update: false, delete: false },
             reports: { read: false },
+            financials: { read: false },
             communications: { read: false, create: false },
             payroll: { read: false, run: false },
             transactions: { read: false, create: false, update: false, delete: false },

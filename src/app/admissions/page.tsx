@@ -1,4 +1,3 @@
-
 'use client'
 
 import React from 'react';
@@ -335,6 +334,7 @@ export default function AdmissionsPage() {
   const canCreateAdmission = hasPermission('admissions:create');
   const canDeleteAdmission = hasPermission('admissions:delete');
   const canCreatePayment = hasPermission('payments:create');
+  const canReadFinancials = hasPermission('financials:read');
 
   React.useEffect(() => {
     // Listener for all students to get the total count
@@ -718,13 +718,15 @@ export default function AdmissionsPage() {
             color="text-indigo-500"
             description="For the current term"
         />
-        <StatCard 
-            title="Total Payments"
-            value={`GHS ${admissionStats.totalPayments.toLocaleString()}`}
-            icon={Wallet}
-            color="text-green-500"
-            description="Based on new admissions"
-        />
+        {canReadFinancials && (
+            <StatCard 
+                title="Total Payments"
+                value={`GHS ${admissionStats.totalPayments.toLocaleString()}`}
+                icon={Wallet}
+                color="text-green-500"
+                description="Based on new admissions"
+            />
+        )}
         <StatCard 
             title="Male Students"
             value={admittedStudents.filter(s => s.gender === 'Male').length.toLocaleString()}

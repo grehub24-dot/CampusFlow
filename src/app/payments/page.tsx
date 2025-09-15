@@ -1,4 +1,3 @@
-
 'use client'
 
 import React from 'react';
@@ -22,6 +21,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { PaymentDetails } from '@/components/payment-details';
 import { StudentDetails } from '@/components/student-details';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/auth-context';
 
 
 export default function PaymentsPage() {
@@ -41,6 +41,8 @@ export default function PaymentsPage() {
 
 
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
+  const canReadFinancials = hasPermission('financials:read');
 
   React.useEffect(() => {
     const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
@@ -231,31 +233,37 @@ export default function PaymentsPage() {
             icon={BookOpen}
             color="text-green-500"
         />
-        <StatCard 
-            title="Total Revenue"
-            value={`GHS ${totalRevenue.toLocaleString()}`}
-            icon={Wallet}
-            color="text-purple-500"
-            description="All-time payments received"
-        />
-        <StatCard 
-            title="Revenue (This Term)"
-            value={`GHS ${revenueThisTerm.toLocaleString()}`}
-            icon={Receipt}
-            color="text-indigo-500"
-            description={`For ${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}`}
-        />
+        {canReadFinancials && (
+            <>
+                <StatCard 
+                    title="Total Revenue"
+                    value={`GHS ${totalRevenue.toLocaleString()}`}
+                    icon={Wallet}
+                    color="text-purple-500"
+                    description="All-time payments received"
+                />
+                <StatCard 
+                    title="Revenue (This Term)"
+                    value={`GHS ${revenueThisTerm.toLocaleString()}`}
+                    icon={Receipt}
+                    color="text-indigo-500"
+                    description={`For ${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}`}
+                />
+            </>
+        )}
       </div>
 
-       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-         <StatCard 
-            title="Total Pending Invoices"
-            value={`${pendingInvoices.length}`}
-            icon={Clock}
-            color="text-orange-500"
-            description={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
-        />
-      </div>
+       {canReadFinancials && (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+                <StatCard 
+                    title="Total Pending Invoices"
+                    value={`${pendingInvoices.length}`}
+                    icon={Clock}
+                    color="text-orange-500"
+                    description={`GHS ${pendingInvoicesTotal.toLocaleString()}`}
+                />
+            </div>
+        )}
       
       <PaymentsTable columns={memoizedPaymentColumns} data={payments} />
 

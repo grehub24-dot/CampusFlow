@@ -314,6 +314,7 @@ export type RolePermissions = {
     invoices?: Permission;
     fees?: Permission;
     reports?: Permission;
+    financials?: Pick<Permission, 'read'>;
     communications?: Permission;
     payroll?: Permission & { run: boolean };
     transactions?: Permission;

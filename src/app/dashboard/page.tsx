@@ -1,4 +1,3 @@
-
 'use client'
 
 import React from 'react';
@@ -25,6 +24,7 @@ import { PaymentDetails } from '@/components/payment-details';
 import { StudentDetails } from '@/components/student-details';
 import { InvoiceDetails } from '@/components/invoice-details';
 import PaymentForm from '../payments/payment-form';
+import { useAuth } from '@/context/auth-context';
 
 export default function Dashboard() {
   const [students, setStudents] = React.useState<Student[]>([]);
@@ -42,6 +42,8 @@ export default function Dashboard() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = React.useState(false);
   const [integrationSettings, setIntegrationSettings] = React.useState<IntegrationSettings | null>(null);
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
+  const canReadFinancials = hasPermission('financials:read');
 
   React.useEffect(() => {
     const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
@@ -323,18 +325,22 @@ export default function Dashboard() {
             icon={BookOpen}
             color="text-green-500"
         />
-        <StatCard 
-            title="Total Revenue"
-            value={`GHS ${overallStats.totalRevenue.toLocaleString()}`}
-            icon={Wallet}
-            color="text-purple-500"
-        />
-        <StatCard 
-            title="Pending Invoices"
-            value={`GHS ${overallStats.pendingInvoices.toLocaleString()}`}
-            icon={Clock}
-            color="text-orange-500"
-        />
+        {canReadFinancials && (
+            <>
+                <StatCard 
+                    title="Total Revenue"
+                    value={`GHS ${overallStats.totalRevenue.toLocaleString()}`}
+                    icon={Wallet}
+                    color="text-purple-500"
+                />
+                <StatCard 
+                    title="Pending Invoices"
+                    value={`GHS ${overallStats.pendingInvoices.toLocaleString()}`}
+                    icon={Clock}
+                    color="text-orange-500"
+                />
+            </>
+        )}
       </div>
 
       <Tabs defaultValue="overall" className="space-y-4">
