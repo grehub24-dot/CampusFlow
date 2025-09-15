@@ -7,7 +7,7 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { doc, updateDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Role, RolePermissions } from '@/types';
 import { useAuth } from '@/context/auth-context';
@@ -167,7 +167,8 @@ export function RolesSettings({ roles }: { roles: Role[] }) {
 
     const handleCreateRole = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newRoleName.trim()) {
+        const trimmedName = newRoleName.trim();
+        if (!trimmedName) {
             toast({ variant: 'destructive', title: 'Error', description: 'Role name cannot be empty.' });
             return;
         }
@@ -182,14 +183,17 @@ export function RolesSettings({ roles }: { roles: Role[] }) {
         }
 
         try {
-            await addDoc(collection(db, "roles"), {
-                name: newRoleName.trim(),
+            const newRoleRef = doc(collection(db, "roles"));
+            await setDoc(newRoleRef, {
+                id: newRoleRef.id,
+                name: trimmedName,
                 permissions: defaultPermissions,
             });
-            await logActivity(user, 'Role Created', `Created new role: ${newRoleName.trim()}`);
+
+            await logActivity(user, 'Role Created', `Created new role: ${trimmedName}`);
             toast({
                 title: 'Role Created',
-                description: `The "${newRoleName.trim()}" role has been successfully created.`,
+                description: `The "${trimmedName}" role has been successfully created.`,
             });
             setNewRoleName('');
             setIsCreateDialogOpen(false);
