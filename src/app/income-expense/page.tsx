@@ -22,6 +22,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import type { SubmitHandler } from 'react-hook-form';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useAuth } from '@/context/auth-context';
+import { logActivity } from '@/lib/activity-logger';
 
 
 export default function IncomeExpensePage() {
@@ -37,6 +39,7 @@ export default function IncomeExpensePage() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
   
   useEffect(() => {
     const transactionsQuery = query(collection(db, "transactions"), orderBy("date", "desc"));
@@ -123,6 +126,7 @@ export default function IncomeExpensePage() {
     setIsSubmitting(true);
     try {
         await deleteDoc(doc(db, "transactions", transactionToDelete.id));
+        await logActivity(user, 'Transaction Deleted', `Deleted transaction: ${transactionToDelete.description} (GHS ${transactionToDelete.amount})`);
         toast({ title: "Transaction Deleted", description: "The transaction has been removed."});
     } catch(e) {
         toast({ variant: "destructive", title: "Error", description: "Could not delete the transaction." });
@@ -144,10 +148,12 @@ export default function IncomeExpensePage() {
         // Update
         const docRef = doc(db, "transactions", selectedTransaction.id);
         await updateDoc(docRef, data);
+        await logActivity(user, 'Transaction Updated', `Updated transaction: ${data.description} (GHS ${data.amount})`);
         toast({ title: "Transaction Updated", description: "The transaction has been successfully updated."});
       } else {
         // Create
         await addDoc(collection(db, "transactions"), data);
+        await logActivity(user, 'Transaction Added', `Added ${data.type} transaction: ${data.description} (GHS ${data.amount})`);
         toast({ title: "Transaction Added", description: "The new transaction has been recorded."});
       }
       setIsFormOpen(false);

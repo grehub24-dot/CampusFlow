@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useSchoolInfo } from '@/context/school-info-context';
+import { useAuth } from '@/context/auth-context';
+import { logActivity } from '@/lib/activity-logger';
 
 
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function SchoolInfoSettings() {
   const { toast } = useToast();
   const { schoolInfo, loading, setSchoolInfo } = useSchoolInfo();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
 
@@ -82,6 +85,8 @@ export function SchoolInfoSettings() {
 
         // Update context immediately for a responsive UI
         setSchoolInfo({ ...schoolInfo, ...newInfo } as any);
+        
+        await logActivity(user, 'School Info Updated', `Updated school information. New name: ${values.schoolName}`);
         
         toast({
             title: "Settings Saved",

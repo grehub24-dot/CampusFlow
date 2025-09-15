@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { PayrollForm, type FormValues as PayrollFormValues } from './payroll-form';
 import type { SubmitHandler } from 'react-hook-form';
 import { useAuth } from '@/context/auth-context';
+import { logActivity } from '@/lib/activity-logger';
 
 const months = [
     "January", "February", "March", "April", "May", "June", 
@@ -172,6 +173,7 @@ export default function PayrollPage() {
             };
             const staffRef = doc(db, "staff", selectedStaff.id);
             await updateDoc(staffRef, dataToUpdate);
+            await logActivity(user, 'Payroll Details Updated', `Updated payroll details for ${selectedStaff.name}`);
             toast({ title: "Payroll Details Updated", description: `Financial information for ${selectedStaff.name} has been saved.` });
             setIsFormOpen(false);
         } catch(e) {
@@ -242,6 +244,8 @@ export default function PayrollPage() {
         batch.set(payrollRunRef, newPayrollRun);
         
         await batch.commit();
+
+        await logActivity(user, 'Payroll Run', `Processed payroll for ${period} for ${activeStaff.length} employees.`);
         
         toast({
             title: 'Payroll Processed',

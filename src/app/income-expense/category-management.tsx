@@ -17,6 +17,8 @@ import { PlusCircle, Trash2 } from 'lucide-react';
 import { addDoc, collection, deleteDoc, doc, writeBatch, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useAuth } from '@/context/auth-context';
+import { logActivity } from '@/lib/activity-logger';
 
 
 const formSchema = z.object({
@@ -106,6 +108,7 @@ export function CategoryManagement({ categories }: CategoryManagementProps) {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [categoryToDelete, setCategoryToDelete] = useState<TransactionCategory | null>(null);
     const { toast } = useToast();
+    const { user } = useAuth();
     
     useEffect(() => {
         const seedDefaultCategories = async () => {
@@ -152,6 +155,7 @@ export function CategoryManagement({ categories }: CategoryManagementProps) {
     const onSubmit: SubmitHandler<FormValues> = async (values) => {
         try {
             await addDoc(collection(db, "transaction-categories"), values);
+            await logActivity(user, 'Category Added', `Added new transaction category: ${values.name} (${values.type})`);
             toast({ title: "Category Added", description: "The new category has been created."});
             setIsFormOpen(false);
         } catch (e) {
@@ -164,6 +168,7 @@ export function CategoryManagement({ categories }: CategoryManagementProps) {
         if (!categoryToDelete) return;
         try {
             await deleteDoc(doc(db, "transaction-categories", categoryToDelete.id));
+            await logActivity(user, 'Category Deleted', `Deleted transaction category: ${categoryToDelete.name}`);
             toast({ title: "Category Deleted" });
         } catch (e) {
              toast({ variant: "destructive", title: "Error", description: "Could not delete category." });

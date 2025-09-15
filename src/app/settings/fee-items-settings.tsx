@@ -7,6 +7,8 @@ import { db } from '@/lib/firebase';
 import type { FeeItem } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import type { SubmitHandler } from 'react-hook-form';
+import { useAuth } from '@/context/auth-context';
+import { logActivity } from '@/lib/activity-logger';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +50,7 @@ export function FeeItemsSettings() {
     const [selectedFeeItem, setSelectedFeeItem] = React.useState<FeeItem | null>(null);
     const [itemToDelete, setItemToDelete] = React.useState<FeeItem | null>(null);
     const { toast } = useToast();
+    const { user } = useAuth();
 
     React.useEffect(() => {
         const q = query(collection(db, "fee-items"));
@@ -86,6 +89,7 @@ export function FeeItemsSettings() {
         setIsSubmitting(true);
         try {
             await deleteDoc(doc(db, "fee-items", itemToDelete.id));
+            await logActivity(user, 'Fee Item Deleted', `Deleted fee item: ${itemToDelete.name}`);
             toast({
                 title: "Fee Item Deleted",
                 description: `${itemToDelete.name} has been successfully deleted.`,
@@ -112,9 +116,11 @@ export function FeeItemsSettings() {
             if (selectedFeeItem) {
                 const docRef = doc(db, "fee-items", selectedFeeItem.id);
                 await updateDoc(docRef, values);
+                await logActivity(user, 'Fee Item Updated', `Updated fee item: ${values.name}`);
                 toast({ title: 'Fee Item Updated', description: 'The fee item has been successfully updated.' });
             } else {
                 await addDoc(collection(db, "fee-items"), values);
+                await logActivity(user, 'Fee Item Added', `Added fee item: ${values.name}`);
                 toast({ title: 'Fee Item Added', description: 'The new fee item has been successfully added.' });
             }
             setIsFormDialogOpen(false);

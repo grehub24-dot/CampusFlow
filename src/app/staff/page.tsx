@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { doc, addDoc, updateDoc, deleteDoc, collection, onSnapshot, query } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { SubmitHandler } from 'react-hook-form';
+import { logActivity } from '@/lib/activity-logger';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ export default function StaffPage() {
         setIsSubmitting(true);
         try {
             await deleteDoc(doc(db, "staff", staffToDelete.id));
+            await logActivity(user, 'Staff Deleted', `Deleted staff member: ${staffToDelete.name}`);
             toast({ title: "Staff Deleted", description: `${staffToDelete.name} has been removed.` });
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "Could not delete staff member." });
@@ -116,11 +118,13 @@ export default function StaffPage() {
                 // Update
                 const staffDocRef = doc(db, "staff", selectedStaff.id);
                 await updateDoc(staffDocRef, data);
+                await logActivity(user, 'Staff Updated', `Updated details for ${values.name}`);
                 toast({ title: 'Staff Updated', description: 'The staff member details have been updated.' });
 
             } else {
                 // Create
                 await addDoc(collection(db, "staff"), data);
+                await logActivity(user, 'Staff Added', `Added new staff member: ${values.name}`);
                 toast({ title: 'Staff Added', description: 'New staff member has been added.' });
             }
             
