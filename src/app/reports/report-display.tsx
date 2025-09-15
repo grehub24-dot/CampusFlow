@@ -1,13 +1,9 @@
-
 'use client'
 
 import React from 'react';
 import type { GenerateInsightfulReportsOutput } from '@/ai/flows/generate-insightful-reports';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts"
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { BrainCircuit } from 'lucide-react';
 
 interface ReportDisplayProps {
@@ -15,68 +11,18 @@ interface ReportDisplayProps {
   isLoading: boolean;
 }
 
-const parseCsv = (csvString: string) => {
-    const rows = csvString.trim().split('\n');
-    return rows.map(row => row.split(','));
-};
-
-const CsvReport: React.FC<{ content: string }> = ({ content }) => {
-    const data = parseCsv(content);
-    if (data.length === 0) return <p>No data in CSV.</p>;
-
-    const header = data[0];
-    const body = data.slice(1);
-
-    return (
-        <div className="overflow-x-auto">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        {header.map((col, index) => <TableHead key={index}>{col}</TableHead>)}
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {body.map((row, rowIndex) => (
-                        <TableRow key={rowIndex}>
-                            {row.map((cell, cellIndex) => <TableCell key={cellIndex}>{cell}</TableCell>)}
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </div>
-    );
-};
-
-const ChartReport: React.FC<{ content: string }> = ({ content }) => {
-    try {
-        const data = JSON.parse(content);
-        if (!Array.isArray(data) || data.length === 0) return <p>Invalid chart data.</p>;
-        
-        const keys = Object.keys(data[0]).filter(k => k !== 'name');
-
-        return (
-             <ChartContainer config={{}} className="h-[400px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data}>
-                        <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                        <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
-                        <Legend />
-                        {keys.map((key, index) => (
-                            <Bar key={key} dataKey={key} fill={`hsl(var(--chart-${index + 1}))`} radius={[4, 4, 0, 0]} />
-                        ))}
-                    </BarChart>
-                </ResponsiveContainer>
-            </ChartContainer>
-        )
-    } catch (e) {
-        return <p>Could not parse chart data. Displaying raw content: <pre className="whitespace-pre-wrap">{content}</pre></p>
-    }
-}
-
 const TextReport: React.FC<{ content: string }> = ({ content }) => {
-    return <pre className="whitespace-pre-wrap font-sans text-sm">{content}</pre>
-}
+  const lines = content.split('\n').map((line, idx) => {
+    if (line.startsWith('# ')) return <h1 key={idx} className="text-2xl font-bold mt-6 mb-2">{line.replace('# ', '')}</h1>;
+    if (line.startsWith('## ')) return <h2 key={idx} className="text-xl font-semibold mt-4 mb-1">{line.replace('## ', '')}</h2>;
+    if (line.startsWith('### ')) return <h3 key={idx} className="text-lg font-medium mt-3 mb-1">{line.replace('### ', '')}</h3>;
+    if (line.startsWith('- ')) return <li key={idx} className="ml-6 list-disc">{line.replace('- ', '')}</li>;
+    if (line.trim() === '') return <div key={idx} className="h-4" />;
+    return <p key={idx} className="mb-2 leading-relaxed whitespace-pre-wrap font-mono text-sm">{line}</p>;
+  });
+
+  return <div className="prose max-w-none">{lines}</div>;
+};
 
 export const ReportDisplay: React.FC<ReportDisplayProps> = ({ report, isLoading }) => {
   if (isLoading) {
@@ -87,7 +33,7 @@ export const ReportDisplay: React.FC<ReportDisplayProps> = ({ report, isLoading 
           <Skeleton className="h-4 w-3/4" />
         </CardHeader>
         <CardContent className="space-y-4">
-          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-40 w-full" />
           <Skeleton className="h-20 w-full" />
         </CardContent>
       </Card>
@@ -96,37 +42,28 @@ export const ReportDisplay: React.FC<ReportDisplayProps> = ({ report, isLoading 
 
   if (!report) {
     return (
-        <Card className="flex flex-col items-center justify-center h-full min-h-[300px] text-center border-dashed">
-            <CardHeader>
-                <div className="mx-auto bg-muted rounded-full p-3">
-                    <BrainCircuit className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <CardTitle className="mt-4">Your Report Will Appear Here</CardTitle>
-                <CardDescription>Fill out the form to generate a new report.</CardDescription>
-            </CardHeader>
-        </Card>
+      <Card className="flex flex-col items-center justify-center h-full min-h-[300px] text-center border-dashed">
+        <CardHeader>
+          <div className="mx-auto bg-muted rounded-full p-3">
+            <BrainCircuit className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <CardTitle className="mt-4">Your Report Will Appear Here</CardTitle>
+          <CardDescription>Fill out the form to generate a new report.</CardDescription>
+        </CardHeader>
+      </Card>
     );
-  }
-  
-  const renderContent = () => {
-    const format = report.reportFormat.toLowerCase();
-    if (format.includes('csv')) {
-        return <CsvReport content={report.reportContent} />;
-    }
-    if (format.includes('chart')) {
-        return <ChartReport content={report.reportContent} />;
-    }
-    return <TextReport content={report.reportContent} />;
   }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Generated Report</CardTitle>
-        <CardDescription>Format: <span className="font-semibold capitalize">{report.reportFormat}</span></CardDescription>
+        <CardDescription>
+          Using template: <span className="font-semibold capitalize">{report.reportFormat}</span>
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        {renderContent()}
+        <TextReport content={report.reportContent} />
       </CardContent>
     </Card>
   );

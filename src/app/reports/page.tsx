@@ -11,10 +11,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
-import { generateInsightfulReports } from '@/ai/flows/generate-insightful-reports';
-import type { GenerateInsightfulReportsInput, GenerateInsightfulReportsOutput } from '@/ai/flows/generate-insightful-reports';
+import type { GenerateInsightfulReportsOutput } from '@/ai/flows/generate-insightful-reports';
 import { ReportDisplay } from './report-display';
 import { useToast } from '@/hooks/use-toast';
+import { reportTemplates } from "./report-templates";
 
 const formSchema = z.object({
   reportType: z.string().min(1, 'Please select a report type.'),
@@ -39,17 +39,24 @@ export default function ReportsPage() {
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setIsLoading(true);
     setReport(null);
+
     try {
-      const result = await generateInsightfulReports(values as GenerateInsightfulReportsInput);
-      setReport(result);
+      const staticReport: GenerateInsightfulReportsOutput = {
+        reportFormat: "text",
+        reportContent: reportTemplates[values.reportType] || "Template not found.",
+      };
+
+      setTimeout(() => {
+        setReport(staticReport);
+        setIsLoading(false);
+      }, 500); // simulate delay
     } catch (error) {
-      console.error('Failed to generate report:', error);
+      console.error('Failed to load report:', error);
       toast({
         variant: 'destructive',
-        title: 'Error Generating Report',
-        description: 'An unexpected error occurred. Please try again.',
+        title: 'Error',
+        description: 'Something went wrong while preparing the report.',
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -58,13 +65,13 @@ export default function ReportsPage() {
     <>
       <PageHeader
         title="Report Generation"
-        description="Use AI to generate insightful reports from your school's data."
+        description="Generate structured reports from predefined templates."
       />
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="lg:col-span-2 h-fit">
           <CardHeader>
             <CardTitle>Create a New Report</CardTitle>
-            <CardDescription>Select the type of report you want to generate and add any specific instructions.</CardDescription>
+            <CardDescription>Select the type of report and add instructions.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -82,12 +89,12 @@ export default function ReportsPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="admissions">Admissions</SelectItem>
-                          <SelectItem value="student demographics">Student Demographics</SelectItem>
-                          <SelectItem value="financial data">Financial Data</SelectItem>
-                          <SelectItem value="academic progress">Academic Progress</SelectItem>
-                          <SelectItem value="executive brief">Executive Brief</SelectItem>
-                          <SelectItem value="income and expenditure">Income and Expenditure</SelectItem>
+                          <SelectItem value="Admissions">Admissions</SelectItem>
+                          <SelectItem value="Student Demographics">Student Demographics</SelectItem>
+                          <SelectItem value="Financial Data">Financial Data</SelectItem>
+                          <SelectItem value="Academic Progress">Academic Progress</SelectItem>
+                          <SelectItem value="Executive Brief">Executive Brief</SelectItem>
+                          <SelectItem value="Income and Expenditure">Income and Expenditure</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -99,10 +106,10 @@ export default function ReportsPage() {
                   name="additionalInstructions"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Additional Instructions</FormLabel>
+                      <FormLabel>Additional Instructions (for reference)</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="e.g., 'Focus on the last quarter admissions for Grade 10 and 11'"
+                          placeholder="e.g., Focus on last quarter admissions for Grade 10 and 11"
                           className="resize-none"
                           {...field}
                         />
