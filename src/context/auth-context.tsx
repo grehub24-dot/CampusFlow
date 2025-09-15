@@ -12,9 +12,9 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 const auth = getAuth(app);
 const functions = getFunctions(app);
 
-// Get the function
-const updateUserStatusInAuth = httpsCallable(functions, 'updateUserStatus');
-const deleteUserFromAuth = httpsCallable(functions, 'deleteUserAccount');
+// These functions are currently disabled as they require backend deployment.
+// const updateUserStatusInAuth = httpsCallable(functions, 'updateUserStatus');
+// const deleteUserFromAuth = httpsCallable(functions, 'deleteUserAccount');
 
 interface AuthContextType {
     user: AppUser | null;
@@ -133,14 +133,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const updateUserStatus = async (uid: string, disabled: boolean) => {
-        await updateUserStatusInAuth({ uid, disabled });
+        // await updateUserStatusInAuth({ uid, disabled });
+        console.warn("User status update in Firebase Auth is disabled. Updating Firestore only.");
         // Also update the local Firestore record
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { disabled });
     }
     
     const deleteUserAccount = async (uid: string) => {
-        await deleteUserFromAuth({ uid });
+        // await deleteUserFromAuth({ uid });
+        console.warn("User deletion from Firebase Auth is disabled. Deleting from Firestore only.");
         // Also delete the local Firestore record
         const userDocRef = doc(db, 'users', uid);
         await deleteDoc(userDocRef);
