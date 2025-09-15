@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -55,12 +56,12 @@ export function IncomeAndExpenditureReport() {
       <div id="income-expenditure-report" className="printable-area financial-report-container p-6">
         <header className="text-center mb-6 space-y-1">
           <div className="flex justify-center items-center gap-8 mb-4">
-              <Image src={schoolInfo.logoUrl || '/logo.jpg'} alt="School Logo" width={60} height={60} className="object-contain" />
+              <Image src={schoolInfo.logoUrl || '/logo.jpg'} alt="School Logo" width={80} height={80} className="object-contain" />
               <div>
                   <h1>{schoolInfo.schoolName}</h1>
                   <h2>EDUCATIONAL COMPLEX</h2>
               </div>
-              <Image src={schoolInfo.logoUrl || '/logo.jpg'} alt="School Logo" width={60} height={60} className="object-contain" />
+              <Image src={schoolInfo.logoUrl || '/logo.jpg'} alt="School Logo" width={80} height={80} className="object-contain" />
           </div>
           <h3>Income and Expenditure Account</h3>
           <h4>(As at 30th June 2025)</h4>
