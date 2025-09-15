@@ -42,7 +42,7 @@ export function UserManagementSettings({ users, staff }: UserManagementSettingsP
   const { schoolInfo } = useSchoolInfo();
   const router = useRouter();
   const { toast } = useToast();
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, updateUserStatus, deleteUserAccount } = useAuth();
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isSupportFormOpen, setIsSupportFormOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -133,6 +133,7 @@ export function UserManagementSettings({ users, staff }: UserManagementSettingsP
         
         const userDocRef = doc(db, "users", newFirebaseUser.uid);
         await setDoc(userDocRef, {
+          id: newFirebaseUser.uid,
           name: values.name,
           email: values.email,
           role: values.role,
@@ -149,7 +150,6 @@ export function UserManagementSettings({ users, staff }: UserManagementSettingsP
             role: 'Teacher',
             status: 'Active',
             payrollId: `STAFF-${uuidv4().substring(0, 8).toUpperCase()}`,
-            // Set default empty/zero values for other required staff fields
             grossSalary: 0,
             ssnitEmployee: 0,
             ssnitEmployer: 0,
@@ -191,11 +191,9 @@ export function UserManagementSettings({ users, staff }: UserManagementSettingsP
     setIsSubmitting(true);
     const newStatus = !userToDeactivate.disabled;
     try {
-        const userDocRef = doc(db, 'users', userToDeactivate.id);
-        await updateDoc(userDocRef, { disabled: newStatus });
-
+        await updateUserStatus(userToDeactivate.id, newStatus);
         const action = newStatus ? 'Deactivated' : 'Re-activated';
-        await logActivity(user, `User ${action}`, `Set status for ${userToDeletoDeactivateate.name} to ${newStatus ? 'Inactive' : 'Active'}.`);
+        await logActivity(user, `User ${action}`, `Set status for ${userToDeactivate.name} to ${newStatus ? 'Inactive' : 'Active'}.`);
         toast({ title: `User ${action}`, description: `${userToDeactivate.name} has been ${action.toLowerCase()}.` });
     } catch (error) {
         console.error(`Error ${newStatus ? 'deactivating' : 're-activating'} user:`, error);
@@ -210,9 +208,7 @@ export function UserManagementSettings({ users, staff }: UserManagementSettingsP
     if (!userToDelete) return;
     setIsSubmitting(true);
     try {
-        const userDocRef = doc(db, 'users', userToDelete.id);
-        await deleteDoc(userDocRef);
-
+        await deleteUserAccount(userToDelete.id);
         await logActivity(user, 'User Deleted', `Permanently deleted user: ${userToDelete.name}.`);
         toast({ title: "User Deleted", description: "The user account has been permanently deleted from Firestore." });
     } catch (error) {

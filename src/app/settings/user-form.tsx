@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
   email: z.string().email('Please enter a valid email address.'),
-  password: z.string().min(6, 'Password must be at least 6 characters.').optional(),
+  password: z.string().min(6, 'Password must be at least 6 characters.').optional().or(z.literal('')),
   role: z.enum(['Admin', 'Teacher', 'Accountant', 'Support']),
   payrollId: z.string().optional(),
 });
@@ -44,13 +44,15 @@ export function UserForm({ onSubmit, isSubmitting, isSupportForm = false, defaul
   });
   
   React.useEffect(() => {
-    form.reset({
-        name: defaultValues?.name || '',
-        email: defaultValues?.email || '',
-        password: '',
-        role: isSupportForm ? 'Support' : (defaultValues?.role || 'Teacher'),
-        payrollId: defaultValues?.payrollId || '',
-    })
+    if (defaultValues) {
+        form.reset({
+            name: defaultValues.name || '',
+            email: defaultValues.email || '',
+            password: '',
+            role: isSupportForm ? 'Support' : (defaultValues.role || 'Teacher'),
+            payrollId: defaultValues.payrollId || '',
+        })
+    }
   }, [defaultValues, isSupportForm, form]);
 
   const handleSubmit: SubmitHandler<FormValues> = (values) => {
