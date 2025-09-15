@@ -1,7 +1,7 @@
 
 'use server'
 
-import { collection, writeBatch, getDocs } from "firebase/firestore";
+import { collection, writeBatch, getDocs, doc } from "firebase/firestore";
 import { db } from "./firebase";
 import type { Role } from "@/types";
 
