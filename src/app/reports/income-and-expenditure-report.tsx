@@ -140,7 +140,7 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
   ];
 
   const expenseItems = [
-      { label: 'Salary (June)', value: expenses['Salary'] || 0 },
+      { label: `Salary (${format(today, 'MMMM')})`, value: expenses['Salary'] || 0 },
       { label: 'Canteen Food', value: expenses['Canteen Food'] || 0 },
       { label: 'Petty Expense', value: expenses['Petty Expenses'] || 0 },
       { label: "Teacher's Motivation", value: expenses["Teachers Motivation"] || 0 },
