@@ -25,6 +25,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
             if (firebaseUser) {
+                 if (firebaseUser.email === 'superadmin@campusflow.com') {
+                    // Special case for the superadmin user
+                    setUser({
+                        id: firebaseUser.uid,
+                        email: firebaseUser.email,
+                        name: 'Super Admin',
+                        role: 'Admin',
+                        lastLogin: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
+                    });
+                    setLoading(false);
+                    return;
+                }
+
                 // User is signed in, now fetch their role from Firestore
                 const userDocRef = doc(db, 'users', firebaseUser.uid);
                 const unsubscribeFirestore = onSnapshot(userDocRef, (docSnap) => {
