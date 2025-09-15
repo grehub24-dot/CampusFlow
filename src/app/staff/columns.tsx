@@ -19,6 +19,7 @@ import { format } from "date-fns"
 type ColumnsProps = {
   onEdit: (staff: StaffMember) => void;
   onDelete: (staff: StaffMember) => void;
+  canManage: boolean;
 }
 
 const formatCurrency = (amount: number) => {
@@ -28,7 +29,7 @@ const formatCurrency = (amount: number) => {
     }).format(amount)
 }
 
-export const getStaffColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<StaffMember>[] => [
+export const getStaffColumns = ({ onEdit, onDelete, canManage }: ColumnsProps): ColumnDef<StaffMember>[] => [
   {
     accessorKey: "name",
     header: "Name",
@@ -73,6 +74,7 @@ export const getStaffColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<S
     id: "actions",
     cell: ({ row }) => {
       const staff = row.original;
+      if (!canManage) return null;
       return (
         <div className="text-right">
             <DropdownMenu>

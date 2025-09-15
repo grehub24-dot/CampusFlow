@@ -23,6 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PayrollForm, type FormValues as PayrollFormValues } from './payroll-form';
 import type { SubmitHandler } from 'react-hook-form';
+import { useAuth } from '@/context/auth-context';
 
 const months = [
     "January", "February", "March", "April", "May", "June", 
@@ -32,7 +33,9 @@ const months = [
 const years = Array.from({ length: 5 }, (_, i) => getYear(new Date()) - i);
 
 function StaffPayrollTable({ staff, onEdit }: { staff: StaffMember[], onEdit: (staff: StaffMember) => void }) {
-    const columns = React.useMemo(() => getStaffPayrollColumns({ onEdit }), [onEdit]);
+    const { user } = useAuth();
+    const canEdit = user?.role === 'Admin';
+    const columns = React.useMemo(() => getStaffPayrollColumns({ onEdit, canEdit }), [onEdit, canEdit]);
     const table = useReactTable({
         data: staff,
         columns,
@@ -91,6 +94,8 @@ export default function PayrollPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const { user } = useAuth();
+  const canRunPayroll = user?.role === 'Admin';
 
   useEffect(() => {
     const staffQuery = query(collection(db, "staff"));
@@ -257,53 +262,55 @@ export default function PayrollPage() {
         title="Payroll"
         description="Manage and run monthly payroll."
       >
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button>
-              <PlayCircle className="mr-2 h-4 w-4" />
-              Run New Payroll
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirm Payroll Run</AlertDialogTitle>
-              <AlertDialogDescription>
-                Select the period to process payroll for all active staff. This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                     <div>
-                        <Label htmlFor="month">Month</Label>
-                        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                            <SelectTrigger id="month"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                {months.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                     </div>
-                     <div>
-                        <Label htmlFor="year">Year</Label>
-                        <Select value={selectedYear} onValueChange={setSelectedYear}>
-                            <SelectTrigger id="year"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                     </div>
+        {canRunPayroll && (
+            <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button>
+                <PlayCircle className="mr-2 h-4 w-4" />
+                Run New Payroll
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Confirm Payroll Run</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Select the period to process payroll for all active staff. This action cannot be undone.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="month">Month</Label>
+                            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                                <SelectTrigger id="month"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {months.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label htmlFor="year">Year</Label>
+                            <Select value={selectedYear} onValueChange={setSelectedYear}>
+                                <SelectTrigger id="year"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <p className="text-sm text-center text-muted-foreground">
+                        You are about to run payroll for <strong>{selectedMonth} {selectedYear}</strong>.
+                    </p>
                 </div>
-                 <p className="text-sm text-center text-muted-foreground">
-                    You are about to run payroll for <strong>{selectedMonth} {selectedYear}</strong>.
-                 </p>
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleRunPayroll} disabled={isProcessing}>
-                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Yes, Run Payroll'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleRunPayroll} disabled={isProcessing}>
+                    {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Yes, Run Payroll'}
+                </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+            </AlertDialog>
+        )}
       </PageHeader>
       
       <Tabs defaultValue="manage">

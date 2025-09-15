@@ -287,8 +287,6 @@ function ProtectedAppLayout({ children }: { children: React.ReactNode }) {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
-        <AuthProvider>
-            <ProtectedAppLayout>{children}</ProtectedAppLayout>
-        </AuthProvider>
+        <ProtectedAppLayout>{children}</ProtectedAppLayout>
     )
 }

@@ -18,6 +18,7 @@ import { StaffForm, FormValues } from './staff-form';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { PageHeader } from '@/components/page-header';
+import { useAuth } from '@/context/auth-context';
 
 export default function StaffPage() {
     const [staff, setStaff] = React.useState<StaffMember[]>([]);
@@ -27,6 +28,8 @@ export default function StaffPage() {
     const [selectedStaff, setSelectedStaff] = React.useState<StaffMember | null>(null);
     const [staffToDelete, setStaffToDelete] = React.useState<StaffMember | null>(null);
     const { toast } = useToast();
+    const { user } = useAuth();
+    const canManageStaff = user?.role === 'Admin';
     
     React.useEffect(() => {
         const staffQuery = query(collection(db, "staff"));
@@ -131,7 +134,7 @@ export default function StaffPage() {
         }
     };
     
-    const columns = React.useMemo(() => getStaffColumns({ onEdit: handleEdit, onDelete: handleDelete }), []);
+    const columns = React.useMemo(() => getStaffColumns({ onEdit: handleEdit, onDelete: handleDelete, canManage: canManageStaff }), [canManageStaff]);
     const table = useReactTable({
         data: staff,
         columns,
@@ -144,10 +147,12 @@ export default function StaffPage() {
                 title="Staff Management"
                 description="Manage all employees in the school."
             >
-                <Button onClick={handleAddNew}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Staff
-                </Button>
+                {canManageStaff && (
+                    <Button onClick={handleAddNew}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Staff
+                    </Button>
+                )}
             </PageHeader>
             <Card>
                 <CardHeader>

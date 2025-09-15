@@ -45,6 +45,8 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
   const [isSupportFormOpen, setIsSupportFormOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  const canManageUsers = user?.role === 'Admin';
+
 
   const handleAddUserClick = () => {
     if (user?.role !== 'Admin') {
@@ -138,16 +140,18 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
                     <CardTitle>User Management</CardTitle>
                     <CardDescription>Manage all users with access to the system.</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                     <Button variant="outline" onClick={handleAddSupportUserClick}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Create Support User
-                    </Button>
-                    <Button onClick={handleAddUserClick}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add User
-                    </Button>
-                </div>
+                {canManageUsers && (
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" onClick={handleAddSupportUserClick}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Create Support User
+                        </Button>
+                        <Button onClick={handleAddUserClick}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add User
+                        </Button>
+                    </div>
+                )}
             </div>
         </CardHeader>
         <CardContent>

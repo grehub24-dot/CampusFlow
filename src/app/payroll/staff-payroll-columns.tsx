@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 
 type ColumnsProps = {
   onEdit: (staff: StaffMember) => void;
+  canEdit: boolean;
 }
 
 const formatCurrency = (amount: number) => {
@@ -16,7 +17,7 @@ const formatCurrency = (amount: number) => {
     }).format(amount)
 }
 
-export const getStaffPayrollColumns = ({ onEdit }: ColumnsProps): ColumnDef<StaffMember>[] => [
+export const getStaffPayrollColumns = ({ onEdit, canEdit }: ColumnsProps): ColumnDef<StaffMember>[] => [
   {
     accessorKey: "name",
     header: "Name",
@@ -43,6 +44,7 @@ export const getStaffPayrollColumns = ({ onEdit }: ColumnsProps): ColumnDef<Staf
     id: "actions",
     cell: ({ row }) => {
       const staff = row.original;
+      if (!canEdit) return null;
       return (
         <div className="text-right">
             <Button variant="outline" size="sm" onClick={() => onEdit(staff)}>Edit Payroll</Button>
