@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import * as React from "react"
@@ -9,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { sendSms } from "@/lib/frog-api";
 import { logActivity } from "@/lib/activity-logger";
@@ -17,7 +16,7 @@ import { logActivity } from "@/lib/activity-logger";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Loader2 } from "lucide-react"
+import { PlusCircle, Loader2, Trash2 } from "lucide-react"
 import { getUserColumns } from "./user-columns"
 import { UserTable } from "./user-table"
 import { ToastAction } from "@/components/ui/toast";
@@ -41,7 +40,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
   const { schoolInfo } = useSchoolInfo();
   const router = useRouter();
   const { toast } = useToast();
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, updateUserStatus, deleteUserAccount } = useAuth();
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isSupportFormOpen, setIsSupportFormOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -109,6 +108,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
     setIsSubmitting(true);
     try {
       if (selectedUser) {
+        // Update existing user
         const userDocRef = doc(db, "users", selectedUser.id);
         await updateDoc(userDocRef, {
           name: values.name,
@@ -117,6 +117,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
         await logActivity(user, 'User Updated', `Updated user: ${values.name}.`);
         toast({ title: "User Updated", description: `${values.name}'s details have been updated.` });
       } else {
+        // Create new user
         const auth = getAuth();
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password!);
         const newFirebaseUser = userCredential.user;
