@@ -113,6 +113,10 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
 
   const totalExpenses = Object.values(expenses).reduce((sum, amount) => sum + amount, 0);
 
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
 
   if (loading || !schoolInfo) {
     return (
@@ -153,7 +157,7 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
           <div className="flex justify-center items-center gap-16 mb-4">
               <Image src={schoolInfo.logoUrl || '/logo.jpg'} alt="School Logo" width={100} height={100} className="object-contain" />
               <div>
-                  <h1>{schoolInfo.schoolName}</h1>
+                  <h1 className="text-xl font-bold">{schoolInfo.schoolName}</h1>
                   <p className="text-sm">{schoolInfo.location}</p>
                   <p className="text-sm">{schoolInfo.phone}</p>
               </div>
@@ -175,10 +179,10 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
             {incomeItems.map(item => (
                 <tr key={item.label}>
                     <td>{item.label}</td>
-                    <td className="amount-col">{item.value !== 0 ? item.value.toFixed(2) : '-'}</td>
+                    <td className="amount-col">{item.value !== 0 ? formatCurrency(item.value) : '-'}</td>
                 </tr>
             ))}
-            <tr className="total-row"><td>TOTAL INCOME</td><td className="amount-col">{totalIncome.toFixed(2)}</td></tr>
+            <tr className="total-row"><td>TOTAL INCOME</td><td className="amount-col">{formatCurrency(totalIncome)}</td></tr>
           </tbody>
         </table>
 
@@ -194,11 +198,11 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
                 {expenseItems.map(item => (
                      <tr key={item.label}>
                         <td>{item.label}</td>
-                        <td className="amount-col">{item.value > 0 ? item.value.toFixed(2) : '-'}</td>
+                        <td className="amount-col">{item.value > 0 ? formatCurrency(item.value) : '-'}</td>
                     </tr>
                 ))}
-                 <tr className="total-row"><td>TOTAL EXPENSES</td><td className="amount-col">{totalExpenses.toFixed(2)}</td></tr>
-                 <tr className="total-row"><td>NET BALANCE</td><td className="amount-col">{(totalIncome - totalExpenses).toFixed(2)}</td></tr>
+                 <tr className="total-row"><td>TOTAL EXPENSES</td><td className="amount-col">{formatCurrency(totalExpenses)}</td></tr>
+                 <tr className="total-row"><td>NET BALANCE</td><td className="amount-col">{formatCurrency(totalIncome - totalExpenses)}</td></tr>
             </tbody>
         </table>
       </div>
