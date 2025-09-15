@@ -18,7 +18,7 @@ const formSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
   email: z.string().email('Please enter a valid email address.'),
   password: z.string().min(6, 'Password must be at least 6 characters.').optional().or(z.literal('')),
-  role: z.enum(['Admin', 'Teacher', 'Accountant', 'Support']),
+  role: z.enum(['Admin', 'Receptionist', 'Accountant', 'Support']),
   payrollId: z.string().optional(),
 });
 
@@ -38,7 +38,7 @@ export function UserForm({ onSubmit, isSubmitting, isSupportForm = false, defaul
         name: defaultValues?.name || '',
         email: defaultValues?.email || '',
         password: '',
-        role: isSupportForm ? 'Support' : (defaultValues?.role || 'Teacher'),
+        role: isSupportForm ? 'Support' : (defaultValues?.role || 'Receptionist'),
         payrollId: defaultValues?.payrollId || '',
     }
   });
@@ -49,7 +49,7 @@ export function UserForm({ onSubmit, isSubmitting, isSupportForm = false, defaul
             name: defaultValues.name || '',
             email: defaultValues.email || '',
             password: '',
-            role: isSupportForm ? 'Support' : (defaultValues.role || 'Teacher'),
+            role: isSupportForm ? 'Support' : (defaultValues.role || 'Receptionist'),
             payrollId: defaultValues.payrollId || '',
         })
     }
@@ -126,7 +126,7 @@ export function UserForm({ onSubmit, isSubmitting, isSupportForm = false, defaul
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="Admin">Admin</SelectItem>
-                            <SelectItem value="Teacher">Teacher</SelectItem>
+                            <SelectItem value="Receptionist">Receptionist</SelectItem>
                             <SelectItem value="Accountant">Accountant</SelectItem>
                             <SelectItem value="Support">Support</SelectItem>
                         </SelectContent>

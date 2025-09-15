@@ -1,3 +1,4 @@
+
 'use server'
 
 import { collection, writeBatch, getDocs, doc } from "firebase/firestore";
@@ -19,7 +20,7 @@ const defaultRoles: Role[] = [
             reports: { read: true },
             financials: { read: true },
             communications: { read: true, create: true },
-            payroll: { read: true, run: true },
+            payroll: { read: true, run: true, update: true },
             transactions: { read: true, create: true, update: true, delete: true },
             billing: { read: true, update: true },
             settings: { read: true, update: true },
@@ -40,7 +41,7 @@ const defaultRoles: Role[] = [
             reports: { read: true },
             financials: { read: true },
             communications: { read: true, create: true },
-            payroll: { read: true, run: true },
+            payroll: { read: true, run: true, update: true },
             transactions: { read: true, create: true, update: true, delete: true },
             billing: { read: true, update: false },
             settings: { read: false, update: false },
@@ -48,24 +49,24 @@ const defaultRoles: Role[] = [
         }
     },
     {
-        id: 'teacher',
-        name: 'Teacher',
+        id: 'receptionist',
+        name: 'Receptionist',
         permissions: {
-            dashboard: { read: false },
-            admissions: { read: false, create: false, update: false, delete: false },
-            students: { read: true, create: false, update: false, delete: false },
-            staff: { read: false, create: false, update: false, delete: false },
+            dashboard: { read: true },
+            admissions: { read: true, create: true, update: false, delete: false },
+            students: { read: true, create: false, update: true, delete: false },
+            staff: { read: true, create: false, update: false, delete: false },
             payments: { read: false, create: false, update: false, delete: false },
             invoices: { read: false, create: false, update: false, delete: false },
             fees: { read: false, create: false, update: false, delete: false },
             reports: { read: false },
             financials: { read: false },
             communications: { read: true, create: true },
-            payroll: { read: false, run: false },
+            payroll: { read: false, run: false, update: false },
             transactions: { read: false, create: false, update: false, delete: false },
             billing: { read: false, update: false },
             settings: { read: false, update: false },
-            activity: { read: false },
+            activity: { read: true },
         }
     },
     {
@@ -82,7 +83,7 @@ const defaultRoles: Role[] = [
             reports: { read: false },
             financials: { read: false },
             communications: { read: false, create: false },
-            payroll: { read: false, run: false },
+            payroll: { read: false, run: false, update: false },
             transactions: { read: false, create: false, update: false, delete: false },
             billing: { read: true, update: true },
             settings: { read: true, update: true },

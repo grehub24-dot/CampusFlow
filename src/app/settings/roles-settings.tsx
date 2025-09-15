@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -58,7 +59,7 @@ const permissionConfig = {
     reports: ['read'],
     financials: ['read'],
     communications: ['read', 'create'],
-    payroll: ['read', 'run'],
+    payroll: ['read', 'run', 'update'],
     transactions: ['read', 'create', 'update', 'delete'],
     billing: ['read', 'update'],
     settings: ['read', 'update'],

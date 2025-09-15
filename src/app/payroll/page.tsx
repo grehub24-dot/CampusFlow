@@ -25,7 +25,6 @@ import { PayrollForm, type FormValues as PayrollFormValues } from './payroll-for
 import type { SubmitHandler } from 'react-hook-form';
 import { useAuth } from '@/context/auth-context';
 import { logActivity } from '@/lib/activity-logger';
-import { TeacherPayrollView } from './teacher-payroll-view';
 
 const months = [
     "January", "February", "March", "April", "May", "June", 
@@ -323,15 +322,6 @@ export default function PayrollPage() {
     }
   };
 
-  if (user?.role === 'Teacher') {
-    const teacherInfo = staff.find(s => s.id === user.id);
-    if (!teacherInfo) {
-      return (
-        <PageHeader title="My Payroll" description="Could not find your staff record." />
-      );
-    }
-    return <TeacherPayrollView payrollRuns={payrollRuns} isLoading={isLoadingRuns} teacherId={teacherInfo.id} />
-  }
 
   return (
     <>
@@ -421,5 +411,3 @@ export default function PayrollPage() {
     </>
   );
 }
-
-    

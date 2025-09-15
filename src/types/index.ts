@@ -75,7 +75,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  role: 'Admin' | 'Teacher' | 'Accountant' | 'Support';
+  role: 'Admin' | 'Receptionist' | 'Accountant' | 'Support';
   lastLogin: string;
   disabled?: boolean;
 };
@@ -329,8 +329,6 @@ export type RolePermissions = {
 
 export type Role = {
     id: string;
-    name: 'Admin' | 'Accountant' | 'Teacher' | 'Support';
+    name: 'Admin' | 'Accountant' | 'Receptionist' | 'Support';
     permissions: RolePermissions;
 }
-
-    

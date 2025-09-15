@@ -118,11 +118,9 @@ export function UserManagementSettings({ users, staff }: UserManagementSettingsP
           role: values.role,
         });
 
-        // Also update the name in the staff collection if they are a teacher
-        if (values.role === 'Teacher') {
-            const staffDocRef = doc(db, "staff", selectedUser.id);
-            await updateDoc(staffDocRef, { name: values.name, role: 'Teacher' });
-        }
+        // Also update the name in the staff collection if they have a staff record
+        const staffDocRef = doc(db, "staff", selectedUser.id);
+        await updateDoc(staffDocRef, { name: values.name, role: values.role });
         
         await logActivity(user, 'User Updated', `Updated user: ${values.name}.`);
         toast({ title: "User Updated", description: `${values.name}'s details have been updated.` });
@@ -142,18 +140,17 @@ export function UserManagementSettings({ users, staff }: UserManagementSettingsP
           disabled: false,
         });
 
-        // If the new user is a Teacher, create a corresponding staff entry
-        if (values.role === 'Teacher') {
+        // If the new user is a Receptionist, create a corresponding staff entry
+        if (values.role === 'Receptionist') {
           const staffDocRef = doc(db, "staff", newFirebaseUser.uid);
           await setDoc(staffDocRef, {
             id: newFirebaseUser.uid,
             payrollId: `STAFF-${uuidv4().substring(0, 8).toUpperCase()}`,
             name: values.name,
-            role: 'Teacher',
+            role: 'Receptionist',
             status: 'Active',
             grossSalary: 0,
             employmentDate: new Date().toISOString(),
-            // Initialize other fields to prevent data issues
             ssnitEmployee: 0,
             ssnitEmployer: 0,
             taxableIncome: 0,
@@ -218,9 +215,18 @@ export function UserManagementSettings({ users, staff }: UserManagementSettingsP
     if (!userToDelete) return;
     setIsSubmitting(true);
     try {
-        await deleteUserAccount(userToDelete.id);
+        // This is a placeholder. In a real app, this would call a Cloud Function
+        // to delete the user from Firebase Auth.
+        const userDocRef = doc(db, 'users', userToDelete.id);
+        const staffDocRef = doc(db, 'staff', userToDelete.id);
+        
+        const batch = writeBatch(db);
+        batch.delete(userDocRef);
+        batch.delete(staffDocRef);
+        await batch.commit();
+
         await logActivity(user, 'User Deleted', `Permanently deleted user: ${userToDelete.name}.`);
-        toast({ title: "User Deleted", description: "The user account has been permanently deleted from Firestore." });
+        toast({ title: "User Deleted", description: "The user account has been deleted from the database." });
     } catch (error) {
          console.error("Error deleting user:", error);
         toast({ variant: "destructive", title: "Error", description: "Could not delete user account." });

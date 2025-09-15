@@ -54,11 +54,6 @@ export const getStaffColumns = ({ onEdit, onDelete, canManage }: ColumnsProps): 
     }
   },
   {
-    accessorKey: "grossSalary",
-    header: "Gross Salary (Monthly)",
-    cell: ({ row }) => formatCurrency(row.getValue("grossSalary"))
-  },
-  {
     accessorKey: "contractStatus",
     header: "Contract Status",
     cell: ({ row }) => {
