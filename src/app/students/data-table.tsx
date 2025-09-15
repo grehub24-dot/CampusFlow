@@ -48,6 +48,7 @@ interface DataTableProps {
   onPay: (student: Student) => void;
   onDeleteSelected: (students: Student[]) => void;
   onStatusChange: (student: Student, status: 'Active' | 'Inactive' | 'Graduated' | 'Stopped') => void;
+  canCreatePayment: boolean;
 }
 
 const statusOptions = [
@@ -78,6 +79,7 @@ export function DataTable({
   onPay,
   onDeleteSelected,
   onStatusChange,
+  canCreatePayment,
 }: DataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -100,7 +102,7 @@ export function DataTable({
     return () => unsubscribeClasses();
   }, [])
   
-  const columns = React.useMemo(() => getColumns({ onEdit, onViewDetails, onDelete, onPay, onStatusChange }), [onEdit, onViewDetails, onDelete, onPay, onStatusChange]);
+  const columns = React.useMemo(() => getColumns({ onEdit, onViewDetails, onDelete, onPay, onStatusChange, canCreatePayment }), [onEdit, onViewDetails, onDelete, onPay, onStatusChange, canCreatePayment]);
 
   const table = useReactTable({
     data,
@@ -277,5 +279,7 @@ export function DataTable({
     </Card>
   )
 }
+
+    
 
     

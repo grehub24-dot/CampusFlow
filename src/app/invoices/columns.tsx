@@ -17,9 +17,11 @@ type ColumnsProps = {
   onViewInvoice: (invoice: Invoice) => void;
   onSendReminder: (invoice: Invoice) => void;
   onPay: (invoice: Invoice) => void;
+  canPay: boolean;
+  canSendReminder: boolean;
 }
 
-export const getInvoiceColumns = ({ onViewInvoice, onSendReminder, onPay }: ColumnsProps): ColumnDef<Invoice>[] => [
+export const getInvoiceColumns = ({ onViewInvoice, onSendReminder, onPay, canPay, canSendReminder }: ColumnsProps): ColumnDef<Invoice>[] => [
   {
     accessorKey: "studentName",
     header: "Student Name",
@@ -54,7 +56,7 @@ export const getInvoiceColumns = ({ onViewInvoice, onSendReminder, onPay }: Colu
       const invoice = row.original;
       return (
         <div className="flex justify-end items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => onPay(invoice)}>
+            <Button variant="outline" size="sm" onClick={() => onPay(invoice)} disabled={!canPay}>
                 Pay
             </Button>
             <DropdownMenu>
@@ -67,7 +69,7 @@ export const getInvoiceColumns = ({ onViewInvoice, onSendReminder, onPay }: Colu
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => onViewInvoice(invoice)}>View Invoice</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onSendReminder(invoice)}>Send Reminder</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onSendReminder(invoice)} disabled={!canSendReminder}>Send Reminder</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
@@ -76,4 +78,12 @@ export const getInvoiceColumns = ({ onViewInvoice, onSendReminder, onPay }: Colu
   },
 ];
 
-export const invoiceColumns = getInvoiceColumns({ onViewInvoice: () => {}, onSendReminder: () => {}, onPay: () => {} });
+export const invoiceColumns = getInvoiceColumns({ 
+    onViewInvoice: () => {}, 
+    onSendReminder: () => {}, 
+    onPay: () => {},
+    canPay: false,
+    canSendReminder: false,
+});
+
+    

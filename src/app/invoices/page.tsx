@@ -17,6 +17,7 @@ import { getInvoiceColumns } from './columns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { InvoiceDetails } from '@/components/invoice-details';
 import PaymentForm from '../payments/payment-form';
+import { useAuth } from '@/context/auth-context';
 
 export default function InvoicesPage() {
   const [payments, setPayments] = React.useState<Payment[]>([]);
@@ -34,6 +35,11 @@ export default function InvoicesPage() {
 
 
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
+  
+  const canCreatePayment = hasPermission('payments:create');
+  const canSendCommunication = hasPermission('communications:create');
+
 
   React.useEffect(() => {
     const academicTermsQuery = query(collection(db, "academic-terms"), where("isCurrent", "==", true));
@@ -46,7 +52,7 @@ export default function InvoicesPage() {
         }
     });
 
-    const paymentsQuery = collection(db, "payments");
+    const paymentsQuery = query(collection(db, "payments"));
     const unsubscribePayments = onSnapshot(paymentsQuery, (querySnapshot) => {
       const paymentsData: Payment[] = [];
       querySnapshot.forEach((doc) => {
@@ -55,7 +61,7 @@ export default function InvoicesPage() {
       setPayments(paymentsData);
     });
 
-    const studentsQuery = collection(db, "students");
+    const studentsQuery = query(collection(db, "students"));
     const unsubscribeStudents = onSnapshot(studentsQuery, (querySnapshot) => {
       setStudents(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student)));
     });
@@ -204,9 +210,15 @@ export default function InvoicesPage() {
   }, [students, payments, feeStructures, feeItems, currentTerm]);
 
   const memoizedInvoiceColumns = React.useMemo(
-      () => getInvoiceColumns({ onViewInvoice: handleViewInvoice, onSendReminder: handleSendReminder, onPay: handlePay }),
+      () => getInvoiceColumns({ 
+          onViewInvoice: handleViewInvoice, 
+          onSendReminder: handleSendReminder, 
+          onPay: handlePay,
+          canPay: canCreatePayment,
+          canSendReminder: canSendCommunication,
+      }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [students, integrationSettings] 
+      [students, integrationSettings, canCreatePayment, canSendCommunication] 
   );
 
   const pendingInvoicesTotal = pendingInvoices.reduce((acc, i) => acc + i.amount, 0);
@@ -284,3 +296,5 @@ export default function InvoicesPage() {
     </>
   );
 }
+
+    

@@ -26,6 +26,7 @@ type ColumnsProps = {
   onDelete: (student: Student) => void;
   onPay: (student: Student) => void;
   onStatusChange: (student: Student, status: 'Active' | 'Inactive' | 'Graduated' | 'Stopped') => void;
+  canCreatePayment: boolean;
 }
 
 const calculateAge = (dob: string) => {
@@ -40,7 +41,7 @@ const calculateAge = (dob: string) => {
 };
 
 
-export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay, onStatusChange }: ColumnsProps): ColumnDef<Student>[] => [
+export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay, onStatusChange, canCreatePayment }: ColumnsProps): ColumnDef<Student>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -170,7 +171,7 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay, onStatusCha
                 variant="outline"
                 size="sm"
                 onClick={() => onPay(student)}
-                disabled={student.paymentStatus === 'Paid'}
+                disabled={student.paymentStatus === 'Paid' || !canCreatePayment}
             >
                 Pay
             </Button>
@@ -203,5 +204,7 @@ export const getColumns = ({ onEdit, onViewDetails, onDelete, onPay, onStatusCha
     },
   },
 ]
+
+    
 
     

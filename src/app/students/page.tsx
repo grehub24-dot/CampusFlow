@@ -55,7 +55,10 @@ export default function StudentsPage() {
   const [studentToDelete, setStudentToDelete] = React.useState<Student | null>(null);
   const [studentsToDelete, setStudentsToDelete] = React.useState<Student[]>([]);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
+  
+  const canCreateStudent = hasPermission('students:create');
+  const canCreatePayment = hasPermission('payments:create');
 
   React.useEffect(() => {
     const allTermsQuery = query(collection(db, "academic-terms"));
@@ -539,45 +542,49 @@ export default function StudentsPage() {
         description={`Manage student records for the current term (${currentTerm?.session || ''} ${currentTerm?.academicYear || ''}).`}
       >
         <div className="flex items-center gap-2">
-            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="outline">
-                        <Upload className="mr-2 h-4 w-4" />
-                        Import
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Import Students</DialogTitle>
-                        <DialogDescription>Upload a CSV file to add multiple students at once.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="grid w-full max-w-sm items-center gap-1.5">
-                            <Label htmlFor="csv-file">CSV File</Label>
-                            <Input id="csv-file" type="file" accept=".csv" onChange={handleImport} disabled={isSubmitting} />
+            {canCreateStudent && (
+              <>
+                <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline">
+                            <Upload className="mr-2 h-4 w-4" />
+                            Import
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Import Students</DialogTitle>
+                            <DialogDescription>Upload a CSV file to add multiple students at once.</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div className="grid w-full max-w-sm items-center gap-1.5">
+                                <Label htmlFor="csv-file">CSV File</Label>
+                                <Input id="csv-file" type="file" accept=".csv" onChange={handleImport} disabled={isSubmitting} />
+                            </div>
+                            <div className="text-sm">
+                                <a href="/template.csv" download className="text-primary hover:underline font-medium flex items-center gap-1">
+                                   <Download className="h-4 w-4" /> Download Sample CSV Template
+                                </a>
+                                 <p className="text-muted-foreground mt-1">
+                                    Required columns: firstName, lastName, class, gender, dateOfBirth, admissionDate. `admissionId` is optional.
+                                </p>
+                            </div>
                         </div>
-                        <div className="text-sm">
-                            <a href="/template.csv" download className="text-primary hover:underline font-medium flex items-center gap-1">
-                               <Download className="h-4 w-4" /> Download Sample CSV Template
-                            </a>
-                             <p className="text-muted-foreground mt-1">
-                                Required columns: firstName, lastName, class, gender, dateOfBirth, admissionDate. `admissionId` is optional.
-                            </p>
-                        </div>
-                    </div>
-                    {isSubmitting && (
-                        <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <span className="ml-2">Importing...</span>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
+                        {isSubmitting && (
+                            <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <span className="ml-2">Importing...</span>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
 
-            <Button variant="outline" onClick={handleExport}>
-                <Download className="mr-2 h-4 w-4" />
-                Export
-            </Button>
+                <Button variant="outline" onClick={handleExport}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                </Button>
+              </>
+            )}
         </div>
       </PageHeader>
 
@@ -627,6 +634,7 @@ export default function StudentsPage() {
         onPay={handlePay}
         onDeleteSelected={handleDeleteSelected}
         onStatusChange={handleStatusChange}
+        canCreatePayment={canCreatePayment}
       />
 
        <Dialog open={isFormDialogOpen} onOpenChange={handleFormDialogClose}>
@@ -710,6 +718,8 @@ export default function StudentsPage() {
     </>
   );
 }
+
+    
 
     
 
