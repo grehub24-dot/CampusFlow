@@ -172,7 +172,7 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
           <thead>
             <tr className="main-header">
               <th>INCOME</th>
-              <th className="sub-amount-col"></th>
+              <th className="sub-amount-col">GHC</th>
               <th className="amount-col">GHC</th>
             </tr>
           </thead>
@@ -205,8 +205,8 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
                 {expenseItems.map(item => (
                      <tr key={item.label}>
                         <td>{item.label}</td>
-                        <td className="sub-amount-col">-</td>
-                        <td className="amount-col">{item.value > 0 ? formatCurrency(item.value) : '-'}</td>
+                        <td className="sub-amount-col">{item.value > 0 ? formatCurrency(item.value) : '-'}</td>
+                        <td className="amount-col">-</td>
                     </tr>
                 ))}
                  <tr className="total-row">
