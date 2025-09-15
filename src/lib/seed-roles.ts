@@ -63,7 +63,7 @@ const defaultRoles: Role[] = [
             reports: { read: false },
             financials: { read: false },
             communications: { read: true, create: true },
-            payroll: { read: false, run: false, update: false },
+            payroll: { read: true, run: false, update: false },
             transactions: { read: false, create: false, update: false, delete: false },
             billing: { read: false, update: false },
             settings: { read: false, update: false },
