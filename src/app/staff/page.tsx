@@ -88,7 +88,7 @@ export default function StaffPage() {
     }
     
     const calculatePayrollForEmployee = (employee: { grossSalary: number, deductions?: {name: string, amount: number}[] }) => {
-        const gross = employee.grossSalary; // Use monthly salary directly
+        const gross = employee.grossSalary;
         const ssnitEmployeeRate = payrollSettings ? payrollSettings.ssnitEmployeeRate / 100 : 0.055;
         const ssnitEmployerRate = payrollSettings ? payrollSettings.ssnitEmployerRate / 100 : 0.13;
         

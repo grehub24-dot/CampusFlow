@@ -332,3 +332,5 @@ export type Role = {
     name: 'Admin' | 'Accountant' | 'Teacher' | 'Support';
     permissions: RolePermissions;
 }
+
+    
