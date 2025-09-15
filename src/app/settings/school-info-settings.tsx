@@ -26,6 +26,7 @@ const formSchema = z.object({
   schoolName: z.string().min(1, 'School name is required.'),
   logo: z.any().optional(),
   address: z.string().optional(),
+  location: z.string().optional(),
   phone: z.string().optional(),
 });
 
@@ -43,6 +44,7 @@ export function SchoolInfoSettings() {
     defaultValues: {
       schoolName: schoolInfo?.schoolName || "CampusFlow Academy",
       address: schoolInfo?.address || "",
+      location: schoolInfo?.location || "",
       phone: schoolInfo?.phone || "",
     }
   });
@@ -52,6 +54,7 @@ export function SchoolInfoSettings() {
       form.reset({ 
           schoolName: schoolInfo.schoolName || 'CampusFlow Academy',
           address: schoolInfo.address || '',
+          location: schoolInfo.location || '',
           phone: schoolInfo.phone || '',
       });
       setLogoPreview(schoolInfo.logoUrl || null);
@@ -79,6 +82,7 @@ export function SchoolInfoSettings() {
             schoolName: values.schoolName,
             logoUrl: logoPreview || schoolInfo?.logoUrl || "/logo.jpg",
             address: values.address,
+            location: values.location,
             phone: values.phone,
         };
         await setDoc(settingsDocRef, newInfo, { merge: true });
@@ -139,6 +143,20 @@ export function SchoolInfoSettings() {
                             <FormLabel>Address</FormLabel>
                             <FormControl>
                                 <Textarea placeholder="P.O. Box 123, City, Country" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    
+                    <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Location</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g. Old Tafo, Kumasi" {...field} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>

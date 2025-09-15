@@ -42,7 +42,7 @@ export const SchoolInfoProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const unsubscribeSchoolInfo = onSnapshot(schoolInfoDocRef, (schoolDoc) => {
       const unsubscribeBilling = onSnapshot(billingDocRef, (billingDoc) => {
-        const schoolData = schoolDoc.data() || {};
+        const schoolData = schoolDoc.data() as Partial<SchoolInformation> | undefined;
         const billingData = billingDoc.data() || {};
         
         const currentPlan = billingData.currentPlan || 'free';

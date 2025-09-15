@@ -156,6 +156,7 @@ export type SchoolInformation = {
     logoUrl?: string;
     address?: string;
     phone?: string;
+    location?: string;
     invoiceFooter?: string;
     paymentTerms?: string;
     paymentMethods?: string;
