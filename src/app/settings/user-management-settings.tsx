@@ -12,6 +12,7 @@ import { doc, setDoc, updateDoc, deleteDoc, writeBatch } from "firebase/firestor
 import { db } from "@/lib/firebase";
 import { sendSms } from "@/lib/frog-api";
 import { logActivity } from "@/lib/activity-logger";
+import { v4 as uuidv4 } from 'uuid';
 
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -40,7 +41,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
   const { schoolInfo } = useSchoolInfo();
   const router = useRouter();
   const { toast } = useToast();
-  const { user, hasPermission, updateUserStatus, deleteUserAccount } = useAuth();
+  const { user, hasPermission } = useAuth();
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isSupportFormOpen, setIsSupportFormOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -114,6 +115,13 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
           name: values.name,
           role: values.role,
         });
+
+        // Also update the name in the staff collection if they are a teacher
+        if (values.role === 'Teacher') {
+            const staffDocRef = doc(db, "staff", selectedUser.id);
+            await updateDoc(staffDocRef, { name: values.name });
+        }
+        
         await logActivity(user, 'User Updated', `Updated user: ${values.name}.`);
         toast({ title: "User Updated", description: `${values.name}'s details have been updated.` });
       } else {
@@ -130,6 +138,26 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
           lastLogin: new Date().toISOString(),
           disabled: false,
         });
+
+        // If the new user is a Teacher, create a corresponding staff entry
+        if (values.role === 'Teacher') {
+          const staffDocRef = doc(db, "staff", newFirebaseUser.uid);
+          await setDoc(staffDocRef, {
+            id: newFirebaseUser.uid,
+            name: values.name,
+            role: 'Teacher',
+            status: 'Active',
+            payrollId: `STAFF-${uuidv4().substring(0, 8).toUpperCase()}`,
+            // Set default empty/zero values for other required staff fields
+            grossSalary: 0,
+            ssnitEmployee: 0,
+            ssnitEmployer: 0,
+            taxableIncome: 0,
+            incomeTax: 0,
+            netSalary: 0,
+            employmentDate: new Date().toISOString(),
+          });
+        }
 
         await logActivity(user, 'User Created', `Created a new user: ${values.name} with role ${values.role}.`);
         toast({ title: "User Created", description: `${values.name} has been added as a new ${values.role}.` });
@@ -180,6 +208,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
     if (!userToDelete) return;
     setIsSubmitting(true);
     try {
+        // This only deletes from Firestore. A backend function is needed to delete from Firebase Auth.
         const userDocRef = doc(db, 'users', userToDelete.id);
         await deleteDoc(userDocRef);
         await logActivity(user, 'User Deleted', `Permanently deleted user: ${userToDelete.name}.`);
