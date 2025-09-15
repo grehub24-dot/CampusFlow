@@ -128,8 +128,8 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
 
   const incomeItems = [
       { label: `Bal B/F (${format(prevMonth, 'MMMM, yyyy')})`, value: balanceBroughtForward },
-      { label: 'Canteen Fee', value: allIncome['Canteen Fee'] || 0 },
-      { label: 'Transport', value: allIncome['Transport'] || 0 },
+      { label: 'Canteen Fee', value: allIncome['Canteen Fees'] || 0 },
+      { label: 'Transport', value: allIncome['Transport Fees'] || 0 },
       { label: 'New Admissions School fees', value: allIncome['New Admissions School fees'] || 0 },
       { label: 'Termly School fees (Old Students) & Recovered', value: allIncome['Termly School fees (Old Students) & Recovered'] || 0 },
       { label: 'Books - Sold to Old Students', value: allIncome['Books - Sold to Old Students'] || 0 },
