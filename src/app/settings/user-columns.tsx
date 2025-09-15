@@ -54,7 +54,7 @@ export const getUserColumns = ({ onEdit, onDeactivate, onDelete, canEdit }: Colu
       const role = row.getValue("role") as string;
       const variant = {
         "Admin": "default",
-        "Teacher": "secondary",
+        "Receptionist": "secondary",
         "Accountant": "outline",
         "Support": "destructive",
       }[role] ?? "default" as "default" | "secondary" | "destructive" | "outline" | null | undefined;
