@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
@@ -16,14 +17,20 @@ import { Button } from "@/components/ui/button"
 import { MoreHorizontal } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-export const userColumns: ColumnDef<User>[] = [
+
+type ColumnsProps = {
+  onEdit: (user: User) => void;
+  canEdit: boolean;
+}
+
+export const getUserColumns = ({ onEdit, canEdit }: ColumnsProps): ColumnDef<User>[] => [
   {
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => {
         const name = row.getValue("name") as string;
         const email = row.original.email;
-        const fallback = name.split(' ').map(n => n[0]).join('');
+        const fallback = name ? name.split(' ').map(n => n[0]).join('') : (email?.[0] || 'U').toUpperCase();
         return (
             <div className="flex items-center gap-3">
                 <Avatar>
@@ -56,13 +63,20 @@ export const userColumns: ColumnDef<User>[] = [
     accessorKey: "lastLogin",
     header: "Last Login",
     cell: ({ row }) => {
-        const date = new Date(row.getValue("lastLogin"));
+        const dateStr = row.getValue("lastLogin") as string;
+        if (!dateStr) return "N/A";
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return "Invalid Date";
         return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
     }
   },
   {
     id: "actions",
     cell: ({ row }) => {
+      const user = row.original;
+      // Never show actions for the superadmin
+      if (user.email === 'superadmin@campusflow.com') return null;
+
       return (
         <div className="text-right">
             <DropdownMenu>
@@ -74,7 +88,7 @@ export const userColumns: ColumnDef<User>[] = [
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>Edit user</DropdownMenuItem>
+                {canEdit && <DropdownMenuItem onClick={() => onEdit(user)}>Edit user</DropdownMenuItem>}
                 <DropdownMenuItem>Reset password</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive">Deactivate user</DropdownMenuItem>

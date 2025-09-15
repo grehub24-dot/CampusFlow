@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { sendSms } from "@/lib/frog-api";
 import { logActivity } from "@/lib/activity-logger";
@@ -18,7 +18,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, Loader2 } from "lucide-react"
-import { userColumns } from "./user-columns"
+import { getUserColumns } from "./user-columns"
 import { UserTable } from "./user-table"
 import { ToastAction } from "@/components/ui/toast";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -44,6 +44,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isSupportFormOpen, setIsSupportFormOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
 
   const canManageUsers = user?.role === 'Admin';
 
@@ -65,8 +66,21 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
             action: <ToastAction altText="Upgrade" asChild><Button variant="link" onClick={() => router.push('/billing')}>Upgrade Plan</Button></ToastAction>
         });
     } else {
+        setSelectedUser(null);
         setIsFormOpen(true);
     }
+  }
+
+  const handleEditUser = (userToEdit: User) => {
+    setSelectedUser(userToEdit);
+    setIsFormOpen(true);
+  };
+  
+  const handleFormDialogClose = (open: boolean) => {
+    if(!open) {
+        setSelectedUser(null);
+    }
+    setIsFormOpen(open);
   }
 
   const handleAddSupportUserClick = () => {
@@ -82,39 +96,52 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
     const auth = getAuth();
 
     try {
-        // 1. Create user in Firebase Auth
-        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-        const newFirebaseUser = userCredential.user;
+        if (selectedUser) {
+            // Update user in Firestore
+            const userDocRef = doc(db, "users", selectedUser.id);
+            await updateDoc(userDocRef, {
+                name: values.name,
+                role: values.role,
+            });
+            await logActivity(user, 'User Updated', `Updated user: ${values.name}.`);
+            toast({ title: "User Updated", description: `${values.name}'s details have been updated.` });
 
-        // 2. Create user document in Firestore
-        const userDocRef = doc(db, "users", newFirebaseUser.uid);
-        await setDoc(userDocRef, {
-            name: values.name,
-            email: values.email,
-            role: values.role,
-            lastLogin: new Date().toISOString(),
-        });
-        
-        await logActivity(user, 'User Created', `Created a new user: ${values.name} with role ${values.role}.`);
+        } else {
+            // Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+            const newFirebaseUser = userCredential.user;
 
-        toast({
-            title: "User Created",
-            description: `${values.name} has been added as a new ${values.role}.`
-        });
-        
-        // 3. Send admin notification
-        const adminPhoneNumber = '0536282694';
-        const limit = PLAN_LIMITS[schoolInfo?.currentPlan || 'free'];
-        const currentCount = users.filter(u => u.email !== 'superadmin@campusflow.com' && u.email !== 'support@campusflow.com').length + 1;
-        const message = `New User Created: ${values.name} (${values.role}). Total users: ${currentCount}/${limit} on ${schoolInfo?.currentPlan} plan.`;
-        await sendSms([adminPhoneNumber], message, schoolInfo?.systemId);
+            // Create user document in Firestore
+            const userDocRef = doc(db, "users", newFirebaseUser.uid);
+            await setDoc(userDocRef, {
+                name: values.name,
+                email: values.email,
+                role: values.role,
+                lastLogin: new Date().toISOString(),
+            });
+            
+            await logActivity(user, 'User Created', `Created a new user: ${values.name} with role ${values.role}.`);
+
+            toast({
+                title: "User Created",
+                description: `${values.name} has been added as a new ${values.role}.`
+            });
+            
+            // Send admin notification
+            const adminPhoneNumber = '0536282694';
+            const limit = PLAN_LIMITS[schoolInfo?.currentPlan || 'free'];
+            const currentCount = users.filter(u => u.email !== 'superadmin@campusflow.com' && u.email !== 'support@campusflow.com').length + 1;
+            const message = `New User Created: ${values.name} (${values.role}). Total users: ${currentCount}/${limit} on ${schoolInfo?.currentPlan} plan.`;
+            await sendSms([adminPhoneNumber], message, schoolInfo?.systemId);
+        }
 
         setIsFormOpen(false);
         setIsSupportFormOpen(false);
+        setSelectedUser(null);
 
     } catch (error: any) {
-        console.error("Error creating user:", error);
-        let errorMessage = "Could not create user. Please try again.";
+        console.error("Error creating/updating user:", error);
+        let errorMessage = "Could not save user details. Please try again.";
         if (error.code === 'auth/email-already-in-use') {
             errorMessage = "This email address is already in use by another account.";
         } else if (error.code === 'auth/weak-password') {
@@ -122,13 +149,15 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
         }
         toast({
             variant: "destructive",
-            title: "User Creation Failed",
+            title: "Action Failed",
             description: errorMessage
         });
     } finally {
         setIsSubmitting(false);
     }
   }
+
+  const columns = React.useMemo(() => getUserColumns({ onEdit: handleEditUser, canEdit: canManageUsers }), [canManageUsers]);
 
 
   return (
@@ -155,16 +184,16 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
             </div>
         </CardHeader>
         <CardContent>
-            <UserTable columns={userColumns} data={users} />
+            <UserTable columns={columns} data={users} />
         </CardContent>
     </Card>
-    <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+    <Dialog open={isFormOpen} onOpenChange={handleFormDialogClose}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Add New User</DialogTitle>
-                <DialogDescription>Create a new user account and assign them a role.</DialogDescription>
+                <DialogTitle>{selectedUser ? 'Edit User' : 'Add New User'}</DialogTitle>
+                <DialogDescription>{selectedUser ? "Update the user's name and role." : "Create a new user account and assign them a role."}</DialogDescription>
             </DialogHeader>
-            <UserForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
+            <UserForm onSubmit={onSubmit} isSubmitting={isSubmitting} defaultValues={selectedUser || undefined} />
         </DialogContent>
     </Dialog>
     <Dialog open={isSupportFormOpen} onOpenChange={setIsSupportFormOpen}>

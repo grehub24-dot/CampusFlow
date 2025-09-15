@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React from 'react';
@@ -6,6 +7,8 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
+import type { User } from '@/types';
+
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -15,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
   email: z.string().email('Please enter a valid email address.'),
-  password: z.string().min(6, 'Password must be at least 6 characters.'),
+  password: z.string().min(6, 'Password must be at least 6 characters.').optional(),
   role: z.enum(['Admin', 'Teacher', 'Accountant', 'Support']),
 });
 
@@ -25,22 +28,43 @@ type UserFormProps = {
     onSubmit: SubmitHandler<FormValues>;
     isSubmitting: boolean;
     isSupportForm?: boolean;
+    defaultValues?: User;
 }
 
-export function UserForm({ onSubmit, isSubmitting, isSupportForm = false }: UserFormProps) {
+export function UserForm({ onSubmit, isSubmitting, isSupportForm = false, defaultValues }: UserFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-        name: '',
-        email: '',
+        name: defaultValues?.name || '',
+        email: defaultValues?.email || '',
         password: '',
-        role: isSupportForm ? 'Support' : 'Teacher',
+        role: isSupportForm ? 'Support' : (defaultValues?.role || 'Teacher'),
     }
   });
+  
+  React.useEffect(() => {
+    form.reset({
+        name: defaultValues?.name || '',
+        email: defaultValues?.email || '',
+        password: '',
+        role: isSupportForm ? 'Support' : (defaultValues?.role || 'Teacher'),
+    })
+  }, [defaultValues, isSupportForm, form]);
+
+  const handleSubmit: SubmitHandler<FormValues> = (values) => {
+    const dataToSubmit = { ...values };
+    // If we're editing and the password field is empty, don't include it in the submission
+    if (defaultValues && !values.password) {
+      delete dataToSubmit.password;
+    }
+    onSubmit(dataToSubmit);
+  }
+
+  const isEditing = !!defaultValues;
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <FormField
             control={form.control}
             name="name"
@@ -58,22 +82,24 @@ export function UserForm({ onSubmit, isSubmitting, isSupportForm = false }: User
             render={({ field }) => (
                 <FormItem>
                 <FormLabel>Email Address</FormLabel>
-                <FormControl><Input type="email" placeholder="e.g., jane.doe@school.com" {...field} /></FormControl>
+                <FormControl><Input type="email" placeholder="e.g., jane.doe@school.com" {...field} disabled={isEditing} /></FormControl>
                 <FormMessage />
                 </FormItem>
             )}
         />
-        <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl><Input type="password" {...field} /></FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-        />
+        {!isEditing && (
+            <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl><Input type="password" {...field} /></FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+        )}
         <FormField
             control={form.control}
             name="role"
@@ -96,7 +122,7 @@ export function UserForm({ onSubmit, isSubmitting, isSupportForm = false }: User
         <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create User
+             {isEditing ? 'Save Changes' : 'Create User'}
           </Button>
         </div>
       </form>
