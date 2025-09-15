@@ -62,6 +62,8 @@ export function IncomeAndExpenditureReport() {
               <Image src={schoolInfo.logoUrl || '/logo.jpg'} alt="School Logo" width={100} height={100} className="object-contain" />
               <div>
                   <h1>{schoolInfo.schoolName}</h1>
+                  <p className="text-sm">{schoolInfo.location}</p>
+                  <p className="text-sm">{schoolInfo.phone}</p>
               </div>
               <Image src={schoolInfo.logoUrl || '/logo.jpg'} alt="School Logo" width={100} height={100} className="object-contain" />
           </div>
