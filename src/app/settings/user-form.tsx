@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import React from 'react';
@@ -20,6 +19,7 @@ const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
   password: z.string().min(6, 'Password must be at least 6 characters.').optional(),
   role: z.enum(['Admin', 'Teacher', 'Accountant', 'Support']),
+  payrollId: z.string().optional(),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -28,7 +28,7 @@ type UserFormProps = {
     onSubmit: SubmitHandler<FormValues>;
     isSubmitting: boolean;
     isSupportForm?: boolean;
-    defaultValues?: User;
+    defaultValues?: User & { payrollId?: string };
 }
 
 export function UserForm({ onSubmit, isSubmitting, isSupportForm = false, defaultValues }: UserFormProps) {
@@ -39,6 +39,7 @@ export function UserForm({ onSubmit, isSubmitting, isSupportForm = false, defaul
         email: defaultValues?.email || '',
         password: '',
         role: isSupportForm ? 'Support' : (defaultValues?.role || 'Teacher'),
+        payrollId: defaultValues?.payrollId || '',
     }
   });
   
@@ -48,6 +49,7 @@ export function UserForm({ onSubmit, isSubmitting, isSupportForm = false, defaul
         email: defaultValues?.email || '',
         password: '',
         role: isSupportForm ? 'Support' : (defaultValues?.role || 'Teacher'),
+        payrollId: defaultValues?.payrollId || '',
     })
   }, [defaultValues, isSupportForm, form]);
 
@@ -87,6 +89,18 @@ export function UserForm({ onSubmit, isSubmitting, isSupportForm = false, defaul
                 </FormItem>
             )}
         />
+        {isEditing && defaultValues?.payrollId && (
+            <FormField
+                control={form.control}
+                name="payrollId"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Payroll ID</FormLabel>
+                        <FormControl><Input {...field} readOnly disabled /></FormControl>
+                    </FormItem>
+                )}
+            />
+        )}
         {!isEditing && (
             <FormField
                 control={form.control}

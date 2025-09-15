@@ -4,7 +4,7 @@
 import React from 'react';
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { User, Role } from '@/types';
+import type { User, Role, StaffMember } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSchoolInfo } from '@/context/school-info-context';
 import { useAuth } from '@/context/auth-context';
@@ -26,6 +26,7 @@ import { RolesSettings } from './roles-settings';
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
   const [roles, setRoles] = React.useState<Role[]>([]);
+  const [staff, setStaff] = React.useState<StaffMember[]>([]);
   const { toast } = useToast();
   const { schoolInfo } = useSchoolInfo();
   const { user, hasPermission } = useAuth();
@@ -60,9 +61,15 @@ export default function SettingsPage() {
         setRoles(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Role)));
     });
 
+    const staffQuery = query(collection(db, "staff"));
+    const unsubscribeStaff = onSnapshot(staffQuery, (snapshot) => {
+      setStaff(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StaffMember)));
+    });
+
     return () => {
         unsubscribeUsers();
         unsubscribeRoles();
+        unsubscribeStaff();
     }
   }, [toast, canViewUsers, user]);
 
@@ -109,7 +116,7 @@ export default function SettingsPage() {
 
         {canViewUsers && (
           <TabsContent value="users">
-              <UserManagementSettings users={users} />
+              <UserManagementSettings users={users} staff={staff} />
           </TabsContent>
         )}
         

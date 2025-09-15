@@ -2,7 +2,7 @@
 'use client'
 
 import * as React from "react"
-import type { User } from "@/types"
+import type { User, StaffMember } from "@/types"
 import { useSchoolInfo } from "@/context/school-info-context"
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
@@ -35,13 +35,14 @@ const PLAN_LIMITS = {
 
 type UserManagementSettingsProps = {
     users: User[];
+    staff: StaffMember[];
 }
 
-export function UserManagementSettings({ users }: UserManagementSettingsProps) {
+export function UserManagementSettings({ users, staff }: UserManagementSettingsProps) {
   const { schoolInfo } = useSchoolInfo();
   const router = useRouter();
   const { toast } = useToast();
-  const { user, hasPermission, updateUserStatus, deleteUserAccount } = useAuth();
+  const { user, hasPermission } = useAuth();
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isSupportFormOpen, setIsSupportFormOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -190,9 +191,11 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
     setIsSubmitting(true);
     const newStatus = !userToDeactivate.disabled;
     try {
-        await updateUserStatus(userToDeactivate.id, newStatus);
+        const userDocRef = doc(db, 'users', userToDeactivate.id);
+        await updateDoc(userDocRef, { disabled: newStatus });
+
         const action = newStatus ? 'Deactivated' : 'Re-activated';
-        await logActivity(user, `User ${action}`, `Set status for ${userToDeactivate.name} to ${newStatus ? 'Inactive' : 'Active'}.`);
+        await logActivity(user, `User ${action}`, `Set status for ${userToDeletoDeactivateate.name} to ${newStatus ? 'Inactive' : 'Active'}.`);
         toast({ title: `User ${action}`, description: `${userToDeactivate.name} has been ${action.toLowerCase()}.` });
     } catch (error) {
         console.error(`Error ${newStatus ? 'deactivating' : 're-activating'} user:`, error);
@@ -207,7 +210,9 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
     if (!userToDelete) return;
     setIsSubmitting(true);
     try {
-        await deleteUserAccount(userToDelete.id);
+        const userDocRef = doc(db, 'users', userToDelete.id);
+        await deleteDoc(userDocRef);
+
         await logActivity(user, 'User Deleted', `Permanently deleted user: ${userToDelete.name}.`);
         toast({ title: "User Deleted", description: "The user account has been permanently deleted from Firestore." });
     } catch (error) {
@@ -221,6 +226,8 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
 
 
   const columns = React.useMemo(() => getUserColumns({ onEdit: handleEditUser, onDeactivate: handleDeactivateUser, onDelete: handleDeleteUser, canEdit: canUpdate }), [canUpdate]);
+  
+  const selectedStaffMember = selectedUser ? staff.find(s => s.id === selectedUser.id) : null;
 
 
   return (
@@ -256,7 +263,11 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
                 <DialogTitle>{selectedUser ? 'Edit User' : 'Add New User'}</DialogTitle>
                 <DialogDescription>{selectedUser ? "Update the user's name and role." : "Create a new user account and assign them a role."}</DialogDescription>
             </DialogHeader>
-            <UserForm onSubmit={onSubmit} isSubmitting={isSubmitting} defaultValues={selectedUser || undefined} />
+            <UserForm 
+                onSubmit={onSubmit} 
+                isSubmitting={isSubmitting} 
+                defaultValues={selectedUser ? { ...selectedUser, payrollId: selectedStaffMember?.payrollId } : undefined} 
+            />
         </DialogContent>
     </Dialog>
     <Dialog open={isSupportFormOpen} onOpenChange={setIsSupportFormOpen}>
@@ -305,5 +316,3 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
     </>
   )
 }
-
-    
