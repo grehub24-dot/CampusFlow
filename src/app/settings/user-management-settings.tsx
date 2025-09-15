@@ -108,7 +108,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
 
         } else {
             // Create user in Firebase Auth
-            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password!);
             const newFirebaseUser = userCredential.user;
 
             // Create user document in Firestore

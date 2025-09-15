@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import React from 'react';
@@ -7,6 +8,8 @@ import { db } from '@/lib/firebase';
 import type { SchoolClass } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import type { SubmitHandler } from 'react-hook-form';
+import { useAuth } from '@/context/auth-context';
+import { logActivity } from '@/lib/activity-logger';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +46,7 @@ export function ClassSettings() {
     const [selectedClass, setSelectedClass] = React.useState<SchoolClass | null>(null);
     const [classToDelete, setClassToDelete] = React.useState<SchoolClass | null>(null);
     const { toast } = useToast();
+    const { user } = useAuth();
 
     React.useEffect(() => {
         const q = query(collection(db, "classes"));
@@ -81,6 +85,7 @@ export function ClassSettings() {
         setIsSubmitting(true);
         try {
             await deleteDoc(doc(db, "classes", classToDelete.id));
+            await logActivity(user, 'Delete Class', `Deleted class: ${classToDelete.name}.`);
             toast({
                 title: "Class Deleted",
                 description: `${classToDelete.name} has been successfully deleted.`,
@@ -107,9 +112,11 @@ export function ClassSettings() {
             if (selectedClass) {
                 const classDocRef = doc(db, "classes", selectedClass.id);
                 await updateDoc(classDocRef, values);
+                await logActivity(user, 'Update Class', `Updated class: ${values.name}.`);
                 toast({ title: 'Class Updated', description: 'The class has been successfully updated.' });
             } else {
                 await addDoc(collection(db, "classes"), values);
+                await logActivity(user, 'Add Class', `Added new class: ${values.name}.`);
                 toast({ title: 'Class Added', description: 'The new class has been successfully added.' });
             }
             setIsFormDialogOpen(false);
