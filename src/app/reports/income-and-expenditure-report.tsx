@@ -172,6 +172,7 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
           <thead>
             <tr className="main-header">
               <th>INCOME</th>
+              <th className="sub-amount-col"></th>
               <th className="amount-col">GHC</th>
             </tr>
           </thead>
@@ -179,10 +180,15 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
             {incomeItems.map(item => (
                 <tr key={item.label}>
                     <td>{item.label}</td>
+                    <td className="sub-amount-col">-</td>
                     <td className="amount-col">{item.value !== 0 ? formatCurrency(item.value) : '-'}</td>
                 </tr>
             ))}
-            <tr className="total-row"><td>TOTAL INCOME</td><td className="amount-col">{formatCurrency(totalIncome)}</td></tr>
+            <tr className="total-row">
+                <td>TOTAL INCOME</td>
+                <td className="sub-amount-col"></td>
+                <td className="amount-col">{formatCurrency(totalIncome)}</td>
+            </tr>
           </tbody>
         </table>
 
@@ -191,6 +197,7 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
             <thead>
                 <tr className="main-header">
                 <th>LESS EXPENSES</th>
+                <th className="sub-amount-col">GHC</th>
                 <th className="amount-col">GHC</th>
                 </tr>
             </thead>
@@ -198,11 +205,20 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
                 {expenseItems.map(item => (
                      <tr key={item.label}>
                         <td>{item.label}</td>
+                        <td className="sub-amount-col">-</td>
                         <td className="amount-col">{item.value > 0 ? formatCurrency(item.value) : '-'}</td>
                     </tr>
                 ))}
-                 <tr className="total-row"><td>TOTAL EXPENSES</td><td className="amount-col">{formatCurrency(totalExpenses)}</td></tr>
-                 <tr className="total-row"><td>NET BALANCE</td><td className="amount-col">{formatCurrency(totalIncome - totalExpenses)}</td></tr>
+                 <tr className="total-row">
+                    <td>TOTAL EXPENSES</td>
+                    <td className="sub-amount-col"></td>
+                    <td className="amount-col">{formatCurrency(totalExpenses)}</td>
+                </tr>
+                 <tr className="total-row">
+                    <td>NET BALANCE</td>
+                    <td className="sub-amount-col"></td>
+                    <td className="amount-col">{formatCurrency(totalIncome - totalExpenses)}</td>
+                </tr>
             </tbody>
         </table>
       </div>
@@ -219,4 +235,3 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
     </div>
   );
 }
-
