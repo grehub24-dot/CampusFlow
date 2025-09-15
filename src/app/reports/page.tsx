@@ -15,6 +15,8 @@ import type { GenerateInsightfulReportsOutput } from '@/ai/flows/generate-insigh
 import { ReportDisplay } from './report-display';
 import { useToast } from '@/hooks/use-toast';
 import { reportTemplates } from "./report-templates";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { IncomeAndExpenditureReport } from './income-and-expenditure-report';
 
 const formSchema = z.object({
   reportType: z.string().min(1, 'Please select a report type.'),
@@ -26,6 +28,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function ReportsPage() {
   const [report, setReport] = useState<GenerateInsightfulReportsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isIncomeStatementOpen, setIsIncomeStatementOpen] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
@@ -39,6 +42,12 @@ export default function ReportsPage() {
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     setIsLoading(true);
     setReport(null);
+    
+    if (values.reportType === 'Income and Expenditure') {
+      setIsIncomeStatementOpen(true);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const staticReport: GenerateInsightfulReportsOutput = {
@@ -130,6 +139,20 @@ export default function ReportsPage() {
           <ReportDisplay report={report} isLoading={isLoading} />
         </div>
       </div>
+      
+      <Dialog open={isIncomeStatementOpen} onOpenChange={setIsIncomeStatementOpen}>
+        <DialogContent className="max-w-4xl">
+            <DialogHeader>
+                <DialogTitle>Income and Expenditure Account</DialogTitle>
+                <DialogDescription>
+                    A detailed breakdown of income and expenses for the specified period.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[80vh] overflow-y-auto">
+                <IncomeAndExpenditureReport />
+            </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

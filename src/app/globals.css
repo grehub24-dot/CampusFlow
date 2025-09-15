@@ -163,3 +163,52 @@
     font-family: sans-serif;
     color: #000;
 }
+
+.financial-report-container {
+  font-family: 'Helvetica', Arial, sans-serif;
+  font-size: 10pt;
+}
+
+.financial-report-container h1,
+.financial-report-container h2,
+.financial-report-container h3,
+.financial-report-container h4 {
+  font-weight: bold;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+.financial-report-container h1 { font-size: 16pt; }
+.financial-report-container h2 { font-size: 14pt; }
+.financial-report-container h3 { font-size: 12pt; }
+.financial-report-container h4 { font-size: 10pt; font-weight: normal; }
+
+.financial-report-container table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+.financial-report-container th,
+.financial-report-container td {
+  padding: 4px 8px;
+  text-align: left;
+}
+.financial-report-container .amount-col {
+  text-align: right;
+  width: 100px;
+}
+.financial-report-container .sub-amount-col {
+  text-align: right;
+  width: 75px;
+}
+.financial-report-container .total-row td {
+  border-top: 1px solid black;
+  font-weight: bold;
+}
+.financial-report-container .main-header th {
+  font-weight: bold;
+  border-bottom: 1px solid black;
+}
+.financial-report-container .sub-item {
+  padding-left: 20px;
+}
