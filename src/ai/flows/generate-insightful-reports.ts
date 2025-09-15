@@ -155,14 +155,35 @@ const generalReportPrompt = ai.definePrompt({
   name: 'generalReportPrompt',
   input: {schema: GenerateInsightfulReportsInputSchema},
   output: {schema: GenerateInsightfulReportsOutputSchema},
-  prompt: `You are an AI assistant specialized in generating insightful reports based on provided data.
-
-You will generate a report based on the report type specified by the user, and any additional instructions provided.
-You must also determine the most suitable format for the content requested. The format should be most suitable for the content, be it text, CSV, or a chart.
+  prompt: `Generate a professionally formatted report with clear headings, sub-sections, and a concise executive summary.
 
 Report Type: {{{reportType}}}
 Additional Instructions: {{{additionalInstructions}}}
-Ensure the report is well-structured, easy to understand, and provides valuable insights.
+
+Output Requirements
+
+Structure:
+
+- Title Page (Report Title, Date, Author/Org)
+- Executive Summary (150–200 words)
+- Key Findings (bullet list with metrics/percentages)
+- Detailed Analysis (sub-sections by theme)
+- Recommendations (action items)
+- Appendix / Data Tables (if needed)
+
+Formatting:
+
+- Use clear H1/H2/H3 headings.
+- Bullet lists for key points.
+- Tables or simple charts where numeric comparisons help.
+
+Tone: Business-ready, concise, no fluff.
+
+Export: Ensure the layout copies cleanly to Word (.docx) and PDF.
+
+For Excel-bound data, include all tabular info as clean CSV-friendly tables with headers.
+
+You must also determine the most suitable format for the content requested. The format should be most suitable for the content, be it text, CSV, or a chart.
 `,
 });
 
