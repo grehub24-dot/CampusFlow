@@ -219,3 +219,4 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
     </div>
   );
 }
+
