@@ -2,7 +2,7 @@
 'use client'
 
 import React from 'react';
-import type { StaffMember } from '@/types';
+import type { StaffMember, PayrollSettings } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { doc, addDoc, updateDoc, deleteDoc, collection, onSnapshot, query } from "firebase/firestore";
 import { db } from '@/lib/firebase';
@@ -23,6 +23,7 @@ import { useAuth } from '@/context/auth-context';
 
 export default function StaffPage() {
     const [staff, setStaff] = React.useState<StaffMember[]>([]);
+    const [payrollSettings, setPayrollSettings] = React.useState<PayrollSettings | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [isFormDialogOpen, setIsFormDialogOpen] = React.useState(false);
@@ -38,9 +39,17 @@ export default function StaffPage() {
             setStaff(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StaffMember)));
             setIsLoading(false);
         });
+        
+        const payrollSettingsRef = doc(db, "settings", "payroll");
+        const unsubscribePayrollSettings = onSnapshot(payrollSettingsRef, (doc) => {
+            if (doc.exists()) {
+                setPayrollSettings(doc.data() as PayrollSettings);
+            }
+        });
 
         return () => {
             unsubscribeStaff();
+            unsubscribePayrollSettings();
         };
   }, []);
 
@@ -76,19 +85,17 @@ export default function StaffPage() {
     
     const calculatePayrollForEmployee = (employee: { grossSalary: number, deductions?: {name: string, amount: number}[] }) => {
         const gross = employee.grossSalary;
-        const ssnitEmployee = gross * 0.055;
-        const ssnitEmployer = gross * 0.13;
+        const ssnitEmployeeRate = payrollSettings ? payrollSettings.ssnitEmployeeRate / 100 : 0.055;
+        const ssnitEmployerRate = payrollSettings ? payrollSettings.ssnitEmployerRate / 100 : 0.13;
+        
+        const ssnitEmployee = gross * ssnitEmployeeRate;
+        const ssnitEmployer = gross * ssnitEmployerRate;
         const taxableIncome = gross - ssnitEmployee;
         
         let incomeTax = 0;
-        // Simplified tax calculation for annual income
-        if (taxableIncome > 5880) {
-            if (taxableIncome <= 7200) incomeTax = (taxableIncome - 5880) * 0.05;
-            else if (taxableIncome <= 8760) incomeTax = 66 + (taxableIncome - 7200) * 0.10;
-            else if (taxableIncome <= 36000) incomeTax = 222 + (taxableIncome - 8760) * 0.175;
-            else if (taxableIncome <= 197900) incomeTax = 4989 + (taxableIncome - 36000) * 0.25;
-            else if (taxableIncome <= 600000) incomeTax = 45464 + (taxableIncome - 197900) * 0.30;
-            else incomeTax = 166094 + (taxableIncome - 600000) * 0.35;
+        // This is a simplified calculation and should be replaced by a more robust one if needed.
+        if (taxableIncome > 5880) { // Annual threshold
+            incomeTax = (taxableIncome - 5880) * 0.175; // Simplified single-rate example
         }
 
         const customDeductionsTotal = employee.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;

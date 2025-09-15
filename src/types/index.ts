@@ -277,3 +277,15 @@ export type ActivityLog = {
     action: string;
     details: string;
   };
+
+export type TaxBracket = {
+  from: number;
+  to?: number;
+  rate: number;
+};
+
+export type PayrollSettings = {
+  ssnitEmployeeRate: number;
+  ssnitEmployerRate: number;
+  payeTaxBrackets: TaxBracket[];
+};

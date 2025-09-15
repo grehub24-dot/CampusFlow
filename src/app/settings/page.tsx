@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import React from 'react';
@@ -21,6 +20,7 @@ import { FeeItemsSettings } from './fee-items-settings';
 import { SchoolInfoSettings } from './school-info-settings';
 import { TemplatesSettings } from './templates-settings';
 import { BillingSettings } from './billing-settings';
+import { PayrollSettings } from './payroll-settings';
 
 export default function SettingsPage() {
   const [users, setUsers] = React.useState<User[]>([]);
@@ -74,6 +74,7 @@ export default function SettingsPage() {
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="billing">Billing & Invoices</TabsTrigger>
+          <TabsTrigger value="payroll">Payroll</TabsTrigger>
         </TabsList>
 
         <TabsContent value="school-info" className="space-y-4">
@@ -112,6 +113,10 @@ export default function SettingsPage() {
         
         <TabsContent value="billing">
           <BillingSettings />
+        </TabsContent>
+
+        <TabsContent value="payroll">
+          <PayrollSettings />
         </TabsContent>
       </Tabs>
     </>

@@ -11,7 +11,7 @@ import { format, getYear } from 'date-fns';
 import { Loader2, PlayCircle } from 'lucide-react';
 import { PayrollHistory } from './payroll-history';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import type { StaffMember, PayrollRun } from '@/types';
+import type { StaffMember, PayrollRun, PayrollSettings, TaxBracket } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
@@ -87,6 +87,7 @@ function StaffPayrollTable({ staff, onEdit }: { staff: StaffMember[], onEdit: (s
 export default function PayrollPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
+  const [payrollSettings, setPayrollSettings] = useState<PayrollSettings | null>(null);
   const [isLoadingRuns, setIsLoadingRuns] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMMM'));
@@ -112,9 +113,19 @@ export default function PayrollPage() {
       setIsLoadingRuns(false);
     });
 
+    const payrollSettingsRef = doc(db, "settings", "payroll");
+    const unsubscribePayrollSettings = onSnapshot(payrollSettingsRef, (doc) => {
+        if (doc.exists()) {
+            setPayrollSettings(doc.data() as PayrollSettings);
+        } else {
+            setPayrollSettings(null); // No settings found, use defaults
+        }
+    });
+
     return () => {
       unsubscribeStaff();
       unsubscribeRuns();
+      unsubscribePayrollSettings();
     };
   }, []);
   
@@ -123,25 +134,77 @@ export default function PayrollPage() {
     setIsFormOpen(true);
   }
 
+  const calculateIncomeTax = (taxableIncome: number, brackets: TaxBracket[]): number => {
+    let tax = 0;
+    let remainingIncome = taxableIncome;
+
+    const sortedBrackets = [...brackets].sort((a, b) => a.from - b.from);
+
+    for (const bracket of sortedBrackets) {
+        if (remainingIncome <= 0) break;
+
+        const bracketMin = bracket.from;
+        const bracketMax = bracket.to ?? Infinity;
+        
+        if (taxableIncome > bracketMin) {
+            const incomeInBracket = Math.min(taxableIncome, bracketMax) - bracketMin;
+            tax += incomeInBracket * (bracket.rate / 100);
+        }
+    }
+    // This is a simplified progressive tax calculation. For accurate calculation, a cumulative approach is better.
+    // Let's use the cumulative approach as it's more accurate for Ghana's PAYE.
+    tax = 0;
+    if (taxableIncome > sortedBrackets[0].to!) {
+        let cumulativeTax = 0;
+        for (let i = 1; i < sortedBrackets.length; i++) {
+            const prevBracket = sortedBrackets[i-1];
+            const currentBracket = sortedBrackets[i];
+            
+            if (taxableIncome > prevBracket.to!) {
+                 const taxableInThisBracket = Math.min(taxableIncome, currentBracket.to ?? Infinity) - prevBracket.to!;
+                 if (taxableInThisBracket > 0) {
+                     cumulativeTax += (prevBracket.to! - prevBracket.from) * (prevBracket.rate / 100);
+                     tax = cumulativeTax + taxableInThisBracket * (currentBracket.rate / 100)
+                 }
+            } else {
+                const taxableInThisBracket = taxableIncome - prevBracket.from;
+                tax = cumulativeTax + taxableInThisBracket * (prevBracket.rate / 100);
+                break;
+            }
+        }
+    }
+
+
+    return tax;
+  };
+
   const calculatePayrollForEmployee = (employee: StaffMember) => {
+      const ssnitEmployeeRate = payrollSettings ? payrollSettings.ssnitEmployeeRate / 100 : 0.055;
+      const ssnitEmployerRate = payrollSettings ? payrollSettings.ssnitEmployerRate / 100 : 0.13;
+      const taxBrackets = payrollSettings?.payeTaxBrackets;
+
       const grossSalaryPerMonth = employee.grossSalary / 12;
       const arrearsTotal = employee.arrears?.reduce((acc, d) => acc + d.amount, 0) || 0;
       
       const earnings = grossSalaryPerMonth + arrearsTotal;
       
-      const ssnitEmployee = grossSalaryPerMonth * 0.055;
-      const ssnitEmployer = grossSalaryPerMonth * 0.13;
+      const ssnitEmployee = grossSalaryPerMonth * ssnitEmployeeRate;
+      const ssnitEmployer = grossSalaryPerMonth * ssnitEmployerRate;
       const taxableIncome = earnings - ssnitEmployee;
       
       let incomeTax = 0;
-      // Simplified tax calculation for monthly income
-      if (taxableIncome > 490) {
-        if (taxableIncome <= 600) incomeTax = (taxableIncome - 490) * 0.05;
-        else if (taxableIncome <= 730) incomeTax = 5.5 + (taxableIncome - 600) * 0.10;
-        else if (taxableIncome <= 3000) incomeTax = 18.5 + (taxableIncome - 730) * 0.175;
-        else if (taxableIncome <= 16491.67) incomeTax = 415.75 + (taxableIncome - 3000) * 0.25;
-        else if (taxableIncome <= 50000) incomeTax = 3788.67 + (taxableIncome - 16491.67) * 0.30;
-        else incomeTax = 13841.17 + (taxableIncome - 50000) * 0.35;
+      if (taxBrackets) {
+          incomeTax = calculateIncomeTax(taxableIncome, taxBrackets);
+      } else {
+        // Fallback to hardcoded calculation if settings are not available
+        if (taxableIncome > 490) {
+            if (taxableIncome <= 600) incomeTax = (taxableIncome - 490) * 0.05;
+            else if (taxableIncome <= 730) incomeTax = 5.5 + (taxableIncome - 600) * 0.10;
+            else if (taxableIncome <= 3000) incomeTax = 18.5 + (taxableIncome - 730) * 0.175;
+            else if (taxableIncome <= 16491.67) incomeTax = 415.75 + (taxableIncome - 3000) * 0.25;
+            else if (taxableIncome <= 50000) incomeTax = 3788.67 + (taxableIncome - 16491.67) * 0.30;
+            else incomeTax = 13841.17 + (taxableIncome - 50000) * 0.35;
+        }
       }
 
       const customDeductionsTotal = employee.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;
