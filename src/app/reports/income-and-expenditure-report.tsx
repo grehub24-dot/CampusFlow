@@ -55,7 +55,7 @@ export function IncomeAndExpenditureReport() {
     <div className="p-4 bg-white">
       <div id="income-expenditure-report" className="printable-area financial-report-container p-6">
         <header className="text-center mb-6 space-y-1">
-          <div className="flex justify-center items-center gap-8 mb-4">
+          <div className="flex justify-center items-center gap-16 mb-4">
               <Image src={schoolInfo.logoUrl || '/logo.jpg'} alt="School Logo" width={100} height={100} className="object-contain" />
               <div>
                   <h1>{schoolInfo.schoolName}</h1>
