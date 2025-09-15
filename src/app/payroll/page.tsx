@@ -25,6 +25,7 @@ import { PayrollForm, type FormValues as PayrollFormValues } from './payroll-for
 import type { SubmitHandler } from 'react-hook-form';
 import { useAuth } from '@/context/auth-context';
 import { logActivity } from '@/lib/activity-logger';
+import { TeacherPayrollView } from './teacher-payroll-view';
 
 const months = [
     "January", "February", "March", "April", "May", "June", 
@@ -322,6 +323,10 @@ export default function PayrollPage() {
         setIsProcessing(false);
     }
   };
+
+  if (user?.role === 'Teacher') {
+    return <TeacherPayrollView payrollRuns={payrollRuns} isLoading={isLoadingRuns} teacherId={user.id} />
+  }
 
   return (
     <>
