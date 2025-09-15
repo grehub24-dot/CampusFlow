@@ -20,10 +20,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type ColumnsProps = {
   onEdit: (user: User) => void;
+  onDeactivate: (user: User) => void;
+  onDelete: (user: User) => void;
   canEdit: boolean;
 }
 
-export const getUserColumns = ({ onEdit, canEdit }: ColumnsProps): ColumnDef<User>[] => [
+export const getUserColumns = ({ onEdit, onDeactivate, onDelete, canEdit }: ColumnsProps): ColumnDef<User>[] => [
   {
     accessorKey: "name",
     header: "Name",
@@ -59,6 +61,14 @@ export const getUserColumns = ({ onEdit, canEdit }: ColumnsProps): ColumnDef<Use
       return <Badge variant={variant}>{role}</Badge>
     }
   },
+    {
+    accessorKey: "disabled",
+    header: "Status",
+    cell: ({ row }) => {
+      const disabled = row.getValue("disabled") as boolean;
+      return <Badge variant={disabled ? "destructive" : "default"}>{disabled ? 'Inactive' : 'Active'}</Badge>;
+    }
+  },
   {
     accessorKey: "lastLogin",
     header: "Last Login",
@@ -91,7 +101,12 @@ export const getUserColumns = ({ onEdit, canEdit }: ColumnsProps): ColumnDef<Use
                 <DropdownMenuItem onClick={() => onEdit(user)}>Edit user</DropdownMenuItem>
                 <DropdownMenuItem>Reset password</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">Deactivate user</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDeactivate(user)}>
+                    {user.disabled ? 'Re-activate user' : 'Deactivate user'}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={() => onDelete(user)}>
+                    Delete user
+                </DropdownMenuItem>
             </DropdownMenuContent>
             </DropdownMenu>
         </div>

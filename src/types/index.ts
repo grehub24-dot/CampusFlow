@@ -77,6 +77,7 @@ export type User = {
   email: string;
   role: 'Admin' | 'Teacher' | 'Accountant' | 'Support';
   lastLogin: string;
+  disabled?: boolean;
 };
 
 export type Report = {
@@ -299,10 +300,11 @@ export type GenerateInsightfulReportsOutput = {
 }
 
 export type Permission = {
-    read: boolean;
-    create: boolean;
-    update: boolean;
-    delete: boolean;
+    read?: boolean;
+    create?: boolean;
+    update?: boolean;
+    delete?: boolean;
+    run?: boolean;
 }
 
 export type RolePermissions = {
@@ -313,14 +315,15 @@ export type RolePermissions = {
     payments?: Permission;
     invoices?: Permission;
     fees?: Permission;
-    reports?: Permission;
+    reports?: Pick<Permission, 'read'>;
     financials?: Pick<Permission, 'read'>;
-    communications?: Permission;
-    payroll?: Permission & { run: boolean };
+    communications?: Pick<Permission, 'read' | 'create'>;
+    payroll?: Pick<Permission, 'read' | 'run'>;
     transactions?: Permission;
     billing?: Pick<Permission, 'read' | 'update'>;
     settings?: Pick<Permission, 'read' | 'update'>;
     activity?: Pick<Permission, 'read'>;
+    [key: string]: Permission | undefined;
 }
 
 export type Role = {

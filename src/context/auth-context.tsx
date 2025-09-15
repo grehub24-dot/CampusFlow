@@ -1,13 +1,20 @@
 
+
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut as firebaseSignOut, type User as FirebaseUser } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut as firebaseSignOut, type User as FirebaseUser, updateProfile, updateEmail, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from 'firebase/auth';
 import { app, db } from '@/lib/firebase';
-import { doc, onSnapshot, collection, query, getDocs } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { User as AppUser, Role } from '@/types';
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 const auth = getAuth(app);
+const functions = getFunctions(app);
+
+// Get the function
+const updateUserStatusInAuth = httpsCallable(functions, 'updateUserStatus');
+const deleteUserFromAuth = httpsCallable(functions, 'deleteUserAccount');
 
 interface AuthContextType {
     user: AppUser | null;
@@ -15,6 +22,8 @@ interface AuthContextType {
     signIn: (email: string, pass: string) => Promise<any>;
     signOut: () => Promise<any>;
     hasPermission: (permission: string) => boolean;
+    updateUserStatus: (uid: string, disabled: boolean) => Promise<any>;
+    deleteUserAccount: (uid: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         name: 'Super Admin',
                         role: 'Admin',
                         lastLogin: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
+                        disabled: firebaseUser.disabled,
                     });
                     setLoading(false);
                     return;
@@ -59,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         name: 'Support Team',
                         role: 'Support',
                         lastLogin: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
+                        disabled: firebaseUser.disabled,
                     });
                     setLoading(false);
                     return;
@@ -74,14 +85,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             name: customData.name || firebaseUser.displayName,
                             role: customData.role || 'User',
                             lastLogin: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
+                            disabled: firebaseUser.disabled,
                         });
                     } else {
+                        // This case is unlikely if users are created properly
                         setUser({
                             id: firebaseUser.uid,
                             email: firebaseUser.email || '',
                             name: firebaseUser.displayName || 'User',
                             role: 'User',
                             lastLogin: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
+                            disabled: firebaseUser.disabled,
                         });
                     }
                      setLoading(false);
@@ -107,21 +121,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const hasPermission = (permission: string) => {
         if (!user || roles.length === 0) return false;
         
+        // Super Admin bypass
+        if (user.role === 'Admin' && user.email === 'superadmin@campusflow.com') return true;
+        
         const userRole = roles.find(r => r.name === user.role);
-        if (!userRole) return false;
-
-        // The Super Admin role bypasses specific permissions checks
-        if (userRole.name === 'Admin' && user.email === 'superadmin@campusflow.com') return true;
-
-        if (!userRole.permissions) return false;
+        if (!userRole || !userRole.permissions) return false;
 
         const [feature, action] = permission.split(':');
         
         return userRole.permissions[feature]?.[action] === true;
     }
 
+    const updateUserStatus = async (uid: string, disabled: boolean) => {
+        await updateUserStatusInAuth({ uid, disabled });
+        // Also update the local Firestore record
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { disabled });
+    }
+    
+    const deleteUserAccount = async (uid: string) => {
+        await deleteUserFromAuth({ uid });
+        // Also delete the local Firestore record
+        const userDocRef = doc(db, 'users', uid);
+        await deleteDoc(userDocRef);
+    }
+
+
     return (
-        <AuthContext.Provider value={{ user, loading, signIn, signOut, hasPermission }}>
+        <AuthContext.Provider value={{ user, loading, signIn, signOut, hasPermission, updateUserStatus, deleteUserAccount }}>
             {children}
         </AuthContext.Provider>
     )
