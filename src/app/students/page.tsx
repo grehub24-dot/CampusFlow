@@ -34,6 +34,8 @@ import StatCard from '@/components/dashboard/stat-card';
 import ClassEnrollmentChart from './class-enrollment-chart';
 import { StudentForm, type FormValues } from './student-form';
 import PaymentForm from '../payments/payment-form';
+import { useAuth } from '@/context/auth-context';
+import { logActivity } from '@/lib/activity-logger';
 
 export default function StudentsPage() {
   const [students, setStudents] = React.useState<Student[]>([]);
@@ -53,6 +55,7 @@ export default function StudentsPage() {
   const [studentToDelete, setStudentToDelete] = React.useState<Student | null>(null);
   const [studentsToDelete, setStudentsToDelete] = React.useState<Student[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   React.useEffect(() => {
     const allTermsQuery = query(collection(db, "academic-terms"));
@@ -248,6 +251,7 @@ export default function StudentsPage() {
     setIsSubmitting(true);
     try {
       await deleteDoc(doc(db, "students", studentToDelete.id));
+      await logActivity(user, 'Student Deleted', `Deleted student: ${studentToDelete.name} (ID: ${studentToDelete.admissionId}).`);
       toast({
         title: "Student Deleted",
         description: `${studentToDelete.name} has been successfully deleted.`,
@@ -269,6 +273,8 @@ export default function StudentsPage() {
     if (studentsToDelete.length === 0) return;
     setIsSubmitting(true);
     const batch = writeBatch(db);
+    const studentNames = studentsToDelete.map(s => `${s.name} (ID: ${s.admissionId})`).join(', ');
+
     studentsToDelete.forEach(student => {
         const docRef = doc(db, "students", student.id);
         batch.delete(docRef);
@@ -276,6 +282,7 @@ export default function StudentsPage() {
 
     try {
         await batch.commit();
+        await logActivity(user, 'Bulk Student Deletion', `Deleted ${studentsToDelete.length} students: ${studentNames}.`);
         toast({
             title: `Deleted ${studentsToDelete.length} students`,
             description: "The selected students have been successfully deleted.",
@@ -703,6 +710,8 @@ export default function StudentsPage() {
     </>
   );
 }
+
+    
 
     
 
