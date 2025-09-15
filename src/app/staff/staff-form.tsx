@@ -224,6 +224,76 @@ export function StaffForm({ onSubmit, defaultValues }: StaffFormProps) {
                 <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Notes</FormLabel><FormControl><Textarea placeholder="Any additional information..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
         </div>
+        
+        <Separator />
+        
+        <div>
+             <h3 className="text-lg font-medium mb-2">Salary & Payment Information</h3>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="grossSalary"
+                    render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                        <FormLabel>Gross Monthly Salary (GHS)</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 2000" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField control={form.control} name="bankName" render={({ field }) => (<FormItem><FormLabel>Bank Name</FormLabel><FormControl><Input placeholder="e.g., GCB Bank" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="accountNumber" render={({ field }) => (<FormItem><FormLabel>Account Number</FormLabel><FormControl><Input placeholder="e.g., 1234567890123" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="momoNumber" render={({ field }) => (<FormItem><FormLabel>Contact / Mobile Money No.</FormLabel><FormControl><Input placeholder="e.g., 0241234567" {...field} /></FormControl><FormMessage /></FormItem>)} />
+             </div>
+        </div>
+
+        <Separator />
+        
+        <div>
+            <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-medium">Custom Deductions (Recurring)</h3>
+                 <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => append({ name: "", amount: 0 })}
+                >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Deduction
+                </Button>
+            </div>
+             <div className="space-y-4">
+                {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-end gap-2">
+                        <FormField
+                            control={form.control}
+                            name={`deductions.${index}.name`}
+                            render={({ field }) => (
+                                <FormItem className="flex-1">
+                                <FormLabel className={cn(index !== 0 && "sr-only")}>Deduction Name</FormLabel>
+                                <FormControl><Input placeholder="e.g., Welfare" {...field} /></FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name={`deductions.${index}.amount`}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel className={cn(index !== 0 && "sr-only")}>Amount (GHS)</FormLabel>
+                                <FormControl><Input type="number" placeholder="50" {...field} /></FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                    </div>
+                ))}
+             </div>
+        </div>
 
         <div className="flex justify-end">
           <Button type="submit">

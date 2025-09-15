@@ -98,8 +98,13 @@ export default function StaffPage() {
         
         let incomeTax = 0;
         // This is a simplified calculation and should be replaced by a more robust one if needed.
-        if (taxableIncome > 5880) { // Annual threshold
-            incomeTax = (taxableIncome - 5880) * 0.175; // Simplified single-rate example
+        if (taxableIncome > 490) { // Monthly threshold
+             if (taxableIncome <= 600) incomeTax = (taxableIncome - 490) * 0.05;
+            else if (taxableIncome <= 730) incomeTax = 5.5 + (taxableIncome - 600) * 0.10;
+            else if (taxableIncome <= 3000) incomeTax = 18.5 + (taxableIncome - 730) * 0.175;
+            else if (taxableIncome <= 16491.67) incomeTax = 415.75 + (taxableIncome - 3000) * 0.25;
+            else if (taxableIncome <= 50000) incomeTax = 3788.67 + (taxableIncome - 16491.67) * 0.30;
+            else incomeTax = 13841.17 + (taxableIncome - 50000) * 0.35;
         }
 
         const customDeductionsTotal = employee.deductions?.reduce((acc, d) => acc + d.amount, 0) || 0;

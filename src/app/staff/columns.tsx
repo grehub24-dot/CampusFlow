@@ -2,7 +2,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import type { StaffMember } from "@/types"
+import type { StaffArrears, StaffMember } from "@/types"
 import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
@@ -55,7 +55,7 @@ export const getStaffColumns = ({ onEdit, onDelete, canManage }: ColumnsProps): 
   },
   {
     accessorKey: "grossSalary",
-    header: "Gross Salary (Annual)",
+    header: "Gross Salary (Monthly)",
     cell: ({ row }) => formatCurrency(row.getValue("grossSalary"))
   },
   {
