@@ -106,11 +106,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const hasPermission = (permission: string) => {
         if (!user || roles.length === 0) return false;
-        if (user.role === 'Admin') return true; // Admins have all permissions
         
         const userRole = roles.find(r => r.name === user.role);
-        if (!userRole || !userRole.permissions) return false;
-        
+        if (!userRole) return false;
+
+        // The Super Admin role bypasses specific permissions checks
+        if (userRole.name === 'Admin' && user.email === 'superadmin@campusflow.com') return true;
+
+        if (!userRole.permissions) return false;
+
         const [feature, action] = permission.split(':');
         
         return userRole.permissions[feature]?.[action] === true;

@@ -149,12 +149,6 @@ export function RolesSettings({ roles }: { roles: Role[] }) {
     };
     
     const handleRoleSelect = (roleName: string) => {
-        if (roleName === 'Admin') {
-            toast({
-                title: "Admin Role",
-                description: "The Admin role has all permissions by default and cannot be modified.",
-            });
-        }
         setSelectedRole(roles.find(r => r.name === roleName) || null);
     }
 
@@ -188,16 +182,11 @@ export function RolesSettings({ roles }: { roles: Role[] }) {
                                 <CardHeader>
                                     <CardTitle>Permissions for {selectedRole.name}</CardTitle>
                                     <CardDescription>
-                                        {selectedRole.name === 'Admin' 
-                                            ? 'Admins have unrestricted access to all features.'
-                                            : 'Select the actions this role can perform.'
-                                        }
+                                        Select the actions this role can perform.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {selectedRole.name !== 'Admin' && (
-                                        <RoleForm role={selectedRole} onSave={handleSavePermissions} isSubmitting={isSubmitting} />
-                                    )}
+                                    <RoleForm role={selectedRole} onSave={handleSavePermissions} isSubmitting={isSubmitting} />
                                 </CardContent>
                             </Card>
                         ) : (

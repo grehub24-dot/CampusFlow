@@ -9,7 +9,22 @@ const defaultRoles: Role[] = [
     {
         id: 'admin',
         name: 'Admin',
-        permissions: {} // Admin has all permissions implicitly
+        permissions: {
+            dashboard: { read: true },
+            admissions: { read: true, create: true, update: true, delete: true },
+            students: { read: true, create: true, update: true, delete: true },
+            staff: { read: true, create: true, update: true, delete: true },
+            payments: { read: true, create: true, update: true, delete: true },
+            invoices: { read: true, create: true, update: true, delete: true },
+            fees: { read: true, create: true, update: true, delete: true },
+            reports: { read: true },
+            communications: { read: true, create: true },
+            payroll: { read: true, run: true },
+            transactions: { read: true, create: true, update: true, delete: true },
+            billing: { read: true, update: true },
+            settings: { read: true, update: true },
+            activity: { read: true },
+        }
     },
     {
         id: 'accountant',
