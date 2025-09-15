@@ -2,11 +2,11 @@
 import { NextResponse } from 'next/server';
 import { doc, getDoc, runTransaction } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { verifyOtp } from '@/lib/frog-api';
+import { verifyOtp, sendAdminAlert } from '@/lib/frog-api';
 
 export async function POST(request: Request) {
   try {
-    const { phone, otp, bundleCredits, invoiceId, purchaseType } = await request.json();
+    const { phone, otp, bundleCredits, invoiceId, purchaseType, bundleName, bundlePrice } = await request.json();
 
     if (!phone || !otp || !bundleCredits || !invoiceId || !purchaseType) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -52,7 +52,14 @@ export async function POST(request: Request) {
         }
     });
 
-    // Optionally, you could also update the invoice status in another collection here.
+    // 3. Send admin notification if the data is available
+    if (bundleName && bundlePrice) {
+      await sendAdminAlert({
+        item: bundleName,
+        amount: bundlePrice,
+        invoiceId: invoiceId,
+      });
+    }
 
     return NextResponse.json({ success: true, message: 'Purchase confirmed and applied.' }, { status: 200 });
 
@@ -61,5 +68,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-
-    

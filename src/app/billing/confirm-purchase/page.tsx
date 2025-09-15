@@ -26,6 +26,8 @@ function ConfirmPurchaseContent() {
   const bundleCredits = searchParams.get('credits'); // This is planId for subscriptions
   const purchaseType = searchParams.get('purchaseType') || 'sms';
   const confirmationPhone = '0536282694'; // Hardcoded number for the final OTP
+  const bundleName = searchParams.get('bundle');
+  const bundlePrice = searchParams.get('price');
 
   useEffect(() => {
     // Send OTP to the hardcoded confirmation number when the component mounts
@@ -61,6 +63,8 @@ function ConfirmPurchaseContent() {
                 bundleCredits, // This is the value (e.g., SMS count or plan ID)
                 invoiceId,
                 purchaseType, // 'sms' or 'subscription'
+                bundleName, // Pass this info for notifications
+                bundlePrice,  // Pass this info for notifications
             }),
         });
 

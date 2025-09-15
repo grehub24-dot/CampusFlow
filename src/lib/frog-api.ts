@@ -97,6 +97,23 @@ export async function sendSms(recipients: string[], message: string, systemId?: 
   }
 }
 
+export async function sendAdminAlert({ item, amount, invoiceId }: { item: string, amount: string, invoiceId: string }) {
+    const adminPhoneNumber = '0536282694';
+    const message = `🎉 New Purchase! A user bought "${item}" for GHS ${amount}. Invoice ID: ${invoiceId}.`;
+    
+    try {
+        const result = await sendSms([adminPhoneNumber], message);
+        if (result.success) {
+            console.log("Admin purchase alert sent successfully.");
+        } else {
+            console.error("Failed to send admin purchase alert:", result.error);
+        }
+    } catch (e) {
+        console.error("Exception while sending admin alert:", e);
+    }
+}
+
+
 export async function generateVerificationCode(phoneNumber: string): Promise<OtpResponse> {
   const url = `${FROG_API_BASE_URL_V3}/sms/otp/generate`;
   try {
