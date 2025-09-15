@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from "react"
@@ -146,17 +147,26 @@ export function UserManagementSettings({ users, staff }: UserManagementSettingsP
           const staffDocRef = doc(db, "staff", newFirebaseUser.uid);
           await setDoc(staffDocRef, {
             id: newFirebaseUser.uid,
+            payrollId: `STAFF-${uuidv4().substring(0, 8).toUpperCase()}`,
             name: values.name,
             role: 'Teacher',
             status: 'Active',
-            payrollId: `STAFF-${uuidv4().substring(0, 8).toUpperCase()}`,
             grossSalary: 0,
+            employmentDate: new Date().toISOString(),
+            // Initialize other fields to prevent data issues
             ssnitEmployee: 0,
             ssnitEmployer: 0,
             taxableIncome: 0,
             incomeTax: 0,
             netSalary: 0,
-            employmentDate: new Date().toISOString(),
+            deductions: [],
+            arrears: [],
+            bankName: '',
+            accountNumber: '',
+            momoNumber: '',
+            qualification: '',
+            subjectsTaught: '',
+            notes: '',
           });
         }
 
