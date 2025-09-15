@@ -7,7 +7,7 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Role, RolePermissions } from '@/types';
 import { useAuth } from '@/context/auth-context';
@@ -16,10 +16,12 @@ import { logActivity } from '@/lib/activity-logger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 const permissionSchema = z.object({
   read: z.boolean().optional(),
@@ -123,6 +125,8 @@ function RoleForm({ role, onSave, isSubmitting }: { role: Role; onSave: SubmitHa
 export function RolesSettings({ roles }: { roles: Role[] }) {
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [newRoleName, setNewRoleName] = useState('');
     const { toast } = useToast();
     const { user } = useAuth();
     
@@ -159,13 +163,49 @@ export function RolesSettings({ roles }: { roles: Role[] }) {
             setIsSubmitting(false);
         }
     };
+
+    const handleCreateRole = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newRoleName.trim()) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Role name cannot be empty.' });
+            return;
+        }
+        setIsSubmitting(true);
+
+        const defaultPermissions: RolePermissions = {};
+        for (const feature in permissionConfig) {
+            defaultPermissions[feature] = {};
+            for (const action of permissionConfig[feature as keyof RolePermissions]) {
+                defaultPermissions[feature]![action] = false;
+            }
+        }
+
+        try {
+            await addDoc(collection(db, "roles"), {
+                name: newRoleName.trim(),
+                permissions: defaultPermissions,
+            });
+            await logActivity(user, 'Role Created', `Created new role: ${newRoleName.trim()}`);
+            toast({
+                title: 'Role Created',
+                description: `The "${newRoleName.trim()}" role has been successfully created.`,
+            });
+            setNewRoleName('');
+            setIsCreateDialogOpen(false);
+        } catch (error) {
+            console.error("Error creating role:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not create new role.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
     
     const handleRoleSelect = (roleName: string) => {
         setSelectedRole(roles.find(r => r.name === roleName) || null);
     }
 
     if (roles.length === 0) {
-        return <Skeleton className="h-96 w-full" />;
+        return <Skeleton className="h-96 w-full" />
     }
 
     return (
@@ -187,6 +227,37 @@ export function RolesSettings({ roles }: { roles: Role[] }) {
                                 {role.name}
                             </Button>
                          ))}
+                         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                            <DialogTrigger asChild>
+                                 <Button variant="outline" className="justify-start mt-4">
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Create New Role
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Create New Role</DialogTitle>
+                                    <DialogDescription>Enter a name for the new role. You can set permissions after creating it.</DialogDescription>
+                                </DialogHeader>
+                                <form onSubmit={handleCreateRole} className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="new-role-name">Role Name</Label>
+                                        <Input
+                                            id="new-role-name"
+                                            value={newRoleName}
+                                            onChange={(e) => setNewRoleName(e.target.value)}
+                                            placeholder="e.g., Librarian"
+                                        />
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <Button type="submit" disabled={isSubmitting}>
+                                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Create Role
+                                        </Button>
+                                    </div>
+                                </form>
+                            </DialogContent>
+                         </Dialog>
                     </div>
                     <div className="md:col-span-3">
                         {selectedRole ? (
@@ -210,3 +281,5 @@ export function RolesSettings({ roles }: { roles: Role[] }) {
         </Card>
     )
 }
+
+    
