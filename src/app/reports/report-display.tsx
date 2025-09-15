@@ -18,7 +18,7 @@ const TextReport: React.FC<{ content: string }> = ({ content }) => {
     if (line.startsWith('### ')) return <h3 key={idx} className="text-lg font-medium mt-3 mb-1">{line.replace('### ', '')}</h3>;
     if (line.startsWith('- ')) return <li key={idx} className="ml-6 list-disc">{line.replace('- ', '')}</li>;
     if (line.trim() === '') return <div key={idx} className="h-4" />;
-    return <p key={idx} className="mb-2 leading-relaxed whitespace-pre-wrap font-mono text-sm">{line}</p>;
+    return <p key={idx} className="mb-2 leading-relaxed whitespace-pre-wrap font-serif text-sm">{line}</p>;
   });
 
   return <div className="prose max-w-none">{lines}</div>;

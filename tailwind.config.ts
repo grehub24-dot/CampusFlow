@@ -12,6 +12,7 @@ export default {
       fontFamily: {
         body: ['Inter', 'sans-serif'],
         headline: ['Inter', 'sans-serif'],
+        serif: ['Times New Roman', 'serif'],
         code: ['monospace'],
       },
       colors: {
