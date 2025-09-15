@@ -11,6 +11,7 @@ import { useAuth } from "@/context/auth-context";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { sendSms } from "@/lib/frog-api";
 
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -86,6 +87,14 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
             title: "User Created",
             description: `${values.name} has been added as a new ${values.role}.`
         });
+        
+        // 3. Send admin notification
+        const adminPhoneNumber = '0536282694';
+        const limit = PLAN_LIMITS[schoolInfo?.currentPlan || 'free'];
+        const currentCount = users.filter(u => u.email !== 'superadmin@campusflow.com').length + 1;
+        const message = `New User Created: ${values.name} (${values.role}). Total users: ${currentCount}/${limit} on ${schoolInfo?.currentPlan} plan.`;
+        await sendSms([adminPhoneNumber], message);
+
         setIsFormOpen(false);
 
     } catch (error: any) {
