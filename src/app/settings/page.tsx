@@ -42,6 +42,12 @@ export default function SettingsPage() {
       querySnapshot.forEach((doc) => {
         usersData.push({ id: doc.id, ...doc.data() } as User);
       });
+
+      // Ensure the current admin user is always in the list, even if not in Firestore
+      if (user && user.role === 'Admin' && !usersData.find(u => u.id === user.id)) {
+        usersData.unshift(user);
+      }
+
       setUsers(usersData);
     }, (error) => {
       console.error("Error fetching users:", error);
@@ -49,7 +55,7 @@ export default function SettingsPage() {
     });
 
     return () => unsubscribeUsers();
-  }, [toast, canViewUsers]);
+  }, [toast, canViewUsers, user]);
 
   return (
     <>
