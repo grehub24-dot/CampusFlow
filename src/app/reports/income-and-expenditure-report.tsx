@@ -205,7 +205,7 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
                 {expenseItems.map(item => (
                      <tr key={item.label}>
                         <td>{item.label}</td>
-                        <td className="sub-amount-col">{item.value > 0 ? formatCurrency(item.value) : '-'}</td>
+                        <td className="sub-amount-col">{item.value !== 0 ? formatCurrency(item.value) : '-'}</td>
                         <td className="amount-col">-</td>
                     </tr>
                 ))}
