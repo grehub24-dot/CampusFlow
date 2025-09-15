@@ -8,7 +8,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useSchoolInfo } from '@/context/school-info-context';
 import Image from 'next/image';
-import { format, endOfMonth, startOfMonth, isWithinInterval } from 'date-fns';
+import { format, endOfMonth, startOfMonth, isWithinInterval, subMonths } from 'date-fns';
 import type { Payment, Transaction, Student, AcademicTerm } from '@/types';
 
 interface ReportProps {
@@ -51,12 +51,24 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
     }
   };
   
-  const reportDate = endOfMonth(new Date());
-  const reportMonthStart = startOfMonth(new Date());
-
+  const today = new Date();
+  const reportDate = endOfMonth(today);
+  const reportMonthStart = startOfMonth(today);
+  const prevMonth = subMonths(today, 1);
+  
   const monthlyPayments = payments.filter(p => isWithinInterval(new Date(p.date), { start: reportMonthStart, end: reportDate }));
   const monthlyTransactions = transactions.filter(t => isWithinInterval(new Date(t.date), { start: reportMonthStart, end: reportDate }));
-  
+
+  // --- Calculate Balance Brought Forward ---
+  const previousPayments = payments.filter(p => new Date(p.date) < reportMonthStart);
+  const previousTransactions = transactions.filter(t => new Date(t.date) < reportMonthStart);
+
+  const previousIncomeFromPayments = previousPayments.reduce((sum, p) => sum + p.amount, 0);
+  const previousOtherIncome = previousTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const previousExpenses = previousTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const balanceBroughtForward = previousIncomeFromPayments + previousOtherIncome - previousExpenses;
+  // --- End Balance B/F Calculation ---
+
   const incomeFromPayments = monthlyPayments.reduce((acc, payment) => {
     payment.items?.forEach(item => {
       const student = students.find(s => s.id === payment.studentId);
@@ -85,7 +97,9 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
     }, {} as Record<string, number>);
     
   const allIncome = {...incomeFromPayments, ...otherIncome};
-  const totalIncome = Object.values(allIncome).reduce((sum, amount) => sum + amount, 0);
+  const totalMonthlyIncome = Object.values(allIncome).reduce((sum, amount) => sum + amount, 0);
+  const totalIncome = totalMonthlyIncome + balanceBroughtForward;
+
 
   const expenses = monthlyTransactions
     .filter(t => t.type === 'expense')
@@ -109,6 +123,7 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
   }
 
   const incomeItems = [
+      { label: `Bal B/F (${format(prevMonth, 'MMMM, yyyy')})`, value: balanceBroughtForward },
       { label: 'Canteen Fee', value: allIncome['Canteen Fee'] || 0 },
       { label: 'Transport', value: allIncome['Transport'] || 0 },
       { label: 'New Admissions School fees', value: allIncome['New Admissions School fees'] || 0 },
@@ -160,7 +175,7 @@ export function IncomeAndExpenditureReport({ payments, transactions, students, c
             {incomeItems.map(item => (
                 <tr key={item.label}>
                     <td>{item.label}</td>
-                    <td className="amount-col">{item.value > 0 ? item.value.toFixed(2) : '-'}</td>
+                    <td className="amount-col">{item.value !== 0 ? item.value.toFixed(2) : '-'}</td>
                 </tr>
             ))}
             <tr className="total-row"><td>TOTAL INCOME</td><td className="amount-col">{totalIncome.toFixed(2)}</td></tr>
