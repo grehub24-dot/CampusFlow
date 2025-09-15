@@ -153,7 +153,6 @@ export default function PayrollPage() {
         }
     }
     // This is a simplified progressive tax calculation. For accurate calculation, a cumulative approach is better.
-    // Let's use the cumulative approach as it's more accurate for Ghana's PAYE.
     tax = 0;
     if (taxableIncome > sortedBrackets[0].to!) {
         let cumulativeTax = 0;
@@ -184,7 +183,7 @@ export default function PayrollPage() {
       const ssnitEmployerRate = payrollSettings ? payrollSettings.ssnitEmployerRate / 100 : 0.13;
       const taxBrackets = payrollSettings?.payeTaxBrackets;
 
-      const grossSalaryPerMonth = employee.grossSalary / 12;
+      const grossSalaryPerMonth = employee.grossSalary;
       const arrearsTotal = employee.arrears?.reduce((acc, d) => acc + d.amount, 0) || 0;
       
       const earnings = grossSalaryPerMonth + arrearsTotal;
@@ -422,3 +421,5 @@ export default function PayrollPage() {
     </>
   );
 }
+
+    
