@@ -48,7 +48,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const permissionConfig = {
+const permissionConfig: { [key in keyof RolePermissions]: ('read' | 'create' | 'update' | 'delete' | 'run')[] } = {
     dashboard: ['read'],
     admissions: ['read', 'create', 'update', 'delete'],
     students: ['read', 'create', 'update', 'delete'],
@@ -134,9 +134,19 @@ export function RolesSettings({ roles }: { roles: Role[] }) {
     const handleSavePermissions: SubmitHandler<FormValues> = async (data) => {
         if (!selectedRole) return;
         setIsSubmitting(true);
+        
+        // Ensure all possible permissions have a boolean value
+        const fullPermissions: RolePermissions = {};
+        for (const feature in permissionConfig) {
+            fullPermissions[feature] = {};
+            for (const action of permissionConfig[feature as keyof RolePermissions]) {
+                fullPermissions[feature]![action] = data[feature]?.[action] || false;
+            }
+        }
+
         try {
             const roleDocRef = doc(db, "roles", selectedRole.id);
-            await updateDoc(roleDocRef, { permissions: data });
+            await updateDoc(roleDocRef, { permissions: fullPermissions });
             await logActivity(user, 'Permissions Updated', `Updated permissions for the ${selectedRole.name} role.`);
             toast({
                 title: 'Permissions Saved',
