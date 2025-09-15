@@ -50,10 +50,11 @@ export async function sendSms(recipients: string[], message: string, systemId?: 
       msgid: `cf-${uuidv4()}`
     }));
 
-    const finalMessage = systemId ? `[${systemId}] ${message}` : message;
-
-    // Use "Nexora" for administrative SMS messages sent via this generic function
-    const senderId = recipients.includes('0536282694') ? 'Nexora' : (credentials.senderId || 'CampusFlow');
+    const isAdminAlert = recipients.includes('0536282694');
+    const finalMessage = isAdminAlert && systemId ? `[${systemId}] ${message}` : message;
+    
+    // Use "Nexora" for administrative SMS messages, otherwise use configured sender ID.
+    const senderId = isAdminAlert ? 'Nexora' : (credentials.senderId || 'CampusFlow');
 
     const response = await fetch(url, {
       method: 'POST',
