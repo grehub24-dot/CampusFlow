@@ -31,7 +31,9 @@ export default function StaffPage() {
     const [staffToDelete, setStaffToDelete] = React.useState<StaffMember | null>(null);
     const { toast } = useToast();
     const { user, hasPermission } = useAuth();
-    const canManageStaff = hasPermission('staff:update') || hasPermission('staff:delete');
+    const canUpdate = hasPermission('staff:update');
+    const canDelete = hasPermission('staff:delete');
+    const canManageStaff = canUpdate || canDelete;
     const canCreateStaff = hasPermission('staff:create');
 
     React.useEffect(() => {
@@ -146,7 +148,7 @@ export default function StaffPage() {
         }
     };
     
-    const columns = React.useMemo(() => getStaffColumns({ onEdit: handleEdit, onDelete: handleDelete, canManage }), [canManage]);
+    const columns = React.useMemo(() => getStaffColumns({ onEdit: canUpdate ? handleEdit : () => {}, onDelete: canDelete ? handleDelete: () => {}, canManage: canManageStaff }), [canUpdate, canDelete, canManageStaff]);
     const table = useReactTable({
         data: staff,
         columns,
