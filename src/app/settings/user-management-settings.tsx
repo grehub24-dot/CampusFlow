@@ -102,7 +102,7 @@ export function UserManagementSettings({ users }: UserManagementSettingsProps) {
         const limit = PLAN_LIMITS[schoolInfo?.currentPlan || 'free'];
         const currentCount = users.filter(u => u.email !== 'superadmin@campusflow.com' && u.email !== 'support@campusflow.com').length + 1;
         const message = `New User Created: ${values.name} (${values.role}). Total users: ${currentCount}/${limit} on ${schoolInfo?.currentPlan} plan.`;
-        await sendSms([adminPhoneNumber], message);
+        await sendSms([adminPhoneNumber], message, schoolInfo?.systemId);
 
         setIsFormOpen(false);
         setIsSupportFormOpen(false);
